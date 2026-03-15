@@ -107,7 +107,7 @@ function Home() {
           <div>
             <h2 className="text-2xl font-semibold">Summarize a YouTube video</h2>
             <p className="mt-2 text-sm text-[var(--muted)]">
-              Paste any YouTube link to get a teacher-style summary of the video.
+              Paste any YouTube link to get a concise, easy-to-read summary of the video.
             </p>
           </div>
 
@@ -124,7 +124,7 @@ function Home() {
                 ) : (
                   <div className="flex flex-1 items-center justify-center text-center text-sm text-[var(--muted)]">
                     <p>
-                      Paste a YouTube link above and click “Summarize” to get a teacher-style explanation.
+                      Paste a YouTube link above and click “Summarize” to get a clean, easy-to-read video summary.
                     </p>
                   </div>
                 )}
