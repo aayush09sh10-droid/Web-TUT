@@ -25,7 +25,9 @@ function App() {
       root.classList.remove('dark')
     }
     window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+    
   }, [theme])
+  
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
