@@ -1,7 +1,14 @@
-const { getYoutubeTranscript } = require('../utils/youtube')
-const { summarizeWithGemini } = require('../utils/gemini')
+const {
+  downloadYoutubeAudio,
+  createGeminiAudioChunks,
+  removeFiles,
+} = require('../services/youtube-audio.service')
+const { generateSummaryFromAudioChunks } = require('../services/gemini.service')
 
 async function summarizeVideo(req, res) {
+  let downloadedAudioPath = null
+  let chunkPaths = []
+
   try {
     const { url } = req.body
     const io = req.app.get('io')
@@ -12,49 +19,54 @@ async function summarizeVideo(req, res) {
       }
     }
 
-    // 1️⃣ Validate URL
     if (!url) {
       return res.status(400).json({
         success: false,
-        error: 'Missing `url` in request body.'
+        error: 'Missing `url` in request body.',
       })
     }
 
-    // 2️⃣ Fetch transcript
-    emitProgress('Fetching transcript')
-    const transcript = await getYoutubeTranscript(url)
+    emitProgress('Downloading audio')
+    const audioResult = await downloadYoutubeAudio(url)
+    downloadedAudioPath = audioResult.audioPath
 
-    if (!transcript || transcript.length < 20) {
+    emitProgress('Preparing audio for Gemini')
+    const chunks = await createGeminiAudioChunks(
+      downloadedAudioPath,
+      audioResult.durationInSeconds
+    )
+
+    chunkPaths = chunks.map((chunk) => chunk.path)
+
+    if (!chunks.length) {
       return res.status(400).json({
         success: false,
-        error: 'Transcript could not be fetched for this video.'
+        error: 'No audio found in video',
       })
     }
 
-    // 3️⃣ Analyze transcript (preparing for summary)
-    emitProgress('Analyzing transcript')
+    emitProgress('Generating summary')
+    const summary = await generateSummaryFromAudioChunks(chunks, {
+      durationInSeconds: audioResult.durationInSeconds,
+      sourceUrl: url,
+    })
 
-    // 4️⃣ Generate AI summary
-    emitProgress('Generating AI summary')
-    const result = await summarizeWithGemini(transcript, url)
-
-    // 5️⃣ Summary ready
     emitProgress('Summary ready')
 
-    // 6️⃣ Send response
     return res.json({
       success: true,
       videoUrl: url,
-      summary: result.summary
+      summary,
     })
-
   } catch (error) {
     console.error('Summarize error:', error)
 
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       success: false,
-      error: error.message || 'Failed to summarize the video.'
+      error: error.message || 'Failed to summarize the video.',
     })
+  } finally {
+    await removeFiles([downloadedAudioPath, ...chunkPaths])
   }
 }
 

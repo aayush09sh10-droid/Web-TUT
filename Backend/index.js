@@ -1,16 +1,11 @@
 require('dotenv').config()
 
-// Ensure fetch is available for libraries like OpenAI and node-fetch
-if (typeof global.fetch !== 'function') {
-  global.fetch = require('node-fetch')
-}
-
 const express = require('express')
 const cors = require('cors')
 const http = require('http')
 const { Server } = require('socket.io')
 
-const summarizeRouter = require('./Routes/summarize')
+const summarizeRouter = require('./routes/summarize')
 
 const app = express()
 

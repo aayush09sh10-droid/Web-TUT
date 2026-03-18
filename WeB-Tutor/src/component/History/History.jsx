@@ -3,6 +3,30 @@ import { Link } from 'react-router-dom'
 
 const HISTORY_STORAGE_KEY = 'yt-summarizer-history'
 
+function normalizeSummaryPayload(result) {
+  const summary = result?.summary
+
+  if (summary && typeof summary === 'object') {
+    return {
+      title: summary.title || 'Video Summary',
+      timeline: Array.isArray(summary.timeline) ? summary.timeline : [],
+      paragraphs: summary.paragraphs || {},
+    }
+  }
+
+  const fallbackText = result?.summary || result?.detailedSummary || result?.overview || ''
+
+  return {
+    title: 'Video Summary',
+    timeline: [],
+    paragraphs: {
+      overview: fallbackText,
+      coreIdeas: '',
+      exploreMore: '',
+    },
+  }
+}
+
 export default function History() {
   const [history, setHistory] = useState([])
   const [selected, setSelected] = useState(null)
@@ -44,8 +68,12 @@ export default function History() {
   }
 
   const selectedResult = selected?.result
-  const summaryText =
-    selectedResult?.summary || selectedResult?.detailedSummary || selectedResult?.overview || ''
+  const normalizedSummary = normalizeSummaryPayload(selectedResult)
+  const summaryParagraphs = [
+    normalizedSummary.paragraphs.overview,
+    normalizedSummary.paragraphs.coreIdeas,
+    normalizedSummary.paragraphs.exploreMore,
+  ].filter(Boolean)
 
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
@@ -119,10 +147,41 @@ export default function History() {
                 </p>
 
                 <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg)] p-4">
-                  <h4 className="text-base font-semibold text-[var(--text)]">Summary</h4>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[var(--text)]">
-                    {summaryText || 'No summary was available for this item.'}
-                  </p>
+                  <h4 className="text-base font-semibold text-[var(--text)]">
+                    {normalizedSummary.title}
+                  </h4>
+
+                  {normalizedSummary.timeline.length > 0 && (
+                    <div className="mt-4 space-y-2 border-b border-[var(--border)] pb-4">
+                      <h5 className="text-sm font-semibold text-[var(--text)]">Timeline</h5>
+                      {normalizedSummary.timeline.map((item, index) => (
+                        <div
+                          key={`${item.timestamp}-${index}`}
+                          className="flex gap-3 text-sm text-[var(--text)]"
+                        >
+                          <span className="min-w-16 font-semibold">{item.timestamp}</span>
+                          <span>{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-4 space-y-3">
+                    {summaryParagraphs.length > 0 ? (
+                      summaryParagraphs.map((paragraph, index) => (
+                        <p
+                          key={index}
+                          className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--text)]"
+                        >
+                          {paragraph}
+                        </p>
+                      ))
+                    ) : (
+                      <p className="text-sm leading-relaxed text-[var(--text)]">
+                        No summary was available for this item.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (

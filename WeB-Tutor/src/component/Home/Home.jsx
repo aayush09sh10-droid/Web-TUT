@@ -3,6 +3,30 @@ import React, { useEffect, useState } from 'react'
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
 const HISTORY_STORAGE_KEY = 'yt-summarizer-history'
 
+function normalizeSummaryPayload(result) {
+  const summary = result?.summary
+
+  if (summary && typeof summary === 'object') {
+    return {
+      title: summary.title || 'Video Summary',
+      timeline: Array.isArray(summary.timeline) ? summary.timeline : [],
+      paragraphs: summary.paragraphs || {},
+    }
+  }
+
+  const fallbackText = result?.summary || result?.detailedSummary || result?.overview || ''
+
+  return {
+    title: 'Video Summary',
+    timeline: [],
+    paragraphs: {
+      overview: fallbackText,
+      coreIdeas: '',
+      exploreMore: '',
+    },
+  }
+}
+
 function Home() {
   const [url, setUrl] = useState('')
   const [result, setResult] = useState(null)
@@ -96,9 +120,13 @@ function Home() {
     }
   }
 
-  const summaryText =
-    result?.summary || result?.detailedSummary || result?.overview || ''
   const showResult = Boolean(result)
+  const normalizedSummary = normalizeSummaryPayload(result)
+  const summaryParagraphs = [
+    normalizedSummary.paragraphs.overview,
+    normalizedSummary.paragraphs.coreIdeas,
+    normalizedSummary.paragraphs.exploreMore,
+  ].filter(Boolean)
 
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
@@ -115,11 +143,49 @@ function Home() {
             <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
               <div className="flex flex-1 flex-col gap-4 overflow-auto p-6 pb-24">
                 {showResult ? (
-                  <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)] p-4">
-                    <h3 className="text-lg font-semibold text-[var(--text)]">Summary</h3>
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[var(--text)]">
-                      {summaryText || 'No summary was returned by the model.'}
-                    </p>
+                  <div className="space-y-4">
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)] p-4">
+                      <h3 className="text-lg font-semibold text-[var(--text)]">
+                        {normalizedSummary.title}
+                      </h3>
+                    </div>
+
+                    {normalizedSummary.timeline.length > 0 && (
+                      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)] p-4">
+                        <h3 className="text-lg font-semibold text-[var(--text)]">Timeline</h3>
+                        <div className="mt-3 space-y-2">
+                          {normalizedSummary.timeline.map((item, index) => (
+                            <div
+                              key={`${item.timestamp}-${index}`}
+                              className="flex gap-3 text-sm text-[var(--text)]"
+                            >
+                              <span className="min-w-16 font-semibold">{item.timestamp}</span>
+                              <span>{item.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)] p-4">
+                      <h3 className="text-lg font-semibold text-[var(--text)]">Summary</h3>
+                      <div className="mt-3 space-y-3">
+                        {summaryParagraphs.length > 0 ? (
+                          summaryParagraphs.map((paragraph, index) => (
+                            <p
+                              key={index}
+                              className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--text)]"
+                            >
+                              {paragraph}
+                            </p>
+                          ))
+                        ) : (
+                          <p className="text-sm leading-relaxed text-[var(--text)]">
+                            No summary was returned by the model.
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-1 items-center justify-center text-center text-sm text-[var(--muted)]">
