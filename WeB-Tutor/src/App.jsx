@@ -4,6 +4,8 @@ import Auth from './component/Auth/Auth'
 import Header from './component/Header/Header'
 import Home from './component/Home/Home'
 import History from './component/History/History'
+import Profile from './component/Profile/Profile'
+import LearningDetails from './component/Profile/LearningDetails'
 import Footer from './component/Footer/Footer'
 
 const THEME_STORAGE_KEY = 'yt-summarizer-theme'
@@ -68,6 +70,8 @@ function App() {
             <Routes>
               <Route path="/" element={<Home theme={theme} authToken={auth.token} authUser={auth.user} />} />
               <Route path="/history" element={<History authToken={auth.token} />} />
+              <Route path="/profile" element={<Profile theme={theme} authToken={auth.token} authUser={auth.user} />} />
+              <Route path="/profile/learning/:id" element={<LearningDetails theme={theme} authToken={auth.token} />} />
             </Routes>
           ) : (
             <Auth theme={theme} onAuthSuccess={handleAuthSuccess} />

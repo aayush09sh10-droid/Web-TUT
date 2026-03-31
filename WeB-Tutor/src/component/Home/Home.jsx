@@ -37,6 +37,23 @@ const DARK_TEACHING_THEME = {
   card: 'rgba(38, 51, 89, 0.62)',
   cardSoft: 'rgba(234, 241, 255, 0.08)',
 }
+const LIGHT_FORMULA_THEME = {
+  primary: 'oklch(74% 0.18 145)',
+  secondary: 'oklch(87% 0.11 120)',
+  surface: 'oklch(95% 0.06 145)',
+  accent: 'oklch(63% 0.16 155)',
+  text: '#183d2e',
+}
+const DARK_FORMULA_THEME = {
+  primary: 'oklch(61% 0.13 155)',
+  secondary: 'oklch(42% 0.08 145)',
+  surface: 'rgba(17, 44, 35, 0.94)',
+  accent: 'oklch(72% 0.14 150)',
+  text: '#e4fff2',
+  muted: '#b9e9d1',
+  card: 'rgba(37, 79, 63, 0.58)',
+  cardSoft: 'rgba(231, 255, 243, 0.08)',
+}
 const LIGHT_DOUBT_THEME = {
   primary: 'oklch(70% 0.16 330)',
   secondary: 'oklch(86% 0.09 320)',
@@ -101,6 +118,7 @@ function Home({ theme = 'light', authToken }) {
   const isDarkMode = theme === 'dark'
   const QUIZ_THEME = isDarkMode ? DARK_QUIZ_THEME : LIGHT_QUIZ_THEME
   const TEACHING_THEME = isDarkMode ? DARK_TEACHING_THEME : LIGHT_TEACHING_THEME
+  const FORMULA_THEME = isDarkMode ? DARK_FORMULA_THEME : LIGHT_FORMULA_THEME
   const DOUBT_THEME = isDarkMode ? DARK_DOUBT_THEME : LIGHT_DOUBT_THEME
   const [inputMode, setInputMode] = useState('video')
   const [url, setUrl] = useState('')
@@ -114,9 +132,13 @@ function Home({ theme = 'light', authToken }) {
   const [quizError, setQuizError] = useState('')
   const [teachingLoading, setTeachingLoading] = useState(false)
   const [teachingError, setTeachingError] = useState('')
+  const [formulaLoading, setFormulaLoading] = useState(false)
+  const [formulaError, setFormulaError] = useState('')
   const [selectedAnswers, setSelectedAnswers] = useState({})
   const [quizSubmitted, setQuizSubmitted] = useState(false)
   const [activeTopicId, setActiveTopicId] = useState('')
+  const [activeFormulaSectionId, setActiveFormulaSectionId] = useState('')
+  const [activeFormulaPanel, setActiveFormulaPanel] = useState('explanation')
   const [showComposer, setShowComposer] = useState(true)
   const [hasHydratedHomeState, setHasHydratedHomeState] = useState(false)
   const [doubtQuestion, setDoubtQuestion] = useState('')
@@ -142,6 +164,7 @@ function Home({ theme = 'light', authToken }) {
         parsed?.activeView === 'summary' ||
         parsed?.activeView === 'quiz' ||
         parsed?.activeView === 'teaching' ||
+        parsed?.activeView === 'formula' ||
         parsed?.activeView === 'doubt'
       ) {
         setActiveView(parsed.activeView)
@@ -154,6 +177,12 @@ function Home({ theme = 'light', authToken }) {
       }
       if (typeof parsed?.activeTopicId === 'string') {
         setActiveTopicId(parsed.activeTopicId)
+      }
+      if (typeof parsed?.activeFormulaSectionId === 'string') {
+        setActiveFormulaSectionId(parsed.activeFormulaSectionId)
+      }
+      if (parsed?.activeFormulaPanel === 'explanation' || parsed?.activeFormulaPanel === 'practice') {
+        setActiveFormulaPanel(parsed.activeFormulaPanel)
       }
       if (typeof parsed?.showComposer === 'boolean') {
         setShowComposer(parsed.showComposer)
@@ -179,6 +208,8 @@ function Home({ theme = 'light', authToken }) {
       selectedAnswers,
       quizSubmitted,
       activeTopicId,
+      activeFormulaSectionId,
+      activeFormulaPanel,
       showComposer,
       doubtQuestion,
     }
@@ -192,6 +223,8 @@ function Home({ theme = 'light', authToken }) {
     selectedAnswers,
     quizSubmitted,
     activeTopicId,
+    activeFormulaSectionId,
+    activeFormulaPanel,
     showComposer,
     doubtQuestion,
     hasHydratedHomeState,
@@ -274,6 +307,7 @@ function Home({ theme = 'light', authToken }) {
     setError('')
     setQuizError('')
     setTeachingError('')
+    setFormulaError('')
     setDoubtError('')
 
     setLoading(true)
@@ -315,11 +349,14 @@ function Home({ theme = 'light', authToken }) {
       setError('')
       setQuizError('')
       setTeachingError('')
+      setFormulaError('')
       setDoubtError('')
       setActiveView('summary')
       setSelectedAnswers({})
       setQuizSubmitted(false)
       setActiveTopicId('')
+      setActiveFormulaSectionId('')
+      setActiveFormulaPanel('explanation')
       setShowComposer(false)
 
       addToHistory({
@@ -338,6 +375,9 @@ function Home({ theme = 'light', authToken }) {
     setUrl('')
     setNotesImage(null)
     setError('')
+    setFormulaError('')
+    setActiveFormulaSectionId('')
+    setActiveFormulaPanel('explanation')
     setShowComposer(true)
   }
 
@@ -499,6 +539,48 @@ function Home({ theme = 'light', authToken }) {
     }
   }
 
+  async function handleGenerateFormula() {
+    if (!result?.summary) return
+
+    setActiveView('formula')
+    setFormulaError('')
+
+    if (result.formula?.sections?.length) {
+      if (!activeFormulaSectionId) {
+        setActiveFormulaSectionId(result.formula.sections[0].id)
+      }
+      return
+    }
+
+    setFormulaLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/formula`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ summary: result.summary, historyId: result.historyId }),
+      })
+
+      const payload = await res.json()
+      if (!res.ok) {
+        throw new Error(payload?.error || 'Failed to generate formula guide.')
+      }
+
+      const nextResult = {
+        ...result,
+        formula: payload.formula,
+      }
+
+      setResult(nextResult)
+      setActiveFormulaSectionId(payload.formula?.sections?.[0]?.id || '')
+      setActiveFormulaPanel('explanation')
+      updateHistoryResult(nextResult)
+    } catch (err) {
+      setFormulaError(err.message || 'Unexpected error')
+    } finally {
+      setFormulaLoading(false)
+    }
+  }
+
   function handleSelectAnswer(questionId, optionIndex) {
     if (quizSubmitted) return
 
@@ -511,6 +593,47 @@ function Home({ theme = 'light', authToken }) {
   function handleSubmitQuiz() {
     if (!quiz?.questions?.length) return
     setQuizSubmitted(true)
+
+    if (result?.historyId && authToken) {
+      const nextWrongQuestions = quiz.questions
+        .filter((question) => selectedAnswers[question.id] !== question.answerIndex)
+        .map((question) => question.question)
+
+      fetch(`${API_BASE}/api/history/${result.historyId}/quiz-progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({
+          correctCount,
+          totalQuestions,
+          scorePercent,
+          selectedAnswers,
+          wrongQuestions: nextWrongQuestions,
+        }),
+      })
+        .then((res) => res.json().then((payload) => ({ ok: res.ok, payload })))
+        .then(({ ok, payload }) => {
+          if (!ok) {
+            throw new Error(payload?.error || 'Failed to save quiz progress.')
+          }
+
+          const nextResult = {
+            ...result,
+            quizProgress: payload.item?.result?.quizProgress || {
+              correctCount,
+              totalQuestions,
+              scorePercent,
+              selectedAnswers,
+              wrongQuestions: nextWrongQuestions,
+            },
+          }
+
+          setResult(nextResult)
+          updateHistoryResult(nextResult)
+        })
+        .catch((err) => {
+          console.error('Quiz progress save error:', err)
+        })
+    }
   }
 
   function handleRetryQuiz() {
@@ -527,9 +650,11 @@ function Home({ theme = 'light', authToken }) {
   ].filter(Boolean)
   const quiz = result?.quiz
   const teaching = result?.teaching
+  const formula = result?.formula
   const doubt = result?.doubt
   const isQuizView = activeView === 'quiz'
   const isTeachingView = activeView === 'teaching'
+  const isFormulaView = activeView === 'formula'
   const isDoubtView = activeView === 'doubt'
   const answeredCount = quiz?.questions?.filter((question) => selectedAnswers[question.id] !== undefined).length || 0
   const totalQuestions = quiz?.questions?.length || 0
@@ -549,6 +674,12 @@ function Home({ theme = 'light', authToken }) {
         borderColor: TEACHING_THEME.primary,
       }
     : undefined
+  const formulaPanelStyle = isFormulaView
+    ? {
+        backgroundColor: FORMULA_THEME.surface,
+        borderColor: FORMULA_THEME.primary,
+      }
+    : undefined
   const doubtPanelStyle = isDoubtView
     ? {
         backgroundColor: DOUBT_THEME.surface,
@@ -557,6 +688,10 @@ function Home({ theme = 'light', authToken }) {
     : undefined
   const activeTopic =
     teaching?.topics?.find((topic) => topic.id === activeTopicId) || teaching?.topics?.[0] || null
+  const activeFormulaSection =
+    formula?.sections?.find((section) => section.id === activeFormulaSectionId) ||
+    formula?.sections?.[0] ||
+    null
 
   let teacherRating = ''
   let teacherGuidance = ''
@@ -584,7 +719,7 @@ function Home({ theme = 'light', authToken }) {
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Summarize a video or notes photo</h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
-              Paste a YouTube link or upload study notes and turn them into a colorful study flow with summaries, quizzes, and guided teaching.
+              Paste a YouTube link or upload study notes and turn them into a colorful study flow with summaries, quizzes, formula help, and guided teaching.
             </p>
           </div>
 
@@ -712,6 +847,19 @@ function Home({ theme = 'light', authToken }) {
                         }}
                       >
                         {teachingLoading ? 'Generating Teaching...' : 'Teaching'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleGenerateFormula}
+                        disabled={formulaLoading}
+                        className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(58,168,118,0.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                        style={{
+                          background: `linear-gradient(135deg, ${FORMULA_THEME.primary}, ${FORMULA_THEME.secondary})`,
+                          borderColor: FORMULA_THEME.accent,
+                          color: FORMULA_THEME.text,
+                        }}
+                      >
+                        {formulaLoading ? 'Generating Formula...' : 'Formula Lab'}
                       </button>
                       <button
                         type="button"
@@ -1132,6 +1280,220 @@ function Home({ theme = 'light', authToken }) {
                                     <p className="mt-2 text-sm leading-relaxed" style={{ color: isDarkMode ? TEACHING_THEME.text : '#233567' }}>
                                       {activeTopic.reflectionQuestion}
                                     </p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : activeView === 'formula' ? (
+                      <div
+                        className="rounded-[1.75rem] border p-4 shadow-[0_20px_48px_rgba(58,168,118,0.16)] sm:p-5"
+                        style={{
+                          ...formulaPanelStyle,
+                          color: FORMULA_THEME.text,
+                          backgroundImage: isDarkMode
+                            ? `radial-gradient(circle at top left, rgba(182,255,224,0.1), transparent 28%), linear-gradient(135deg, ${FORMULA_THEME.surface}, rgba(14,35,29,0.98))`
+                            : `radial-gradient(circle at top left, rgba(255,255,255,0.82), transparent 28%), linear-gradient(135deg, ${FORMULA_THEME.surface}, #effff5)`,
+                        }}
+                      >
+                        <h3 className="text-lg font-semibold sm:text-xl">
+                          {formula?.title || 'Formula Lab'}
+                        </h3>
+                        <p className="mt-2 text-sm leading-relaxed" style={{ color: isDarkMode ? FORMULA_THEME.muted : '#35634f' }}>
+                          Explore important formulas part by part. Open one section, then switch between explanation and practice to apply the idea properly.
+                        </p>
+
+                        {formulaError && (
+                          <p className="mt-4 rounded-xl border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700">
+                            {formulaError}
+                          </p>
+                        )}
+
+                        {!formulaLoading && !formula && !formulaError && (
+                          <p className="mt-4 text-sm leading-relaxed">
+                            Click the formula button above to generate formula explanations and practice tasks.
+                          </p>
+                        )}
+
+                        {formulaLoading && (
+                          <p className="mt-4 text-sm font-medium">Preparing your formula guide...</p>
+                        )}
+
+                        {formula?.intro && (
+                          <div
+                            className="mt-5 rounded-[1.25rem] border px-4 py-4"
+                            style={{
+                              background: isDarkMode ? FORMULA_THEME.card : 'rgba(255,255,255,0.66)',
+                              borderColor: FORMULA_THEME.secondary,
+                            }}
+                          >
+                            <p className="text-sm leading-relaxed" style={{ color: isDarkMode ? FORMULA_THEME.muted : '#35634f' }}>
+                              {formula.intro}
+                            </p>
+                          </div>
+                        )}
+
+                        {formula?.sections?.length > 0 && (
+                          <div className="mt-5 grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
+                            <div className="space-y-3">
+                              {formula.sections.map((section, index) => (
+                                <button
+                                  key={section.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveFormulaSectionId(section.id)
+                                    setActiveFormulaPanel('explanation')
+                                  }}
+                                  className="block w-full rounded-[1.15rem] border px-4 py-3 text-left text-sm font-semibold transition"
+                                  style={{
+                                    background:
+                                      activeFormulaSection?.id === section.id
+                                        ? `linear-gradient(135deg, ${FORMULA_THEME.primary}, ${FORMULA_THEME.secondary})`
+                                        : isDarkMode
+                                          ? FORMULA_THEME.cardSoft
+                                          : 'rgba(255,255,255,0.72)',
+                                    borderColor:
+                                      activeFormulaSection?.id === section.id
+                                        ? FORMULA_THEME.accent
+                                        : 'rgba(24, 61, 46, 0.12)',
+                                    color:
+                                      activeFormulaSection?.id === section.id
+                                        ? FORMULA_THEME.text
+                                        : isDarkMode
+                                          ? '#d6ffea'
+                                          : '#245340',
+                                  }}
+                                >
+                                  Part {index + 1}: {section.title}
+                                </button>
+                              ))}
+                            </div>
+
+                            {activeFormulaSection && (
+                              <div
+                                className="rounded-[1.5rem] border px-4 py-4 sm:px-5 sm:py-5"
+                                style={{
+                                  background: isDarkMode ? FORMULA_THEME.card : 'rgba(255,255,255,0.74)',
+                                  borderColor: FORMULA_THEME.secondary,
+                                }}
+                              >
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                  <div>
+                                    <h4 className="text-lg font-semibold">{activeFormulaSection.title}</h4>
+                                    <p className="mt-1 text-sm font-medium" style={{ color: isDarkMode ? FORMULA_THEME.muted : '#35634f' }}>
+                                      {activeFormulaSection.formulaName}
+                                    </p>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setActiveFormulaPanel('explanation')}
+                                      className="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
+                                      style={{
+                                        background:
+                                          activeFormulaPanel === 'explanation'
+                                            ? `linear-gradient(135deg, ${FORMULA_THEME.primary}, ${FORMULA_THEME.secondary})`
+                                            : isDarkMode
+                                              ? FORMULA_THEME.cardSoft
+                                              : 'rgba(255,255,255,0.75)',
+                                        borderColor: FORMULA_THEME.accent,
+                                        color: FORMULA_THEME.text,
+                                      }}
+                                    >
+                                      Explanation
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setActiveFormulaPanel('practice')}
+                                      className="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
+                                      style={{
+                                        background:
+                                          activeFormulaPanel === 'practice'
+                                            ? `linear-gradient(135deg, ${FORMULA_THEME.primary}, ${FORMULA_THEME.secondary})`
+                                            : isDarkMode
+                                              ? FORMULA_THEME.cardSoft
+                                              : 'rgba(255,255,255,0.75)',
+                                        borderColor: FORMULA_THEME.accent,
+                                        color: FORMULA_THEME.text,
+                                      }}
+                                    >
+                                      Practice
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="mt-4 rounded-[1.2rem] border px-4 py-4" style={{
+                                  background: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.92)',
+                                  borderColor: 'rgba(24, 61, 46, 0.1)',
+                                }}>
+                                  <h5 className="text-sm font-semibold uppercase tracking-[0.12em]" style={{ color: isDarkMode ? '#9be4bf' : '#4a7d68' }}>
+                                    Formula
+                                  </h5>
+                                  <p className="mt-2 text-base font-semibold break-words" style={{ color: isDarkMode ? FORMULA_THEME.text : '#1d4a38' }}>
+                                    {activeFormulaSection.formula}
+                                  </p>
+                                </div>
+
+                                {activeFormulaPanel === 'explanation' ? (
+                                  <div className="mt-4 space-y-4">
+                                    {activeFormulaSection.importance && (
+                                      <div className="rounded-xl border px-4 py-3 text-sm" style={{
+                                        background: isDarkMode ? FORMULA_THEME.cardSoft : 'rgba(244,255,248,0.95)',
+                                        borderColor: 'rgba(24, 61, 46, 0.1)',
+                                        color: isDarkMode ? FORMULA_THEME.muted : '#35634f',
+                                      }}>
+                                        Why it matters: {activeFormulaSection.importance}
+                                      </div>
+                                    )}
+                                    {activeFormulaSection.whenToUse && (
+                                      <div className="rounded-xl border px-4 py-3 text-sm" style={{
+                                        background: isDarkMode ? FORMULA_THEME.cardSoft : 'rgba(244,255,248,0.95)',
+                                        borderColor: 'rgba(24, 61, 46, 0.1)',
+                                        color: isDarkMode ? FORMULA_THEME.muted : '#35634f',
+                                      }}>
+                                        When to use: {activeFormulaSection.whenToUse}
+                                      </div>
+                                    )}
+                                    <div className="rounded-[1.2rem] border px-4 py-4" style={{
+                                      background: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.92)',
+                                      borderColor: 'rgba(24, 61, 46, 0.1)',
+                                    }}>
+                                      <h5 className="text-sm font-semibold uppercase tracking-[0.12em]" style={{ color: isDarkMode ? '#9be4bf' : '#4a7d68' }}>
+                                        Explanation
+                                      </h5>
+                                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 sm:leading-7" style={{ color: isDarkMode ? FORMULA_THEME.text : '#1d4a38' }}>
+                                        {activeFormulaSection.explanation}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="mt-4">
+                                    <h5 className="text-sm font-semibold uppercase tracking-[0.12em]" style={{ color: isDarkMode ? '#9be4bf' : '#4a7d68' }}>
+                                      Practice Questions
+                                    </h5>
+                                    <div className="mt-3 space-y-2">
+                                      {Array.isArray(activeFormulaSection.practiceQuestions) && activeFormulaSection.practiceQuestions.length > 0 ? (
+                                        activeFormulaSection.practiceQuestions.map((question, index) => (
+                                          <div
+                                            key={`${question}-${index}`}
+                                            className="rounded-xl border px-3 py-3 text-sm"
+                                            style={{
+                                              background: isDarkMode ? FORMULA_THEME.cardSoft : 'rgba(245,255,249,0.95)',
+                                              borderColor: 'rgba(24, 61, 46, 0.1)',
+                                              color: isDarkMode ? FORMULA_THEME.text : '#245340',
+                                            }}
+                                          >
+                                            Q{index + 1}. {question}
+                                          </div>
+                                        ))
+                                      ) : (
+                                        <p className="text-sm" style={{ color: isDarkMode ? FORMULA_THEME.muted : '#35634f' }}>
+                                          This part does not need practice questions. Focus on understanding the rule first.
+                                        </p>
+                                      )}
+                                    </div>
                                   </div>
                                 )}
                               </div>

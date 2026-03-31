@@ -30,7 +30,15 @@ const studyHistorySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: null,
     },
+    formula: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
     doubt: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+    quizProgress: {
       type: mongoose.Schema.Types.Mixed,
       default: null,
     },

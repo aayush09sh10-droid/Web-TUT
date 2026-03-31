@@ -6,8 +6,10 @@ function Header({ theme, setTheme, authUser, onLogout }) {
   const nextTheme = theme === 'dark' ? 'light' : 'dark'
   const isDark = theme === 'dark'
   const [isVisible, setIsVisible] = useState(true)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const lastScrollYRef = useRef(0)
   const upwardTravelRef = useRef(0)
+  const menuRef = useRef(null)
 
   const navItems = [
     { to: '/', label: 'Home' },
@@ -46,6 +48,22 @@ function Header({ theme, setTheme, authUser, onLogout }) {
       window.removeEventListener('scroll', handleScroll)
     }
   }, [])
+
+  useEffect(() => {
+    if (!isMenuOpen) return
+
+    const handlePointerDown = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+    }
+  }, [isMenuOpen])
 
   return (
     <>
@@ -107,12 +125,6 @@ function Header({ theme, setTheme, authUser, onLogout }) {
             </nav>
           )}
 
-          {authUser && (
-            <div className="rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-center text-xs font-semibold text-[var(--text)]">
-              @{authUser.username}
-            </div>
-          )}
-
           <button
             type="button"
             onClick={() => setTheme(nextTheme)}
@@ -127,18 +139,56 @@ function Header({ theme, setTheme, authUser, onLogout }) {
           </button>
 
           {authUser && (
-            <button
-              type="button"
-              onClick={onLogout}
-              className="w-full rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5 sm:w-auto"
-              style={{
-                borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
-                background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.68)',
-                color: isDark ? '#f5f7ff' : 'var(--text)',
-              }}
-            >
-              Logout
-            </button>
+            <div className="relative w-full sm:w-auto" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setIsMenuOpen((current) => !current)}
+                className="flex w-full items-center justify-center gap-3 rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5 sm:w-auto"
+                style={{
+                  borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
+                  background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.68)',
+                  color: isDark ? '#f5f7ff' : 'var(--text)',
+                }}
+              >
+                <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--card-strong)] text-[10px] font-bold">
+                  {authUser.avatarUrl ? (
+                    <img src={authUser.avatarUrl} alt={authUser.name} className="h-full w-full object-cover" />
+                  ) : (
+                    String(authUser.name || authUser.username || 'U').charAt(0).toUpperCase()
+                  )}
+                </span>
+                <span>@{authUser.username}</span>
+                <span aria-hidden="true">{isMenuOpen ? '^' : 'v'}</span>
+              </button>
+
+              {isMenuOpen && (
+                <div
+                  className="mt-2 w-full rounded-[1.2rem] border p-2 shadow-[0_18px_40px_rgba(0,0,0,0.14)] sm:absolute sm:right-0 sm:mt-3 sm:w-56"
+                  style={{
+                    borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
+                    background: isDark ? 'rgba(18,22,36,0.96)' : 'rgba(255,250,244,0.98)',
+                  }}
+                >
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block rounded-[0.95rem] px-4 py-3 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--card)]"
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMenuOpen(false)
+                      onLogout()
+                    }}
+                    className="mt-1 block w-full rounded-[0.95rem] px-4 py-3 text-left text-sm font-medium text-[var(--text)] transition hover:bg-[var(--card)]"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

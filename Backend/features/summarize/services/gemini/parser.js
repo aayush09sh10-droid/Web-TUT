@@ -184,6 +184,48 @@ function sanitiseDoubtAnswerShape(answer) {
   }
 }
 
+function sanitiseFormulaShape(formula) {
+  if (!formula || typeof formula !== 'object') {
+    throw new GeminiServiceError('Gemini did not return a valid formula object.')
+  }
+
+  const sections = Array.isArray(formula.sections)
+    ? formula.sections
+        .map((section, index) => {
+          const practiceQuestions = Array.isArray(section?.practiceQuestions)
+            ? section.practiceQuestions.map((question) => normaliseParagraph(question)).filter(Boolean).slice(0, 4)
+            : []
+
+          if (!normaliseParagraph(section?.title) || !normaliseParagraph(section?.explanation)) {
+            return null
+          }
+
+          return {
+            id: `formula-${index + 1}`,
+            title: normaliseParagraph(section.title),
+            formulaName: normaliseParagraph(section.formulaName || section.title),
+            formula: normaliseParagraph(section.formula || 'No direct formula required'),
+            importance: normaliseParagraph(section.importance),
+            whenToUse: normaliseParagraph(section.whenToUse),
+            explanation: normaliseParagraph(section.explanation),
+            practiceQuestions,
+          }
+        })
+        .filter(Boolean)
+        .slice(0, 8)
+    : []
+
+  if (!sections.length) {
+    throw new GeminiServiceError('Gemini returned an incomplete formula structure.')
+  }
+
+  return {
+    title: normaliseParagraph(formula.title || 'Formula Lab'),
+    intro: normaliseParagraph(formula.intro),
+    sections,
+  }
+}
+
 async function requestJsonFromGeminiParts(parts) {
   const model = getGeminiModel()
 
@@ -232,6 +274,7 @@ module.exports = {
   sanitiseQuizShape,
   sanitiseTeachingShape,
   sanitiseDoubtAnswerShape,
+  sanitiseFormulaShape,
   requestJsonFromGeminiParts,
   buildFallbackTimeline,
 }

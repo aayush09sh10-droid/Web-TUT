@@ -124,7 +124,7 @@ function Auth({ theme = 'light', onAuthSuccess }) {
               {[
                 'Register with name, username, and email',
                 'Login using username or email',
-                'Store your account data in MongoDB with backend JWT auth',
+                
               ].map((item) => (
                 <div
                   key={item}

@@ -1,5 +1,6 @@
 const { GeminiServiceError } = require('./errors')
 const { answerDoubtFromSummary } = require('./doubt')
+const { generateFormulaGuideFromSummary } = require('./formula')
 const { generateSummaryFromNotesImage } = require('./notes')
 const { generateQuizFromSummary } = require('./quiz')
 const { generateSummaryFromAudioChunks } = require('./summary')
@@ -10,6 +11,7 @@ module.exports = {
   generateSummaryFromNotesImage,
   generateQuizFromSummary,
   generateTeachingFromSummary,
+  generateFormulaGuideFromSummary,
   answerDoubtFromSummary,
   GeminiServiceError,
 }

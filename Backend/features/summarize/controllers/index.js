@@ -1,4 +1,5 @@
 const { answerDoubt } = require('./answerDoubt')
+const { generateFormula } = require('./generateFormula')
 const { generateQuiz } = require('./generateQuiz')
 const { generateTeaching } = require('./generateTeaching')
 const { summarizeNotes } = require('./summarizeNotes')
@@ -9,5 +10,6 @@ module.exports = {
   summarizeNotes,
   generateQuiz,
   generateTeaching,
+  generateFormula,
   answerDoubt,
 }
