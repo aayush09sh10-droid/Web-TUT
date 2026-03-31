@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-const HISTORY_STORAGE_KEY = 'yt-summarizer-history'
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
 
 function normalizeSummaryPayload(result) {
   const summary = result?.summary
@@ -27,30 +27,59 @@ function normalizeSummaryPayload(result) {
   }
 }
 
-export default function History() {
+export default function History({ authToken }) {
   const [history, setHistory] = useState([])
   const [selected, setSelected] = useState(null)
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(HISTORY_STORAGE_KEY)
-    if (!stored) return
+    if (!authToken) return
 
-    try {
-      const parsed = JSON.parse(stored)
-      if (Array.isArray(parsed)) {
-        setHistory(parsed)
+    const controller = new AbortController()
+
+    async function loadHistory() {
+      try {
+        const res = await fetch(`${API_BASE}/api/history`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+          signal: controller.signal,
+        })
+
+        const payload = await res.json()
+        if (!res.ok) {
+          throw new Error(payload?.error || 'Failed to load history.')
+        }
+
+        setHistory(Array.isArray(payload.history) ? payload.history : [])
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('History load error:', err)
+        }
       }
-    } catch {
-      // ignore
     }
-  }, [])
+
+    loadHistory()
+
+    return () => controller.abort()
+  }, [authToken])
 
   function saveHistory(items) {
     setHistory(items)
-    window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(items))
   }
 
-  function clearHistory() {
+  async function clearHistory() {
+    const res = await fetch(`${API_BASE}/api/history`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    })
+
+    const payload = await res.json()
+    if (!res.ok) {
+      throw new Error(payload?.error || 'Failed to clear history.')
+    }
+
     saveHistory([])
     setSelected(null)
   }
@@ -59,10 +88,22 @@ export default function History() {
     setSelected(item)
   }
 
-  function removeItem(item) {
-    const remaining = history.filter((h) => h.timestamp !== item.timestamp)
+  async function removeItem(item) {
+    const res = await fetch(`${API_BASE}/api/history/${item.id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    })
+
+    const payload = await res.json()
+    if (!res.ok) {
+      throw new Error(payload?.error || 'Failed to delete history item.')
+    }
+
+    const remaining = history.filter((h) => h.id !== item.id)
     saveHistory(remaining)
-    if (selected?.timestamp === item.timestamp) {
+    if (selected?.id === item.id) {
       setSelected(null)
     }
   }
@@ -76,26 +117,26 @@ export default function History() {
   ].filter(Boolean)
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
-      <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 pb-10 pt-8">
-        <div className="flex items-center justify-between gap-4">
+    <main className="min-h-screen text-[var(--text)]">
+      <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-3 pb-10 pt-6 sm:px-4 sm:pt-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold">Search History</h2>
+            <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Search History</h2>
             <p className="mt-1 text-sm text-[var(--muted)]">
               View previously summarized videos. Click an item to review its summary.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:flex">
             <Link
               to="/"
-              className="rounded-full border border-[var(--text)] px-4 py-2 text-xs font-medium hover:bg-[var(--text)] hover:text-[var(--bg)]"
+              className="rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-center text-xs font-medium transition hover:-translate-y-0.5"
             >
               Back to Home
             </Link>
             <button
               type="button"
               onClick={clearHistory}
-              className="rounded-full border border-[var(--text)] px-4 py-2 text-xs font-medium hover:bg-[var(--text)] hover:text-[var(--bg)]"
+              className="rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-center text-xs font-medium transition hover:-translate-y-0.5"
             >
               Clear all
             </button>
@@ -105,21 +146,21 @@ export default function History() {
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <div className="space-y-3">
             {history.length === 0 ? (
-              <div className="rounded-2xl border border-[var(--text)] bg-[var(--card)] p-6 text-sm text-[var(--text)]">
+              <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-6 text-sm text-[var(--text)] shadow-[var(--shadow)] backdrop-blur-xl">
                 No history yet. Summarize a video to populate this list.
               </div>
             ) : (
               history.map((item) => (
                 <div
                   key={item.timestamp}
-                  className="flex items-start justify-between rounded-2xl border border-[var(--text)] bg-[var(--card)] p-4"
+                  className="flex flex-col gap-3 rounded-[1.4rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-[var(--shadow)] backdrop-blur-xl sm:flex-row sm:items-start sm:justify-between"
                 >
                   <button
                     type="button"
                     onClick={() => selectItem(item)}
-                    className="text-left"
+                    className="min-w-0 text-left"
                   >
-                    <div className="font-medium text-[var(--text)] truncate w-56">
+                    <div className="max-w-full break-all font-medium text-[var(--text)] sm:w-56 sm:truncate sm:break-normal">
                       {item.url}
                     </div>
                     <div className="mt-1 text-xs text-[var(--muted)]">
@@ -129,7 +170,7 @@ export default function History() {
                   <button
                     type="button"
                     onClick={() => removeItem(item)}
-                    className="text-xs font-medium text-[var(--text)] opacity-80 hover:text-red-500"
+                    className="self-start text-xs font-medium text-[var(--text)] opacity-80 hover:text-red-500"
                   >
                     Delete
                   </button>
@@ -140,13 +181,13 @@ export default function History() {
 
           <div className="lg:col-span-2">
             {selectedResult ? (
-              <div className="rounded-2xl border border-[var(--text)] bg-[var(--card)] p-6">
+              <div className="rounded-[1.6rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-[var(--shadow)] backdrop-blur-xl sm:p-6">
                 <h3 className="text-lg font-semibold">Summary details</h3>
                 <p className="mt-2 text-sm text-[var(--muted)]">
                   The summary is displayed below.
                 </p>
 
-                <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg)] p-4">
+                <div className="mt-4 rounded-[1.2rem] border border-[var(--border)] bg-[var(--card-strong)] p-4">
                   <h4 className="text-base font-semibold text-[var(--text)]">
                     {normalizedSummary.title}
                   </h4>
@@ -157,9 +198,9 @@ export default function History() {
                       {normalizedSummary.timeline.map((item, index) => (
                         <div
                           key={`${item.timestamp}-${index}`}
-                          className="flex gap-3 text-sm text-[var(--text)]"
+                          className="flex flex-col gap-1 text-sm text-[var(--text)] sm:flex-row sm:gap-3"
                         >
-                          <span className="min-w-16 font-semibold">{item.timestamp}</span>
+                          <span className="font-semibold sm:min-w-16">{item.timestamp}</span>
                           <span>{item.label}</span>
                         </div>
                       ))}
@@ -185,7 +226,7 @@ export default function History() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-[var(--text)] bg-[var(--card)] p-6 text-sm text-[var(--text)]">
+              <div className="rounded-[1.6rem] border border-[var(--border)] bg-[var(--card)] p-4 text-sm text-[var(--text)] shadow-[var(--shadow)] backdrop-blur-xl sm:p-6">
                 Select a history item to view its summary.
               </div>
             )}
