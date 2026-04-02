@@ -5,27 +5,46 @@ const cors = require('cors')
 const http = require('http')
 const { Server } = require('socket.io')
 const { connectDB } = require('./DB/dbconnect')
+const { parseAllowedOrigins, createCorsOriginValidator } = require('./config/security')
+const { createRateLimiter } = require('./middleware/rateLimit')
+const { applySecurityHeaders } = require('./middleware/securityHeaders')
 
 const authRouter = require('./routes/auth')
 const historyRouter = require('./routes/history')
 const summarizeRouter = require('./routes/summarize')
 
 const app = express()
+const allowedOrigins = parseAllowedOrigins()
+const corsOptions = {
+  origin: createCorsOriginValidator(allowedOrigins),
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}
+const authRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 10,
+  message: 'Too many authentication attempts. Please try again later.',
+})
+const apiRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 60,
+})
 
-app.use(cors())
+app.disable('x-powered-by')
+app.set('trust proxy', 1)
+app.use(applySecurityHeaders)
+app.use(cors(corsOptions))
 app.use(express.json({ limit: '15mb' }))
-app.use(express.urlencoded({ extended: true }))
+app.use(express.urlencoded({ extended: true, limit: '15mb' }))
 
-app.use('/api/auth', authRouter)
-app.use('/api/history', historyRouter)
-app.use('/api', summarizeRouter)
+app.use('/api/auth', authRateLimiter, authRouter)
+app.use('/api/history', apiRateLimiter, historyRouter)
+app.use('/api', apiRateLimiter, summarizeRouter)
 
 // Create HTTP server and attach Socket.io
 const server = http.createServer(app)
 const io = new Server(server, {
-  cors: {
-    origin: '*'
-  }
+  cors: corsOptions,
 })
 
 // Make the Socket.io instance available in Express controllers

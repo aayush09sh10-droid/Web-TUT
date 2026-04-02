@@ -19,6 +19,26 @@ function getGeminiModel() {
   return client.getGenerativeModel({ model: GEMINI_MODEL })
 }
 
+function isGeminiQuotaError(error) {
+  const message = String(error?.message || '').toLowerCase()
+  const status = Number(error?.status || error?.statusCode || 0)
+
+  return (
+    status === 429 ||
+    status === 503 ||
+    message.includes('quota') ||
+    message.includes('rate limit') ||
+    message.includes('too many requests') ||
+    message.includes('resource has been exhausted') ||
+    message.includes('token limit') ||
+    message.includes('billing') ||
+    message.includes('exceeded') ||
+    message.includes('service unavailable') ||
+    message.includes('high demand') ||
+    message.includes('try again later')
+  )
+}
+
 function parseGeminiJson(rawText) {
   const cleaned = cleanJsonFence(rawText)
 
@@ -288,6 +308,13 @@ async function requestJsonFromGeminiParts(parts) {
   } catch (error) {
     if (error instanceof GeminiServiceError) {
       throw error
+    }
+
+    if (isGeminiQuotaError(error)) {
+      throw new GeminiServiceError(
+        'Gemini token finished. Please take subscription.',
+        429
+      )
     }
 
     throw new GeminiServiceError(

@@ -11,14 +11,18 @@ function getInitialTheme() {
 
 function getInitialAuth() {
   if (typeof window === 'undefined') return null
-  const stored = window.localStorage.getItem(AUTH_STORAGE_KEY)
-  if (!stored) return null
+  const stored = window.sessionStorage.getItem(AUTH_STORAGE_KEY)
+
+  if (!stored) {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY)
+    return null
+  }
 
   try {
     const parsed = JSON.parse(stored)
     return parsed?.token && parsed?.user ? parsed : null
   } catch {
-    window.localStorage.removeItem(AUTH_STORAGE_KEY)
+    window.sessionStorage.removeItem(AUTH_STORAGE_KEY)
     return null
   }
 }

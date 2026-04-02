@@ -26,8 +26,10 @@ function App() {
 
   useEffect(() => {
     if (auth?.token && auth?.user) {
-      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth))
+      window.sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth))
+      window.localStorage.removeItem(AUTH_STORAGE_KEY)
     } else {
+      window.sessionStorage.removeItem(AUTH_STORAGE_KEY)
       window.localStorage.removeItem(AUTH_STORAGE_KEY)
     }
   }, [auth])
