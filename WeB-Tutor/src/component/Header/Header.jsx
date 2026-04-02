@@ -1,19 +1,23 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { clearAuth, toggleTheme } from '../Auth/store/authSlice'
+import { closeHeaderMenu, setHeaderVisible, toggleHeaderMenu } from './store/headerSlice'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
 
-function Header({ theme, setTheme, authUser, onLogout }) {
+function Header() {
   const location = useLocation()
-  const nextTheme = theme === 'dark' ? 'light' : 'dark'
+  const dispatch = useAppDispatch()
+  const theme = useAppSelector((state) => state.auth.theme)
+  const authUser = useAppSelector((state) => state.auth.auth?.user)
+  const { isVisible, isMenuOpen } = useAppSelector((state) => state.header)
   const isDark = theme === 'dark'
-  const [isVisible, setIsVisible] = useState(true)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const lastScrollYRef = useRef(0)
   const upwardTravelRef = useRef(0)
   const menuRef = useRef(null)
 
   const navItems = [
     { to: '/', label: 'Home' },
-    { to: '/history', label: 'History' },
+    { to: '/history', label: 'Activity Log' },
   ]
 
   useEffect(() => {
@@ -22,7 +26,7 @@ function Header({ theme, setTheme, authUser, onLogout }) {
       const delta = currentScrollY - lastScrollYRef.current
 
       if (currentScrollY <= 24) {
-        setIsVisible(true)
+        dispatch(setHeaderVisible(true))
         upwardTravelRef.current = 0
         lastScrollYRef.current = currentScrollY
         return
@@ -30,12 +34,12 @@ function Header({ theme, setTheme, authUser, onLogout }) {
 
       if (delta > 12) {
         upwardTravelRef.current = 0
-        setIsVisible(false)
+        dispatch(setHeaderVisible(false))
       } else if (delta < -12) {
         upwardTravelRef.current += Math.abs(delta)
 
         if (upwardTravelRef.current >= 96) {
-          setIsVisible(true)
+          dispatch(setHeaderVisible(true))
         }
       }
 
@@ -43,27 +47,21 @@ function Header({ theme, setTheme, authUser, onLogout }) {
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-    }
-  }, [])
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [dispatch])
 
   useEffect(() => {
     if (!isMenuOpen) return
 
     const handlePointerDown = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsMenuOpen(false)
+        dispatch(closeHeaderMenu())
       }
     }
 
     document.addEventListener('mousedown', handlePointerDown)
-
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown)
-    }
-  }, [isMenuOpen])
+    return () => document.removeEventListener('mousedown', handlePointerDown)
+  }, [dispatch, isMenuOpen])
 
   return (
     <>
@@ -72,126 +70,123 @@ function Header({ theme, setTheme, authUser, onLogout }) {
           isVisible ? 'translate-y-0 opacity-100' : '-translate-y-[135%] opacity-0'
         }`}
       >
-      <div
-        className="mx-auto flex max-w-5xl flex-col gap-3 rounded-[1.5rem] border px-4 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-5"
-        style={{
-          borderColor: isDark ? 'rgba(135,154,255,0.18)' : 'rgba(255,186,120,0.35)',
-          background: isDark
-            ? 'linear-gradient(135deg, rgba(22,27,46,0.92), rgba(16,20,35,0.96))'
-            : 'linear-gradient(135deg, rgba(255,250,242,0.88), rgba(255,238,222,0.96), rgba(239,246,255,0.88))',
-          boxShadow: isDark
-            ? '0 20px 46px rgba(0,0,0,0.38)'
-            : '0 16px 42px rgba(242,139,64,0.16)',
-        }}
-      >
-        <div className="min-w-0">
-          <h1 className="text-base font-extrabold tracking-[0.02em] sm:text-lg">YouTube Summarizer</h1>
-          <p className="text-xs text-[var(--muted)]">
-            Learn, quiz, and revise from any video in a more playful way.
-          </p>
-        </div>
+        <div
+          className="mx-auto flex max-w-5xl flex-col gap-3 rounded-[1.5rem] border px-4 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-5"
+          style={{
+            borderColor: isDark ? 'rgba(135,154,255,0.18)' : 'rgba(255,186,120,0.35)',
+            background: isDark
+              ? 'linear-gradient(135deg, rgba(22,27,46,0.92), rgba(16,20,35,0.96))'
+              : 'linear-gradient(135deg, rgba(255,250,242,0.88), rgba(255,238,222,0.96), rgba(239,246,255,0.88))',
+            boxShadow: isDark ? '0 20px 46px rgba(0,0,0,0.38)' : '0 16px 42px rgba(242,139,64,0.16)',
+          }}
+        >
+          <div className="min-w-0">
+            <h1 className="text-base font-extrabold tracking-[0.02em] sm:text-lg">WeB-Tutor</h1>
+            <p className="text-xs text-[var(--muted)]">
+              Learn, quiz, and revise from any video in a more playful way.
+            </p>
+          </div>
 
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          {authUser && (
-            <nav className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
-              {navItems.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`rounded-full px-4 py-2 text-center text-xs font-medium transition ${
-                    location.pathname === item.to
-                      ? 'text-[var(--text)] shadow-sm'
-                      : 'border text-[var(--text)] hover:-translate-y-0.5'
-                  }`}
-                  style={
-                    location.pathname === item.to
-                      ? {
-                          background:
-                            isDark
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            {authUser && (
+              <nav className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={`rounded-full px-4 py-2 text-center text-xs font-medium transition ${
+                      location.pathname === item.to
+                        ? 'text-[var(--text)] shadow-sm'
+                        : 'border text-[var(--text)] hover:-translate-y-0.5'
+                    }`}
+                    style={
+                      location.pathname === item.to
+                        ? {
+                            background: isDark
                               ? 'linear-gradient(135deg, rgba(108,129,255,0.72), rgba(255,179,107,0.34))'
                               : 'linear-gradient(135deg, rgba(255,213,138,0.95), rgba(200,221,255,0.95))',
-                          color: isDark ? '#f5f7ff' : 'var(--text)',
-                        }
-                      : {
-                          borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
-                          background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.68)',
-                          color: isDark ? '#dbe5ff' : 'var(--text)',
-                        }
-                  }
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          )}
+                            color: isDark ? '#f5f7ff' : 'var(--text)',
+                          }
+                        : {
+                            borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
+                            background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.68)',
+                            color: isDark ? '#dbe5ff' : 'var(--text)',
+                          }
+                    }
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            )}
 
-          <button
-            type="button"
-            onClick={() => setTheme(nextTheme)}
-            className="w-full rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5 sm:w-auto"
-            style={{
-              borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
-              background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.68)',
-              color: isDark ? '#f5f7ff' : 'var(--text)',
-            }}
-          >
-            {theme === 'dark' ? 'Light' : 'Dark'}
-          </button>
+            <button
+              type="button"
+              onClick={() => dispatch(toggleTheme())}
+              className="w-full rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5 sm:w-auto"
+              style={{
+                borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
+                background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.68)',
+                color: isDark ? '#f5f7ff' : 'var(--text)',
+              }}
+            >
+              {theme === 'dark' ? 'Light' : 'Dark'}
+            </button>
 
-          {authUser && (
-            <div className="relative w-full sm:w-auto" ref={menuRef}>
-              <button
-                type="button"
-                onClick={() => setIsMenuOpen((current) => !current)}
-                className="flex w-full items-center justify-center gap-3 rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5 sm:w-auto"
-                style={{
-                  borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
-                  background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.68)',
-                  color: isDark ? '#f5f7ff' : 'var(--text)',
-                }}
-              >
-                <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--card-strong)] text-[10px] font-bold">
-                  {authUser.avatarUrl ? (
-                    <img src={authUser.avatarUrl} alt={authUser.name} className="h-full w-full object-cover" />
-                  ) : (
-                    String(authUser.name || authUser.username || 'U').charAt(0).toUpperCase()
-                  )}
-                </span>
-                <span>@{authUser.username}</span>
-                <span aria-hidden="true">{isMenuOpen ? '^' : 'v'}</span>
-              </button>
-
-              {isMenuOpen && (
-                <div
-                  className="mt-2 w-full rounded-[1.2rem] border p-2 shadow-[0_18px_40px_rgba(0,0,0,0.14)] sm:absolute sm:right-0 sm:mt-3 sm:w-56"
+            {authUser && (
+              <div className="relative w-full sm:w-auto" ref={menuRef}>
+                <button
+                  type="button"
+                  onClick={() => dispatch(toggleHeaderMenu())}
+                  className="flex w-full items-center justify-center gap-3 rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5 sm:w-auto"
                   style={{
                     borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
-                    background: isDark ? 'rgba(18,22,36,0.96)' : 'rgba(255,250,244,0.98)',
+                    background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.68)',
+                    color: isDark ? '#f5f7ff' : 'var(--text)',
                   }}
                 >
-                  <Link
-                    to="/profile"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="block rounded-[0.95rem] px-4 py-3 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--card)]"
-                  >
-                    Profile
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMenuOpen(false)
-                      onLogout()
+                  <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--card-strong)] text-[10px] font-bold">
+                    {authUser.avatarUrl ? (
+                      <img src={authUser.avatarUrl} alt={authUser.name} className="h-full w-full object-cover" />
+                    ) : (
+                      String(authUser.name || authUser.username || 'U').charAt(0).toUpperCase()
+                    )}
+                  </span>
+                  <span>@{authUser.username}</span>
+                  <span aria-hidden="true">{isMenuOpen ? '^' : 'v'}</span>
+                </button>
+
+                {isMenuOpen && (
+                  <div
+                    className="mt-2 w-full rounded-[1.2rem] border p-2 shadow-[0_18px_40px_rgba(0,0,0,0.14)] sm:absolute sm:right-0 sm:mt-3 sm:w-56"
+                    style={{
+                      borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
+                      background: isDark ? 'rgba(18,22,36,0.96)' : 'rgba(255,250,244,0.98)',
                     }}
-                    className="mt-1 block w-full rounded-[0.95rem] px-4 py-3 text-left text-sm font-medium text-[var(--text)] transition hover:bg-[var(--card)]"
                   >
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+                    <Link
+                      to="/profile"
+                      onClick={() => dispatch(closeHeaderMenu())}
+                      className="block rounded-[0.95rem] px-4 py-3 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--card)]"
+                    >
+                      Profile
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        dispatch(closeHeaderMenu())
+                        dispatch(clearAuth())
+                      }}
+                      className="mt-1 block w-full rounded-[0.95rem] px-4 py-3 text-left text-sm font-medium text-[var(--text)] transition hover:bg-[var(--card)]"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       </header>
       <div aria-hidden="true" className="h-36 sm:h-28" />
     </>

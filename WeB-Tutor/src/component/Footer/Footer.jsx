@@ -1,6 +1,9 @@
 import React from 'react'
+import { useAppSelector } from '../../store/hooks'
 
-function Footer({ theme }) {
+function Footer() {
+  const theme = useAppSelector((state) => state.auth.theme)
+  const { brandName, tagline, badgeText } = useAppSelector((state) => state.footer)
   const isDark = theme === 'dark'
 
   return (
@@ -13,19 +16,14 @@ function Footer({ theme }) {
             background: isDark
               ? 'linear-gradient(135deg, rgba(22,27,46,0.92), rgba(16,20,35,0.96))'
               : 'linear-gradient(135deg, rgba(255,250,242,0.9), rgba(255,238,222,0.96), rgba(239,246,255,0.9))',
-            boxShadow: isDark
-              ? '0 20px 46px rgba(0,0,0,0.38)'
-              : '0 20px 52px rgba(242,139,64,0.16)',
+            boxShadow: isDark ? '0 20px 46px rgba(0,0,0,0.38)' : '0 20px 52px rgba(242,139,64,0.16)',
           }}
         >
           <div className="flex flex-col items-center gap-4 text-center text-xs sm:flex-row sm:justify-between sm:text-left">
             <div className="max-w-md">
-              <p className="text-sm font-bold text-[var(--text)]">YouTube Summarizer</p>
-              <p
-                className="mt-1 leading-relaxed"
-                style={{ color: isDark ? '#dbe5ff' : 'var(--muted)' }}
-              >
-                Turn videos into a study playground with summaries, quizzes, and guided lessons.
+              <p className="text-sm font-bold text-[var(--text)]">{brandName}</p>
+              <p className="mt-1 leading-relaxed" style={{ color: isDark ? '#dbe5ff' : 'var(--muted)' }}>
+                {tagline}
               </p>
             </div>
             <div
@@ -36,7 +34,7 @@ function Footer({ theme }) {
                 color: isDark ? '#f5f7ff' : 'var(--text)',
               }}
             >
-              &copy; {new Date().getFullYear()} Built for playful learning
+              &copy; {new Date().getFullYear()} {badgeText}
             </div>
           </div>
         </div>

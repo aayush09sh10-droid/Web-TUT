@@ -3,7 +3,7 @@ const { updateHistoryEntry } = require('../../history/services/history')
 
 async function answerDoubt(req, res) {
   try {
-    const { summary, question, historyId } = req.body
+    const { summary, question, historyId, formula, teaching, sourceLabel, sourceType } = req.body
 
     if (!summary) {
       return res.status(400).json({
@@ -19,17 +19,27 @@ async function answerDoubt(req, res) {
       })
     }
 
-    const answer = await answerDoubtFromSummary(summary, question)
-    await updateHistoryEntry({
-      historyId,
-      userId: req.user._id,
-      updates: {
-        doubt: {
-          question,
-          answer,
-        },
-      },
+    const answer = await answerDoubtFromSummary({
+      summary,
+      teaching,
+      formula,
+      question,
+      sourceLabel,
+      sourceType,
     })
+
+    if (historyId) {
+      await updateHistoryEntry({
+        historyId,
+        userId: req.user._id,
+        updates: {
+          doubt: {
+            question,
+            answer,
+          },
+        },
+      })
+    }
 
     return res.json({
       success: true,

@@ -1,7 +1,10 @@
-import React, { useState } from 'react'
+import React from 'react'
+import { setSummaryTab } from './store/summaryTabsSlice'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
 
 export default function SummaryTabs({ result }) {
-  const [view, setView] = useState('topics')
+  const dispatch = useAppDispatch()
+  const view = useAppSelector((state) => state.summaryTabs.activeTab)
 
   return (
     <div className="mt-6">
@@ -14,7 +17,7 @@ export default function SummaryTabs({ result }) {
           <button
             key={tab.key}
             type="button"
-            onClick={() => setView(tab.key)}
+            onClick={() => dispatch(setSummaryTab(tab.key))}
             className={`rounded-full px-4 py-2 text-xs font-medium transition ${
               view === tab.key
                 ? 'bg-[var(--text)] text-[var(--bg)]'

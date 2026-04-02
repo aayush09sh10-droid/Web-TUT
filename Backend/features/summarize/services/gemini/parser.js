@@ -174,12 +174,58 @@ function sanitiseDoubtAnswerShape(answer) {
     throw new GeminiServiceError('Gemini did not return a valid doubt answer object.')
   }
 
+  const explanation = normaliseParagraph(answer.explanation)
+  const concept = normaliseParagraph(answer.concept)
+  const mainBody = normaliseParagraph(answer.mainBody || explanation)
+  const conclusion = normaliseParagraph(answer.conclusion || answer.keyTakeaway)
+  const realLifeExample = normaliseParagraph(answer.realLifeExample)
+  const numericalSteps = Array.isArray(answer?.numerical?.steps)
+    ? answer.numerical.steps
+        .map((step, index) => {
+          const label = normaliseParagraph(step?.label || `Step ${index + 1}`)
+          const detail = normaliseParagraph(step?.detail || step)
+
+          if (!detail) {
+            return null
+          }
+
+          return {
+            label,
+            detail,
+          }
+        })
+        .filter(Boolean)
+        .slice(0, 8)
+    : []
+  const codeNotes = Array.isArray(answer?.code?.notes)
+    ? answer.code.notes.map((note) => normaliseParagraph(note)).filter(Boolean).slice(0, 6)
+    : []
+
   return {
     title: normaliseParagraph(answer.title || 'Doubt Solved'),
-    explanation: normaliseParagraph(answer.explanation),
+    explanation,
+    concept,
+    mainBody,
+    conclusion,
+    realLifeExample,
     steps: Array.isArray(answer.steps)
       ? answer.steps.map((step) => normaliseParagraph(step)).filter(Boolean).slice(0, 5)
       : [],
+    numerical: {
+      isNumerical: Boolean(answer?.numerical?.isNumerical || numericalSteps.length || answer?.numerical?.finalAnswer),
+      formulaUsed: normaliseParagraph(answer?.numerical?.formulaUsed),
+      knownValues: Array.isArray(answer?.numerical?.knownValues)
+        ? answer.numerical.knownValues.map((value) => normaliseParagraph(value)).filter(Boolean).slice(0, 8)
+        : [],
+      steps: numericalSteps,
+      finalAnswer: normaliseParagraph(answer?.numerical?.finalAnswer),
+    },
+    code: {
+      language: normaliseParagraph(answer?.code?.language),
+      snippet: String(answer?.code?.snippet || '').trim(),
+      explanation: normaliseParagraph(answer?.code?.explanation),
+      notes: codeNotes,
+    },
     keyTakeaway: normaliseParagraph(answer.keyTakeaway),
   }
 }

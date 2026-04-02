@@ -1,26 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import Auth from './component/Auth/Auth'
-import Header from './component/Header/Header'
-import Home from './component/Home/Home'
-import History from './component/History/History'
-import Profile from './component/Profile/Profile'
-import LearningDetails from './component/Profile/LearningDetails'
+import { AUTH_STORAGE_KEY, THEME_STORAGE_KEY } from './component/Auth/store/authSlice'
 import Footer from './component/Footer/Footer'
-
-const THEME_STORAGE_KEY = 'yt-summarizer-theme'
-const AUTH_STORAGE_KEY = 'yt-summarizer-auth'
+import Header from './component/Header/Header'
+import History from './component/History/History'
+import Home from './component/Home/Home'
+import LearningDetails from './component/Profile/LearningDetails'
+import Profile from './component/Profile/Profile'
+import { useAppSelector } from './store/hooks'
 
 function App() {
-  const [theme, setTheme] = useState('light')
-  const [auth, setAuth] = useState(null)
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
-    if (stored === 'dark' || stored === 'light') {
-      setTheme(stored)
-    }
-  }, [])
+  const theme = useAppSelector((state) => state.auth.theme)
+  const auth = useAppSelector((state) => state.auth.auth)
 
   useEffect(() => {
     const root = document.documentElement
@@ -33,51 +25,30 @@ function App() {
   }, [theme])
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(AUTH_STORAGE_KEY)
-    if (!stored) return
-
-    try {
-      const parsed = JSON.parse(stored)
-      if (parsed?.token && parsed?.user) {
-        setAuth(parsed)
-      }
-    } catch {
+    if (auth?.token && auth?.user) {
+      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth))
+    } else {
       window.localStorage.removeItem(AUTH_STORAGE_KEY)
     }
-  }, [])
-
-  function handleAuthSuccess(payload) {
-    const nextAuth = {
-      token: payload.token,
-      user: payload.user,
-    }
-
-    setAuth(nextAuth)
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextAuth))
-  }
-
-  function handleLogout() {
-    setAuth(null)
-    window.localStorage.removeItem(AUTH_STORAGE_KEY)
-  }
+  }, [auth])
 
   return (
     <div className="flex min-h-screen flex-col text-[var(--text)]">
       <Router>
-        <Header theme={theme} setTheme={setTheme} authUser={auth?.user} onLogout={handleLogout} />
+        <Header />
         <div className="flex-1">
           {auth?.token ? (
             <Routes>
-              <Route path="/" element={<Home theme={theme} authToken={auth.token} authUser={auth.user} />} />
-              <Route path="/history" element={<History authToken={auth.token} />} />
-              <Route path="/profile" element={<Profile theme={theme} authToken={auth.token} authUser={auth.user} />} />
-              <Route path="/profile/learning/:id" element={<LearningDetails theme={theme} authToken={auth.token} />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/learning/:id" element={<LearningDetails />} />
             </Routes>
           ) : (
-            <Auth theme={theme} onAuthSuccess={handleAuthSuccess} />
+            <Auth />
           )}
         </div>
-        <Footer theme={theme} />
+        <Footer />
       </Router>
     </div>
   )
