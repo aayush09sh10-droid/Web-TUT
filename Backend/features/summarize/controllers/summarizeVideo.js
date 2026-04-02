@@ -5,6 +5,8 @@ const {
 } = require('../services/youtube-audio')
 const { generateSummaryFromAudioChunks } = require('../services/gemini')
 const { createHistoryEntry } = require('../../history/services/history')
+const { getOrSetJson } = require('../../../services/cache')
+const { FEATURE_CACHE_TTL, getVideoSummaryCacheKey } = require('../services/cache')
 
 async function summarizeVideo(req, res) {
   let downloadedAudioPath = null
@@ -27,30 +29,34 @@ async function summarizeVideo(req, res) {
       })
     }
 
-    emitProgress('Downloading audio')
-    const audioResult = await downloadYoutubeAudio(url)
-    downloadedAudioPath = audioResult.audioPath
+    const summary = await getOrSetJson(
+      getVideoSummaryCacheKey(req.user._id, url),
+      FEATURE_CACHE_TTL.summaryVideo,
+      async () => {
+        emitProgress('Downloading audio')
+        const audioResult = await downloadYoutubeAudio(url)
+        downloadedAudioPath = audioResult.audioPath
 
-    emitProgress('Preparing audio for Gemini')
-    const chunks = await createGeminiAudioChunks(
-      downloadedAudioPath,
-      audioResult.durationInSeconds
+        emitProgress('Preparing audio for Gemini')
+        const chunks = await createGeminiAudioChunks(
+          downloadedAudioPath,
+          audioResult.durationInSeconds
+        )
+
+        chunkPaths = chunks.map((chunk) => chunk.path)
+
+        if (!chunks.length) {
+          throw Object.assign(new Error('No audio found in video'), { statusCode: 400 })
+        }
+
+        emitProgress('Generating summary')
+        return generateSummaryFromAudioChunks(chunks, {
+          durationInSeconds: audioResult.durationInSeconds,
+          sourceUrl: url,
+        })
+      }
     )
 
-    chunkPaths = chunks.map((chunk) => chunk.path)
-
-    if (!chunks.length) {
-      return res.status(400).json({
-        success: false,
-        error: 'No audio found in video',
-      })
-    }
-
-    emitProgress('Generating summary')
-    const summary = await generateSummaryFromAudioChunks(chunks, {
-      durationInSeconds: audioResult.durationInSeconds,
-      sourceUrl: url,
-    })
     const historyEntry = await createHistoryEntry({
       userId: req.user._id,
       sourceType: 'youtube-video',

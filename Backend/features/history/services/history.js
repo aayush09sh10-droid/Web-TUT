@@ -1,6 +1,38 @@
 const mongoose = require('mongoose')
 
 const StudyHistory = require('../models/StudyHistory')
+const { buildCacheKey, deleteMany, getOrSetJson } = require('../../../services/cache')
+
+const HISTORY_CACHE_TTL = {
+  list: 2 * 60,
+  item: 2 * 60,
+  learningSnapshot: 3 * 60,
+}
+
+function getHistoryListCacheKey(userId) {
+  return buildCacheKey(['history', 'list', String(userId || '')])
+}
+
+function getHistoryItemCacheKey(userId, historyId) {
+  return buildCacheKey(['history', 'item', String(userId || ''), String(historyId || '')])
+}
+
+function getLearningSnapshotCacheKey(userId) {
+  return buildCacheKey(['history', 'learning-snapshot', String(userId || '')])
+}
+
+function getProfileCacheKey(userId) {
+  return buildCacheKey(['auth', 'profile', String(userId || '')])
+}
+
+async function invalidateUserHistoryCache(userId, historyId) {
+  await deleteMany([
+    getHistoryListCacheKey(userId),
+    getLearningSnapshotCacheKey(userId),
+    getProfileCacheKey(userId),
+    historyId ? getHistoryItemCacheKey(userId, historyId) : null,
+  ])
+}
 
 function cleanTopicLabel(value) {
   return String(value || '')
@@ -75,6 +107,7 @@ async function createHistoryEntry({ userId, sourceType, sourceLabel, summary }) 
     summary,
   })
 
+  await invalidateUserHistoryCache(userId, entry._id)
   return serialiseHistoryEntry(entry)
 }
 
@@ -96,12 +129,19 @@ async function updateHistoryEntry({ historyId, userId, updates }) {
     }
   )
 
-  return entry ? serialiseHistoryEntry(entry) : null
+  if (!entry) {
+    return null
+  }
+
+  await invalidateUserHistoryCache(userId, historyId)
+  return serialiseHistoryEntry(entry)
 }
 
 async function listHistoryEntries(userId) {
-  const entries = await StudyHistory.find({ user: userId }).sort({ updatedAt: -1 })
-  return entries.map(serialiseHistoryEntry)
+  return getOrSetJson(getHistoryListCacheKey(userId), HISTORY_CACHE_TTL.list, async () => {
+    const entries = await StudyHistory.find({ user: userId }).sort({ updatedAt: -1 })
+    return entries.map(serialiseHistoryEntry)
+  })
 }
 
 async function getHistoryEntry(userId, historyId) {
@@ -109,12 +149,14 @@ async function getHistoryEntry(userId, historyId) {
     return null
   }
 
-  const entry = await StudyHistory.findOne({
-    _id: historyId,
-    user: userId,
-  })
+  return getOrSetJson(getHistoryItemCacheKey(userId, historyId), HISTORY_CACHE_TTL.item, async () => {
+    const entry = await StudyHistory.findOne({
+      _id: historyId,
+      user: userId,
+    })
 
-  return entry ? serialiseHistoryEntry(entry) : null
+    return entry ? serialiseHistoryEntry(entry) : null
+  })
 }
 
 async function deleteHistoryEntry(userId, historyId) {
@@ -127,51 +169,64 @@ async function deleteHistoryEntry(userId, historyId) {
     user: userId,
   })
 
+  if (result.deletedCount > 0) {
+    await invalidateUserHistoryCache(userId, historyId)
+  }
+
   return result.deletedCount > 0
 }
 
 async function clearHistoryEntries(userId) {
   await StudyHistory.deleteMany({ user: userId })
+  await invalidateUserHistoryCache(userId)
 }
 
 async function getLearningSnapshot(userId) {
-  const entries = await StudyHistory.find({ user: userId }).sort({ updatedAt: -1 }).limit(6)
-  const allEntries = await StudyHistory.find({ user: userId }).select('summary quiz teaching formula doubt updatedAt createdAt')
-  const topicCounts = new Map()
+  return getOrSetJson(
+    getLearningSnapshotCacheKey(userId),
+    HISTORY_CACHE_TTL.learningSnapshot,
+    async () => {
+      const entries = await StudyHistory.find({ user: userId }).sort({ updatedAt: -1 }).limit(6)
+      const allEntries = await StudyHistory.find({ user: userId }).select(
+        'summary quiz teaching formula doubt updatedAt createdAt quizProgress'
+      )
+      const topicCounts = new Map()
 
-  allEntries.forEach((entry) => {
-    extractTopics(entry).forEach((topic) => {
-      topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1)
-    })
-  })
+      allEntries.forEach((entry) => {
+        extractTopics(entry).forEach((topic) => {
+          topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1)
+        })
+      })
 
-  const topTopics = Array.from(topicCounts.entries())
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .slice(0, 8)
-    .map(([topic, count]) => ({
-      topic,
-      count,
-    }))
+      const topTopics = Array.from(topicCounts.entries())
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, 8)
+        .map(([topic, count]) => ({
+          topic,
+          count,
+        }))
 
-  return {
-    totalSummaries: await StudyHistory.countDocuments({ user: userId, summary: { $ne: null } }),
-    totalQuizzes: await StudyHistory.countDocuments({ user: userId, quiz: { $ne: null } }),
-    totalTeachingSessions: await StudyHistory.countDocuments({ user: userId, teaching: { $ne: null } }),
-    totalFormulaSessions: await StudyHistory.countDocuments({ user: userId, formula: { $ne: null } }),
-    totalDoubts: await StudyHistory.countDocuments({ user: userId, doubt: { $ne: null } }),
-    topTopics,
-    recentLearning: entries.map((entry) => ({
-      id: String(entry._id),
-      title: entry.summary?.title || 'Untitled learning session',
-      topics: extractTopics(entry),
-      hasQuiz: Boolean(entry.quiz),
-      hasTeaching: Boolean(entry.teaching),
-      hasFormula: Boolean(entry.formula),
-      hasDoubt: Boolean(entry.doubt),
-      quizProgress: entry.quizProgress || null,
-      updatedAt: new Date(entry.updatedAt || entry.createdAt).getTime(),
-    })),
-  }
+      return {
+        totalSummaries: await StudyHistory.countDocuments({ user: userId, summary: { $ne: null } }),
+        totalQuizzes: await StudyHistory.countDocuments({ user: userId, quiz: { $ne: null } }),
+        totalTeachingSessions: await StudyHistory.countDocuments({ user: userId, teaching: { $ne: null } }),
+        totalFormulaSessions: await StudyHistory.countDocuments({ user: userId, formula: { $ne: null } }),
+        totalDoubts: await StudyHistory.countDocuments({ user: userId, doubt: { $ne: null } }),
+        topTopics,
+        recentLearning: entries.map((entry) => ({
+          id: String(entry._id),
+          title: entry.summary?.title || 'Untitled learning session',
+          topics: extractTopics(entry),
+          hasQuiz: Boolean(entry.quiz),
+          hasTeaching: Boolean(entry.teaching),
+          hasFormula: Boolean(entry.formula),
+          hasDoubt: Boolean(entry.doubt),
+          quizProgress: entry.quizProgress || null,
+          updatedAt: new Date(entry.updatedAt || entry.createdAt).getTime(),
+        })),
+      }
+    }
+  )
 }
 
 module.exports = {
@@ -182,4 +237,5 @@ module.exports = {
   deleteHistoryEntry,
   clearHistoryEntries,
   getLearningSnapshot,
+  invalidateUserHistoryCache,
 }

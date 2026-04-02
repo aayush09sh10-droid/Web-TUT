@@ -2,6 +2,35 @@
 
 Web Tutor is a full-stack learning platform that helps a user study from YouTube videos and notes images. The app creates AI-powered summaries, quizzes, teaching sections, formula guides, and doubt answers, then saves the learning history for later review.
 
+## Project Status
+
+The project currently includes the main learning flow from authentication to AI-powered study generation and history tracking.
+
+### Completed So Far
+
+- Frontend and backend project structure setup
+- User registration and login
+- JWT-based protected routes
+- Profile page and password change flow
+- MongoDB database connection and data models
+- YouTube video summary generation
+- Notes image summary generation
+- Quiz generation from summary
+- Teaching content generation from summary
+- Formula guide generation from summary
+- Doubt solving from saved learning context
+- History save, list, single-item view, delete, and clear actions
+- Quiz progress save feature
+- Socket.io progress updates for summary generation
+- Gemini API custom error handling for quota and high-demand cases
+- Redis caching layer for backend data reads and AI-generated feature outputs
+- Backend security improvements:
+  - restricted CORS
+  - rate limiting
+  - security headers
+  - safer token storage flow
+  - MongoDB connection validation
+
 ## What We Have Added
 
 - User authentication with register, login, profile view, and password change
@@ -15,6 +44,10 @@ Web Tutor is a full-stack learning platform that helps a user study from YouTube
 - Study history listing, single-item view, delete, and clear history
 - Quiz progress saving inside history
 - Socket.io progress updates during video summary generation
+- Redis-based backend caching:
+  - data-wise caching for history and learning snapshot reads
+  - layer-wise reusable cache service for Redis access and key generation
+  - feature-wise caching for video summary, notes summary, quiz, teaching, formula, and doubt generation
 - Basic backend security hardening:
   - restricted CORS through environment config
   - security headers
@@ -88,6 +121,7 @@ Install these on your system before running the project:
 - Node.js
 - npm
 - MongoDB Atlas account or MongoDB database URI
+- Redis server or Redis Cloud URL
 - ffmpeg
 - yt-dlp
 
@@ -107,6 +141,7 @@ Backend:
 
 - `express`
 - `mongoose`
+- `redis`
 - `dotenv`
 - `jsonwebtoken`
 - `bcryptjs`
@@ -159,6 +194,7 @@ CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
 CORS_ALLOWED_ORIGINS=http://localhost:5173
+REDIS_URL=redis://localhost:6379
 ```
 
 Frontend optional environment variable:
@@ -224,6 +260,36 @@ http://localhost:5173
 - `POST /api/teaching`
 - `POST /api/formula`
 - `POST /api/doubt`
+
+## Redis Caching
+
+Redis caching is added in the backend to reduce repeated database reads and repeated Gemini generation cost.
+
+### Cache Layers Added
+
+- Infrastructure layer:
+  - reusable Redis client setup
+  - reusable cache helper for cache keys, hashing, get/set, and delete operations
+- Data layer:
+  - history list caching
+  - single history item caching
+  - learning snapshot caching
+  - profile response caching
+- Feature layer:
+  - YouTube summary result caching per user and URL
+  - notes summary result caching per user and image payload
+  - quiz caching per user and summary content
+  - teaching caching per user and summary content
+  - formula guide caching per user and summary content
+  - doubt answer caching per user and doubt payload
+
+### Cache Invalidation
+
+- when a new history entry is created
+- when a history item is updated
+- when quiz progress is saved
+- when a history item is deleted
+- when user history is cleared
 
 ## Security Notes
 

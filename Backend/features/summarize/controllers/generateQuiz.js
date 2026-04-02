@@ -1,5 +1,7 @@
 const { generateQuizFromSummary } = require('../services/gemini')
 const { updateHistoryEntry } = require('../../history/services/history')
+const { getOrSetJson } = require('../../../services/cache')
+const { FEATURE_CACHE_TTL, getQuizCacheKey } = require('../services/cache')
 
 async function generateQuiz(req, res) {
   try {
@@ -12,7 +14,11 @@ async function generateQuiz(req, res) {
       })
     }
 
-    const quiz = await generateQuizFromSummary(summary)
+    const quiz = await getOrSetJson(
+      getQuizCacheKey(req.user._id, summary),
+      FEATURE_CACHE_TTL.quiz,
+      async () => generateQuizFromSummary(summary)
+    )
     await updateHistoryEntry({
       historyId,
       userId: req.user._id,
