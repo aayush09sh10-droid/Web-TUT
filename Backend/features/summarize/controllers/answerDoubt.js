@@ -1,7 +1,6 @@
 const { answerDoubtFromSummary } = require('../services/gemini')
+const { getCachedDoubtAnswer } = require('../cache')
 const { updateHistoryEntry } = require('../../history/services/history')
-const { getOrSetJson } = require('../../../services/cache')
-const { FEATURE_CACHE_TTL, getDoubtCacheKey } = require('../services/cache')
 
 async function answerDoubt(req, res) {
   try {
@@ -30,9 +29,9 @@ async function answerDoubt(req, res) {
       sourceType,
     }
 
-    const answer = await getOrSetJson(
-      getDoubtCacheKey(req.user._id, doubtPayload),
-      FEATURE_CACHE_TTL.doubt,
+    const answer = await getCachedDoubtAnswer(
+      req.user._id,
+      doubtPayload,
       async () => answerDoubtFromSummary(doubtPayload)
     )
 

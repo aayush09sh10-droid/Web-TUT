@@ -1,38 +1,12 @@
 const mongoose = require('mongoose')
 
 const StudyHistory = require('../models/StudyHistory')
-const { buildCacheKey, deleteMany, getOrSetJson } = require('../../../services/cache')
-
-const HISTORY_CACHE_TTL = {
-  list: 2 * 60,
-  item: 2 * 60,
-  learningSnapshot: 3 * 60,
-}
-
-function getHistoryListCacheKey(userId) {
-  return buildCacheKey(['history', 'list', String(userId || '')])
-}
-
-function getHistoryItemCacheKey(userId, historyId) {
-  return buildCacheKey(['history', 'item', String(userId || ''), String(historyId || '')])
-}
-
-function getLearningSnapshotCacheKey(userId) {
-  return buildCacheKey(['history', 'learning-snapshot', String(userId || '')])
-}
-
-function getProfileCacheKey(userId) {
-  return buildCacheKey(['auth', 'profile', String(userId || '')])
-}
-
-async function invalidateUserHistoryCache(userId, historyId) {
-  await deleteMany([
-    getHistoryListCacheKey(userId),
-    getLearningSnapshotCacheKey(userId),
-    getProfileCacheKey(userId),
-    historyId ? getHistoryItemCacheKey(userId, historyId) : null,
-  ])
-}
+const {
+  getCachedHistoryItem,
+  getCachedHistoryList,
+  getCachedLearningSnapshot,
+  invalidateUserHistoryCache,
+} = require('../cache/historyCache')
 
 function cleanTopicLabel(value) {
   return String(value || '')
@@ -138,7 +112,7 @@ async function updateHistoryEntry({ historyId, userId, updates }) {
 }
 
 async function listHistoryEntries(userId) {
-  return getOrSetJson(getHistoryListCacheKey(userId), HISTORY_CACHE_TTL.list, async () => {
+  return getCachedHistoryList(userId, async () => {
     const entries = await StudyHistory.find({ user: userId }).sort({ updatedAt: -1 })
     return entries.map(serialiseHistoryEntry)
   })
@@ -149,7 +123,7 @@ async function getHistoryEntry(userId, historyId) {
     return null
   }
 
-  return getOrSetJson(getHistoryItemCacheKey(userId, historyId), HISTORY_CACHE_TTL.item, async () => {
+  return getCachedHistoryItem(userId, historyId, async () => {
     const entry = await StudyHistory.findOne({
       _id: historyId,
       user: userId,
@@ -182,10 +156,7 @@ async function clearHistoryEntries(userId) {
 }
 
 async function getLearningSnapshot(userId) {
-  return getOrSetJson(
-    getLearningSnapshotCacheKey(userId),
-    HISTORY_CACHE_TTL.learningSnapshot,
-    async () => {
+  return getCachedLearningSnapshot(userId, async () => {
       const entries = await StudyHistory.find({ user: userId }).sort({ updatedAt: -1 }).limit(6)
       const allEntries = await StudyHistory.find({ user: userId }).select(
         'summary quiz teaching formula doubt updatedAt createdAt quizProgress'
@@ -225,8 +196,7 @@ async function getLearningSnapshot(userId) {
           updatedAt: new Date(entry.updatedAt || entry.createdAt).getTime(),
         })),
       }
-    }
-  )
+    })
 }
 
 module.exports = {

@@ -4,9 +4,8 @@ const {
   removeFiles,
 } = require('../services/youtube-audio')
 const { generateSummaryFromAudioChunks } = require('../services/gemini')
+const { getCachedVideoSummary } = require('../cache')
 const { createHistoryEntry } = require('../../history/services/history')
-const { getOrSetJson } = require('../../../services/cache')
-const { FEATURE_CACHE_TTL, getVideoSummaryCacheKey } = require('../services/cache')
 
 async function summarizeVideo(req, res) {
   let downloadedAudioPath = null
@@ -29,10 +28,7 @@ async function summarizeVideo(req, res) {
       })
     }
 
-    const summary = await getOrSetJson(
-      getVideoSummaryCacheKey(req.user._id, url),
-      FEATURE_CACHE_TTL.summaryVideo,
-      async () => {
+    const summary = await getCachedVideoSummary(req.user._id, url, async () => {
         emitProgress('Downloading audio')
         const audioResult = await downloadYoutubeAudio(url)
         downloadedAudioPath = audioResult.audioPath
@@ -54,8 +50,7 @@ async function summarizeVideo(req, res) {
           durationInSeconds: audioResult.durationInSeconds,
           sourceUrl: url,
         })
-      }
-    )
+      })
 
     const historyEntry = await createHistoryEntry({
       userId: req.user._id,

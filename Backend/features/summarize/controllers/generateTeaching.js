@@ -1,7 +1,6 @@
 const { generateTeachingFromSummary } = require('../services/gemini')
+const { getCachedTeaching } = require('../cache')
 const { updateHistoryEntry } = require('../../history/services/history')
-const { getOrSetJson } = require('../../../services/cache')
-const { FEATURE_CACHE_TTL, getTeachingCacheKey } = require('../services/cache')
 
 async function generateTeaching(req, res) {
   try {
@@ -14,9 +13,9 @@ async function generateTeaching(req, res) {
       })
     }
 
-    const teaching = await getOrSetJson(
-      getTeachingCacheKey(req.user._id, summary),
-      FEATURE_CACHE_TTL.teaching,
+    const teaching = await getCachedTeaching(
+      req.user._id,
+      summary,
       async () => generateTeachingFromSummary(summary)
     )
     await updateHistoryEntry({

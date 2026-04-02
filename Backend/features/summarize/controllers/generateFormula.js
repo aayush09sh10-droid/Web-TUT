@@ -1,7 +1,6 @@
 const { generateFormulaGuideFromSummary } = require('../services/gemini')
+const { getCachedFormula } = require('../cache')
 const { updateHistoryEntry } = require('../../history/services/history')
-const { getOrSetJson } = require('../../../services/cache')
-const { FEATURE_CACHE_TTL, getFormulaCacheKey } = require('../services/cache')
 
 async function generateFormula(req, res) {
   try {
@@ -14,9 +13,9 @@ async function generateFormula(req, res) {
       })
     }
 
-    const formula = await getOrSetJson(
-      getFormulaCacheKey(req.user._id, summary),
-      FEATURE_CACHE_TTL.formula,
+    const formula = await getCachedFormula(
+      req.user._id,
+      summary,
       async () => generateFormulaGuideFromSummary(summary)
     )
     await updateHistoryEntry({

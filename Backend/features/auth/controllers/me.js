@@ -1,13 +1,9 @@
 const { serialiseUser } = require('../services/auth')
+const { getCachedProfile } = require('../cache/profileCache')
 const { getLearningSnapshot } = require('../../history/services/history')
-const { buildCacheKey, getOrSetJson } = require('../../../services/cache')
-
-function getProfileCacheKey(userId) {
-  return buildCacheKey(['auth', 'profile', String(userId || '')])
-}
 
 async function me(req, res) {
-  const payload = await getOrSetJson(getProfileCacheKey(req.user._id), 2 * 60, async () => {
+  const payload = await getCachedProfile(req.user._id, async () => {
     const learning = await getLearningSnapshot(req.user._id)
 
     return {
