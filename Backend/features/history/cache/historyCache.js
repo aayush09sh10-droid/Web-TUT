@@ -1,9 +1,13 @@
 const { buildCacheKey, deleteMany, getOrSetJson } = require('../../../services/cache')
 
 const HISTORY_CACHE_TTL = {
-  list: 2 * 60,
-  item: 2 * 60,
-  learningSnapshot: 3 * 60,
+  list: 5 * 60,
+  item: 5 * 60,
+  learningSnapshot: 10 * 60,
+}
+
+function buildKey(...parts) {
+  return parts.join(':')
 }
 
 function getHistoryListCacheKey(userId) {
@@ -38,13 +42,18 @@ async function getCachedLearningSnapshot(userId, provider) {
   )
 }
 
-async function invalidateUserHistoryCache(userId, historyId) {
-  await deleteMany([
+// ✅ Smart Invalidation (ONLY what is needed)
+async function invalidateUserHistoryCache(userId, historyId = null) {
+  const keysToDelete = [
     getHistoryListCacheKey(userId),
-    getLearningSnapshotCacheKey(userId),
-    getProfileCacheKey(userId),
-    historyId ? getHistoryItemCacheKey(userId, historyId) : null,
-  ])
+  ]
+
+  // Only delete specific item if provided
+  if (historyId) {
+    keysToDelete.push(getHistoryItemCacheKey(userId, historyId))
+  }
+
+  await deleteMany(keysToDelete)
 }
 
 module.exports = {

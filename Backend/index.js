@@ -65,6 +65,7 @@ connectDB()
     server
       .listen(PORT, () => {
         console.log(`Backend listening on http://localhost:${PORT}`)
+        console.log('API HIT:', Date.now())
       })
       .on('error', (err) => {
         console.error('Failed to start backend server:', err.message)
