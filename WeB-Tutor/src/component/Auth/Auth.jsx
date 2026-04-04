@@ -123,7 +123,7 @@ function Auth() {
               {['Register with name, username, and email', 'Login using username or email'].map((item) => (
                 <div
                   key={item}
-                  className="rounded-[1.3rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-4 text-sm leading-relaxed"
+                  className="rounded-[1.3rem] border border-(--border) bg-(--card-strong) px-4 py-4 text-sm leading-relaxed"
                 >
                   {item}
                 </div>
@@ -131,7 +131,7 @@ function Auth() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border p-5 backdrop-blur-xl sm:p-6" style={cardStyle}>
+          <div className="rounded-2rem border p-5 backdrop-blur-xl sm:p-6" style={cardStyle}>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -141,8 +141,8 @@ function Auth() {
                 }}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                   mode === 'login'
-                    ? 'bg-[var(--text)] text-[var(--bg)]'
-                    : 'border border-[var(--border)] bg-[var(--card)] text-[var(--text)]'
+                    ? 'bg-(--text) text-(--bg)'
+                    : 'border border-(--border) bg-(--card) text-(--text)'
                 }`}
               >
                 Login
@@ -155,8 +155,8 @@ function Auth() {
                 }}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                   mode === 'register'
-                    ? 'bg-[var(--text)] text-[var(--bg)]'
-                    : 'border border-[var(--border)] bg-[var(--card)] text-[var(--text)]'
+                    ? 'bg-(--text) text-(--bg)'
+                    : 'border border-(--border) bg-(--card) text-(--text)'
                 }`}
               >
                 Register
@@ -167,9 +167,14 @@ function Auth() {
               <form className="mt-5 space-y-3" onSubmit={handleRegister}>
                 <input value={form.name} onChange={(e) => updateField('name', e.target.value)} placeholder="Full name" className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm outline-none" />
                 <input value={form.username} onChange={(e) => updateField('username', e.target.value)} placeholder="Username" className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm outline-none" />
+
+
                 <input value={form.email} onChange={(e) => updateField('email', e.target.value)} type="email" placeholder="Email" className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm outline-none" />
+
                 <input value={form.password} onChange={(e) => updateField('password', e.target.value)} type="password" placeholder="Password" className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm outline-none" />
+
                 <input value={form.confirmPassword} onChange={(e) => updateField('confirmPassword', e.target.value)} type="password" placeholder="Confirm password" className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm outline-none" />
+
                 <label className="block rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm">
                   <span className="font-medium">Profile image</span>
                   <input type="file" accept="image/*" onChange={(e) => setAvatar(e.target.files?.[0] || null)} className="mt-2 block w-full text-xs file:mr-3 file:rounded-full file:border-0 file:bg-[var(--text)] file:px-3 file:py-2 file:font-semibold file:text-[var(--bg)]" />
@@ -178,6 +183,7 @@ function Auth() {
                 <button type="submit" disabled={loading} className="w-full rounded-[1rem] px-4 py-3 text-sm font-semibold text-[var(--bg)] transition disabled:opacity-60" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))' }}>
                   {loading ? 'Creating account...' : 'Create account'}
                 </button>
+                
               </form>
             ) : (
               <form className="mt-5 space-y-3" onSubmit={handleLogin}>
