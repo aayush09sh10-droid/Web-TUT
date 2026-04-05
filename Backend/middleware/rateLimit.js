@@ -1,6 +1,6 @@
 function createRateLimiter({
   windowMs = 60 * 1000,
-  maxRequests = 60,
+  maxRequests = 200,
   message = 'Too many requests. Please try again later.',
 } = {}) {
   const hits = new Map()
@@ -13,7 +13,7 @@ function createRateLimiter({
     if (!currentEntry || currentEntry.expiresAt <= now) {
       hits.set(key, { count: 1, expiresAt: now + windowMs })
       return next()
-    }
+    }   
 
     if (currentEntry.count >= maxRequests) {
       const retryAfterSeconds = Math.max(1, Math.ceil((currentEntry.expiresAt - now) / 1000))
