@@ -11,6 +11,8 @@ export function useHomeHistory(authToken, headers) {
 
     const controller = new AbortController()
 
+    const headers = {Authorization: `Bearer ${authToken}`}
+
     async function loadHistory() {
       try {
         const items = await fetchHomeHistory(headers, controller.signal)
@@ -24,5 +26,5 @@ export function useHomeHistory(authToken, headers) {
 
     loadHistory()
     return () => controller.abort()
-  }, [authToken, dispatch, headers])
+  }, [authToken])
 }

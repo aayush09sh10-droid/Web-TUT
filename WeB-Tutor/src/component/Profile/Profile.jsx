@@ -77,17 +77,17 @@ function Profile() {
   }
 
   return (
-    <main className="min-h-screen text-[var(--text)]">
+    <main className="min-h-screen text-(--text)">
       <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-3 pb-10 pt-6 sm:px-4 sm:pt-8">
-        <div className="rounded-[1.9rem] border p-5 shadow-[var(--shadow)] backdrop-blur-xl sm:p-6" style={panelStyle}>
+        <div className="rounded-[1.9rem] border p-5 shadow-(--shadow) backdrop-blur-xl sm:p-6" style={panelStyle}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Profile</h2>
-              <p className="mt-2 text-sm text-[var(--muted)]">
+              <p className="mt-2 text-sm text-(--muted)">
                 Review your saved lessons and manage your account in one place.
               </p>
             </div>
-            <div className="rounded-full border border-[var(--border)] bg-[var(--card-strong)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+            <div className="rounded-full border border-(--border) bg-(--card-strong) px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-(--muted)">
               Study archive
             </div>
           </div>

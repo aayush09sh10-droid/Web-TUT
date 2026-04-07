@@ -7,7 +7,7 @@ function Footer() {
   const isDark = theme === 'dark'
 
   return (
-    <footer className="px-3 pb-8 pt-12 text-[var(--muted)] sm:px-4 sm:pt-14">
+    <footer className="px-3 pb-8 pt-12 text-(--muted) sm:px-4 sm:pt-14">
       <div className="mx-auto max-w-5xl">
         <div
           className="rounded-[2rem] border px-4 py-5 backdrop-blur-xl sm:px-6"
@@ -21,7 +21,7 @@ function Footer() {
         >
           <div className="flex flex-col items-center gap-4 text-center text-xs sm:flex-row sm:justify-between sm:text-left">
             <div className="max-w-md">
-              <p className="text-sm font-bold text-[var(--text)]">{brandName}</p>
+              <p className="text-sm font-bold text-(--text)">{brandName}</p>
               <p className="mt-1 leading-relaxed" style={{ color: isDark ? '#dbe5ff' : 'var(--muted)' }}>
                 {tagline}
               </p>

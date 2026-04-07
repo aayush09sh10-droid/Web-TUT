@@ -4,21 +4,21 @@ export default function HistoryDoubtCard({ doubt }) {
   if (!doubt?.answer) return null
 
   return (
-    <div className="mt-4 rounded-[1.2rem] border border-[var(--border)] bg-[var(--card-strong)] p-4">
-      <h4 className="text-base font-semibold text-[var(--text)]">
+    <div className="mt-4 rounded-[1.2rem] border border-(--border) bg-(--card-strong) p-4">
+      <h4 className="text-base font-semibold text-(--text)">
         {doubt.answer.title || 'Saved Doubt'}
       </h4>
       {doubt.question && (
-        <p className="mt-2 text-sm text-[var(--muted)]">Question: {doubt.question}</p>
+        <p className="mt-2 text-sm text-(--muted)">Question: {doubt.question}</p>
       )}
       {doubt.answer.concept && (
-        <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-3 text-sm text-[var(--text)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Concept</p>
+        <div className="mt-3 rounded-xl border border-(--border) bg-(--card) px-3 py-3 text-sm text-(--text)">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-(--muted)">Concept</p>
           <p className="mt-2 leading-relaxed">{doubt.answer.concept}</p>
         </div>
       )}
       {(doubt.answer.mainBody || doubt.answer.explanation) && (
-        <p className="mt-3 text-sm leading-relaxed text-[var(--text)]">
+        <p className="mt-3 text-sm leading-relaxed text-(--text)">
           {doubt.answer.mainBody || doubt.answer.explanation}
         </p>
       )}
@@ -27,7 +27,7 @@ export default function HistoryDoubtCard({ doubt }) {
           {doubt.answer.steps.map((step, index) => (
             <p
               key={`step-${index}`}
-              className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm text-[var(--text)]"
+              className="rounded-xl border border-(--border) bg-(--card) px-3 py-2 text-sm text-(--text)"
             >
               Step {index + 1}: {step}
             </p>
@@ -35,8 +35,8 @@ export default function HistoryDoubtCard({ doubt }) {
         </div>
       )}
       {doubt.answer.numerical?.isNumerical && (
-        <div className="mt-3 space-y-2 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-3 text-sm text-[var(--text)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Numerical Solution</p>
+        <div className="mt-3 space-y-2 rounded-xl border border-(--border) bg-(--card) px-3 py-3 text-sm text-(--text)">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-(--muted)">Numerical Solution</p>
           {doubt.answer.numerical.formulaUsed && (
             <p className="mt-2">Formula used: {doubt.answer.numerical.formulaUsed}</p>
           )}
@@ -45,7 +45,7 @@ export default function HistoryDoubtCard({ doubt }) {
               {doubt.answer.numerical.steps.map((step, index) => (
                 <div
                   key={`${step.label}-${index}`}
-                  className="rounded-xl border border-[var(--border)] bg-[var(--card-strong)] px-3 py-2"
+                  className="rounded-xl border border-(--border) bg-(--card-strong) px-3 py-2"
                 >
                   <p className="font-semibold">{step.label}</p>
                   <p className="mt-1 leading-relaxed">{step.detail}</p>
@@ -59,11 +59,11 @@ export default function HistoryDoubtCard({ doubt }) {
         </div>
       )}
       {doubt.answer.code?.snippet && (
-        <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-3 text-sm text-[var(--text)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+        <div className="mt-3 rounded-xl border border-(--border) bg-(--card) px-3 py-3 text-sm text-(--text)">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-(--muted)">
             Code {doubt.answer.code.language ? `(${doubt.answer.code.language})` : ''}
           </p>
-          <pre className="mt-3 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card-strong)] px-3 py-3 text-xs leading-6">
+          <pre className="mt-3 overflow-x-auto rounded-xl border border-(--border) bg-(--card-strong) px-3 py-3 text-xs leading-6">
             <code>{doubt.answer.code.snippet}</code>
           </pre>
           {doubt.answer.code.explanation && (
@@ -72,17 +72,17 @@ export default function HistoryDoubtCard({ doubt }) {
         </div>
       )}
       {doubt.answer.conclusion && (
-        <p className="mt-3 text-sm leading-relaxed text-[var(--text)]">
+        <p className="mt-3 text-sm leading-relaxed text-(--text)">
           Conclusion: {doubt.answer.conclusion}
         </p>
       )}
       {doubt.answer.realLifeExample && (
-        <p className="mt-2 text-sm leading-relaxed text-[var(--text)]">
+        <p className="mt-2 text-sm leading-relaxed text-(--text)">
           Real-life example: {doubt.answer.realLifeExample}
         </p>
       )}
       {doubt.answer.keyTakeaway && (
-        <p className="mt-3 text-xs font-medium text-[var(--muted)]">
+        <p className="mt-3 text-xs font-medium text-(--muted)">
           Key takeaway: {doubt.answer.keyTakeaway}
         </p>
       )}

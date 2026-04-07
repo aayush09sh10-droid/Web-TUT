@@ -3,7 +3,7 @@ import React from 'react'
 export default function LearningDoubtCard({ doubt }) {
   if (!doubt?.answer) {
     return (
-      <p className="mt-3 text-sm text-[var(--muted)]">
+      <p className="mt-3 text-sm text-(--muted)">
         No doubt explanation was saved for this lesson.
       </p>
     )
@@ -12,19 +12,19 @@ export default function LearningDoubtCard({ doubt }) {
   return (
     <>
       {doubt.question && (
-        <p className="mt-3 text-sm text-[var(--muted)]">Your doubt: {doubt.question}</p>
+        <p className="mt-3 text-sm text-(--muted)">Your doubt: {doubt.question}</p>
       )}
-      <p className="mt-3 text-sm font-semibold text-[var(--text)]">
+      <p className="mt-3 text-sm font-semibold text-(--text)">
         {doubt.answer.title || 'Saved explanation'}
       </p>
       {doubt.answer.concept && (
-        <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Concept</p>
-          <p className="mt-2 text-sm leading-relaxed text-[var(--text)]">{doubt.answer.concept}</p>
+        <div className="mt-3 rounded-xl border border-(--border) bg-(--card) px-3 py-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-(--muted)">Concept</p>
+          <p className="mt-2 text-sm leading-relaxed text-(--text)">{doubt.answer.concept}</p>
         </div>
       )}
       {(doubt.answer.mainBody || doubt.answer.explanation) && (
-        <p className="mt-2 text-sm leading-relaxed text-[var(--text)]">
+        <p className="mt-2 text-sm leading-relaxed text-(--text)">
           {doubt.answer.mainBody || doubt.answer.explanation}
         </p>
       )}
@@ -33,7 +33,7 @@ export default function LearningDoubtCard({ doubt }) {
           {doubt.answer.steps.map((step, index) => (
             <p
               key={`${step}-${index}`}
-              className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm text-[var(--text)]"
+              className="rounded-xl border border-(--border) bg-(--card) px-3 py-2 text-sm text-(--text)"
             >
               Step {index + 1}: {step}
             </p>
@@ -41,10 +41,10 @@ export default function LearningDoubtCard({ doubt }) {
         </div>
       )}
       {doubt.answer.numerical?.isNumerical && (
-        <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Numerical Solution</p>
+        <div className="mt-3 rounded-xl border border-(--border) bg-(--card) px-3 py-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-(--muted)">Numerical Solution</p>
           {doubt.answer.numerical.formulaUsed && (
-            <p className="mt-2 text-sm text-[var(--text)]">
+            <p className="mt-2 text-sm text-(--text)">
               Formula used: {doubt.answer.numerical.formulaUsed}
             </p>
           )}
@@ -53,43 +53,43 @@ export default function LearningDoubtCard({ doubt }) {
               {doubt.answer.numerical.steps.map((step, index) => (
                 <div
                   key={`${step.label}-${index}`}
-                  className="rounded-xl border border-[var(--border)] bg-[var(--card-strong)] px-3 py-2"
+                  className="rounded-xl border border-(--border) bg-(--card-strong) px-3 py-2"
                 >
-                  <p className="text-sm font-semibold text-[var(--text)]">{step.label}</p>
-                  <p className="mt-1 text-sm leading-relaxed text-[var(--text)]">{step.detail}</p>
+                  <p className="text-sm font-semibold text-(--text)">{step.label}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-(--text)">{step.detail}</p>
                 </div>
               ))}
             </div>
           )}
           {doubt.answer.numerical.finalAnswer && (
-            <p className="mt-3 text-sm font-medium text-[var(--text)]">
+            <p className="mt-3 text-sm font-medium text-(--text)">
               Final answer: {doubt.answer.numerical.finalAnswer}
             </p>
           )}
         </div>
       )}
       {doubt.answer.code?.snippet && (
-        <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+        <div className="mt-3 rounded-xl border border-(--border) bg-(--card) px-3 py-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-(--muted)">
             Code {doubt.answer.code.language ? `(${doubt.answer.code.language})` : ''}
           </p>
-          <pre className="mt-3 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card-strong)] px-3 py-3 text-xs leading-6 text-[var(--text)]">
+          <pre className="mt-3 overflow-x-auto rounded-xl border border-(--border) bg-(--card-strong) px-3 py-3 text-xs leading-6 text-(--text)">
             <code>{doubt.answer.code.snippet}</code>
           </pre>
           {doubt.answer.code.explanation && (
-            <p className="mt-3 text-sm leading-relaxed text-[var(--text)]">
+            <p className="mt-3 text-sm leading-relaxed text-(--text)">
               {doubt.answer.code.explanation}
             </p>
           )}
         </div>
       )}
       {doubt.answer.conclusion && (
-        <p className="mt-3 text-sm leading-relaxed text-[var(--text)]">
+        <p className="mt-3 text-sm leading-relaxed text-(--text)">
           Conclusion: {doubt.answer.conclusion}
         </p>
       )}
       {doubt.answer.realLifeExample && (
-        <p className="mt-2 text-sm leading-relaxed text-[var(--text)]">
+        <p className="mt-2 text-sm leading-relaxed text-(--text)">
           Real-life example: {doubt.answer.realLifeExample}
         </p>
       )}

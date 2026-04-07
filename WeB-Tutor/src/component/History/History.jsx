@@ -72,20 +72,20 @@ export default function History() {
   const selectedTopicTitles = getSelectedTopicTitles(teaching)
 
   return (
-    <main className="min-h-screen text-[var(--text)]">
+    <main className="min-h-screen text-(--text)">
       <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-3 pb-10 pt-6 sm:px-4 sm:pt-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Activity Log</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">
+            <p className="mt-1 text-sm text-(--muted)">
               Open any saved item to review the full learning session, including what you learnt, summary, quiz, teaching, and doubts.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-2 sm:flex">
-            <Link to="/" className="rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-center text-xs font-medium transition hover:-translate-y-0.5">
+            <Link to="/" className="rounded-full border border-(--border) bg-(--card) px-4 py-2 text-center text-xs font-medium transition hover:-translate-y-0.5">
               Back to Home
             </Link>
-            <button type="button" onClick={handleClearHistory} className="rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-center text-xs font-medium transition hover:-translate-y-0.5">
+            <button type="button" onClick={handleClearHistory} className="rounded-full border border-(--border) bg-(--card) px-4 py-2 text-center text-xs font-medium transition hover:-translate-y-0.5">
               Clear all
             </button>
           </div>

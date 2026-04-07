@@ -107,15 +107,15 @@ function Auth() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-12rem)] px-3 py-6 text-[var(--text)] sm:px-4 sm:py-10">
+    <main className="min-h-[calc(100vh-12rem)] px-3 py-6 text-(--text) sm:px-4 sm:py-10">
       <div className="mx-auto max-w-5xl">
         <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="rounded-[2rem] border p-6 backdrop-blur-xl sm:p-8" style={cardStyle}>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Welcome</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-(--muted)">Welcome</p>
             <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
               Save your study space with your own account
             </h2>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-[var(--muted)] sm:text-base">
+            <p className="mt-4 max-w-xl text-sm leading-7 text-(--muted) sm:text-base">
               Create one personal account to keep your summaries, quiz flow, and guided learning in one place. You can register with email and username, then log in using your username or email plus password.
             </p>
 
@@ -165,32 +165,32 @@ function Auth() {
 
             {mode === 'register' ? (
               <form className="mt-5 space-y-3" onSubmit={handleRegister}>
-                <input value={form.name} onChange={(e) => updateField('name', e.target.value)} placeholder="Full name" className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm outline-none" />
-                <input value={form.username} onChange={(e) => updateField('username', e.target.value)} placeholder="Username" className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm outline-none" />
+                <input value={form.name} onChange={(e) => updateField('name', e.target.value)} placeholder="Full name" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
+                <input value={form.username} onChange={(e) => updateField('username', e.target.value)} placeholder="Username" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
 
 
-                <input value={form.email} onChange={(e) => updateField('email', e.target.value)} type="email" placeholder="Email" className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm outline-none" />
+                <input value={form.email} onChange={(e) => updateField('email', e.target.value)} type="email" placeholder="Email" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
 
-                <input value={form.password} onChange={(e) => updateField('password', e.target.value)} type="password" placeholder="Password" className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm outline-none" />
+                <input value={form.password} onChange={(e) => updateField('password', e.target.value)} type="password" placeholder="Password" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
 
-                <input value={form.confirmPassword} onChange={(e) => updateField('confirmPassword', e.target.value)} type="password" placeholder="Confirm password" className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm outline-none" />
+                <input value={form.confirmPassword} onChange={(e) => updateField('confirmPassword', e.target.value)} type="password" placeholder="Confirm password" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
 
-                <label className="block rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm">
+                <label className="block rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm">
                   <span className="font-medium">Profile image</span>
                   <input type="file" accept="image/*" onChange={(e) => setAvatar(e.target.files?.[0] || null)} className="mt-2 block w-full text-xs file:mr-3 file:rounded-full file:border-0 file:bg-[var(--text)] file:px-3 file:py-2 file:font-semibold file:text-[var(--bg)]" />
                 </label>
 
-                <button type="submit" disabled={loading} className="w-full rounded-[1rem] px-4 py-3 text-sm font-semibold text-[var(--bg)] transition disabled:opacity-60" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))' }}>
+                <button type="submit" disabled={loading} className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--bg)] transition disabled:opacity-60" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))' }}>
                   {loading ? 'Creating account...' : 'Create account'}
                 </button>
                 
               </form>
             ) : (
               <form className="mt-5 space-y-3" onSubmit={handleLogin}>
-                <input value={form.identifier} onChange={(e) => updateField('identifier', e.target.value)} placeholder="Username or email" className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm outline-none" />
-                <input value={form.password} onChange={(e) => updateField('password', e.target.value)} type="password" placeholder="Password" className="w-full rounded-[1rem] border border-[var(--border)] bg-[var(--card-strong)] px-4 py-3 text-sm outline-none" />
+                <input value={form.identifier} onChange={(e) => updateField('identifier', e.target.value)} placeholder="Username or email" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
+                <input value={form.password} onChange={(e) => updateField('password', e.target.value)} type="password" placeholder="Password" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
 
-                <button type="submit" disabled={loading} className="w-full rounded-[1rem] px-4 py-3 text-sm font-semibold text-[var(--bg)] transition disabled:opacity-60" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))' }}>
+                <button type="submit" disabled={loading} className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--bg)] transition disabled:opacity-60" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))' }}>
                   {loading ? 'Signing in...' : 'Login'}
                 </button>
               </form>

@@ -66,7 +66,7 @@ function Header() {
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-50 px-3 pt-3 text-[var(--text)] transition-all duration-300 sm:px-4 sm:pt-4 ${
+        className={`fixed inset-x-0 top-0 z-50 px-3 pt-3 text-(--text) transition-all duration-300 sm:px-4 sm:pt-4 ${
           isVisible ? 'translate-y-0 opacity-100' : '-translate-y-[135%] opacity-0'
         }`}
       >
@@ -82,7 +82,7 @@ function Header() {
         >
           <div className="min-w-0">
             <h1 className="text-base font-extrabold tracking-[0.02em] sm:text-lg">WeB-Tutor</h1>
-            <p className="text-xs text-[var(--muted)]">
+            <p className="text-xs text-(--muted)">
               Learn, quiz, and revise from any video in a more playful way.
             </p>
           </div>
@@ -96,8 +96,8 @@ function Header() {
                     to={item.to}
                     className={`rounded-full px-4 py-2 text-center text-xs font-medium transition ${
                       location.pathname === item.to
-                        ? 'text-[var(--text)] shadow-sm'
-                        : 'border text-[var(--text)] hover:-translate-y-0.5'
+                        ? 'text-(--text) shadow-sm'
+                        : 'border text-(--text) hover:-translate-y-0.5'
                     }`}
                     style={
                       location.pathname === item.to
@@ -145,7 +145,7 @@ function Header() {
                     color: isDark ? '#f5f7ff' : 'var(--text)',
                   }}
                 >
-                  <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--card-strong)] text-[10px] font-bold">
+                  <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-(--border) bg-(--card-strong) text-[10px] font-bold">
                     {authUser.avatarUrl ? (
                       <img src={authUser.avatarUrl} alt={authUser.name} className="h-full w-full object-cover" />
                     ) : (
@@ -167,7 +167,7 @@ function Header() {
                     <Link
                       to="/profile"
                       onClick={() => dispatch(closeHeaderMenu())}
-                      className="block rounded-[0.95rem] px-4 py-3 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--card)]"
+                      className="block rounded-[0.95rem] px-4 py-3 text-sm font-medium text-(--text) transition hover:bg-(--card)"
                     >
                       Profile
                     </Link>
@@ -177,7 +177,7 @@ function Header() {
                         dispatch(closeHeaderMenu())
                         dispatch(clearAuth())
                       }}
-                      className="mt-1 block w-full rounded-[0.95rem] px-4 py-3 text-left text-sm font-medium text-[var(--text)] transition hover:bg-[var(--card)]"
+                      className="mt-1 block w-full rounded-[0.95rem] px-4 py-3 text-left text-sm font-medium text-(--text) transition hover:bg-(--card)"
                     >
                       Logout
                     </button>

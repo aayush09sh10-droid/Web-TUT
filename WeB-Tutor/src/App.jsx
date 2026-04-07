@@ -35,7 +35,7 @@ function App() {
   }, [auth])
 
   return (
-    <div className="flex min-h-screen flex-col text-[var(--text)]">
+    <div className="flex min-h-screen flex-col text-(--text)">
       <Router>
         <Header />
         <div className="flex-1">

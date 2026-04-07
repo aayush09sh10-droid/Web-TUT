@@ -327,7 +327,7 @@ function Home() {
   const showResult = Boolean(result)
 
   return (
-    <main className="min-h-140 text-[var(--text)]">
+    <main className="min-h-140 text-(--text)">
       <section className="flex flex-1 flex-col overflow-hidden">
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-3 pb-10 pt-6 sm:px-4 sm:pb-12 sm:pt-8">
           <HeaderFeature
@@ -338,12 +338,12 @@ function Home() {
           <PasteLinkFeature handleNotesFileChange={handleNotesFileChange} handleSubmit={handleSubmit} />
 
           <div className="mt-5 flex flex-1 flex-col gap-4 sm:mt-6">
-            <div className="flex flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-[var(--border)] bg-[var(--card)] shadow-[var(--shadow)] backdrop-blur-xl">
+            <div className="flex flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-(--border) bg-(--card) shadow-(--shadow) backdrop-blur-xl">
               <div className="flex flex-1 flex-col gap-4 overflow-auto p-4 pb-16 sm:p-6 sm:pb-24">
                 {showResult ? (
                   <div className="space-y-4">
                     <div className="grid gap-3 sm:flex sm:flex-wrap">
-                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'summary' }))} className={`w-full rounded-full border px-4 py-2 text-sm font-semibold transition sm:w-auto ${activeView === 'summary' ? 'border-[var(--text)] bg-[var(--text)] text-[var(--bg)]' : 'border-[var(--border)] bg-[var(--card)] text-[var(--text)]'}`}>Summary</button>
+                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'summary' }))} className={`w-full rounded-full border px-4 py-2 text-sm font-semibold transition sm:w-auto ${activeView === 'summary' ? 'border-[var(--text)] bg-[var(--text)] text-[var(--bg)]' : 'border-(--border) bg-(--card) text-(--text)'}`}>Summary</button>
                       <button type="button" onClick={handleGenerateQuiz} disabled={quizLoading} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_8px_24px_rgba(255,153,0,0.22)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto" style={{ background: 'linear-gradient(135deg, oklch(75% 0.204 54), oklch(80% 0.186 80))', borderColor: 'oklch(72% 0.217 24)', color: '#4a2313' }}>{quizLoading ? 'Generating Quiz...' : 'Generate Quiz'}</button>
                       <button type="button" onClick={handleGenerateTeaching} disabled={teachingLoading} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(96,112,255,0.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto" style={{ background: 'linear-gradient(135deg, oklch(72% 0.167 244), oklch(84% 0.118 214))', borderColor: 'oklch(65% 0.19 278)', color: '#1d2957' }}>{teachingLoading ? 'Generating Teaching...' : 'Teaching'}</button>
                       <button type="button" onClick={handleGenerateFormula} disabled={formulaLoading} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(58,168,118,0.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto" style={{ background: 'linear-gradient(135deg, oklch(74% 0.18 145), oklch(87% 0.11 120))', borderColor: 'oklch(63% 0.16 155)', color: '#183d2e' }}>{formulaLoading ? 'Generating Formula...' : 'Formula Lab'}</button>
@@ -351,8 +351,8 @@ function Home() {
                       <NewSummaryFeature onClick={() => dispatch(resetHomeForNewSummary())} />
                     </div>
 
-                    <div className="rounded-[1.25rem] border border-[var(--border)] bg-[var(--card-strong)] p-4 shadow-sm">
-                      <h3 className="text-lg font-semibold text-[var(--text)]">{normalizedSummary.title}</h3>
+                    <div className="rounded-[1.25rem] border border-(--border) bg-(--card-strong) p-4 shadow-sm">
+                      <h3 className="text-lg font-semibold text-(--text)">{normalizedSummary.title}</h3>
                     </div>
 
                     {activeView === 'summary' && <SummaryFeature />}
@@ -364,7 +364,7 @@ function Home() {
                 ) : activeView === 'doubt' ? (
                   <AskDoubtFeature handleSubmitDoubt={handleSubmitDoubt} hasLearningContext={false} />
                 ) : (
-                  <div className="flex flex-1 items-center justify-center px-2 text-center text-sm leading-relaxed text-[var(--muted)]">
+                  <div className="flex flex-1 items-center justify-center px-2 text-center text-sm leading-relaxed text-(--muted)">
                     <p>Paste a YouTube link or upload a notes photo to get a clean, easy-to-read summary.</p>
                   </div>
                 )}

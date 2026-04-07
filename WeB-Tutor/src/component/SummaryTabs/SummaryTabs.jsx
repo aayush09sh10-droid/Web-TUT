@@ -21,7 +21,7 @@ export default function SummaryTabs({ result }) {
             className={`rounded-full px-4 py-2 text-xs font-medium transition ${
               view === tab.key
                 ? 'bg-[var(--text)] text-[var(--bg)]'
-                : 'bg-[var(--bg)] text-[var(--text)] border border-[var(--text)]'
+                : 'bg-[var(--bg)] text-(--text) border border-[var(--text)]'
             }`}
           >
             {tab.label}
@@ -32,8 +32,8 @@ export default function SummaryTabs({ result }) {
       <div className="mt-6 space-y-4">
         {view === 'topics' && (
           <div>
-            <h4 className="text-sm font-semibold text-[var(--text)]">Main topics covered</h4>
-            <ul className="mt-2 list-disc list-inside text-sm text-[var(--text)]">
+            <h4 className="text-sm font-semibold text-(--text)">Main topics covered</h4>
+            <ul className="mt-2 list-disc list-inside text-sm text-(--text)">
               {result.topics?.map((topic, idx) => (
                 <li key={idx}>{topic}</li>
               ))}
@@ -43,8 +43,8 @@ export default function SummaryTabs({ result }) {
 
         {view === 'timeline' && (
           <div>
-            <h4 className="text-sm font-semibold text-[var(--text)]">Important timeline</h4>
-            <ol className="mt-2 list-decimal list-inside text-sm text-[var(--text)]">
+            <h4 className="text-sm font-semibold text-(--text)">Important timeline</h4>
+            <ol className="mt-2 list-decimal list-inside text-sm text-(--text)">
               {result.timeline?.map((line, idx) => (
                 <li key={idx}>{line}</li>
               ))}
@@ -54,8 +54,8 @@ export default function SummaryTabs({ result }) {
 
         {view === 'summary' && (
           <div>
-            <h4 className="text-sm font-semibold text-[var(--text)]">Detailed summary</h4>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[var(--text)]">
+            <h4 className="text-sm font-semibold text-(--text)">Detailed summary</h4>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-(--text)">
               {result.detailedSummary}
             </p>
           </div>
