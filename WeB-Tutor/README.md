@@ -1,88 +1,350 @@
 # Web Tutor
 
-Web Tutor is a full-stack AI study platform that helps a learner study from:
+Web Tutor is a full-stack AI study platform that converts learning input into structured study material.
+
+It supports:
 
 - YouTube videos
 - study photos
-- uploaded study files such as PDF, TXT, CSV, JSON, markdown, and PPTX
+- study files such as PDF, TXT, CSV, JSON, markdown, images, and PPTX
+- Ask AI prompts for any topic
 
-The platform converts those inputs into:
+From those inputs, Web Tutor creates:
 
 - structured summaries
 - topic-wise breakdowns
-- quizzes
 - teaching paths
+- quizzes
 - formula guides
 - doubt answers
 - saved study history
 
-## 1. Project Goal
+## 1. Problem Statement
 
-The goal of the project is to build one smart study workflow:
+Students usually study from multiple sources:
 
-1. user logs in
-2. user submits learning material
-3. backend processes and summarizes it with Gemini
-4. user generates extra study tools from the summary
-5. all learning sessions are saved and can be reopened later
+- videos
+- handwritten notes
+- PDFs and files
+- direct questions they want to ask
 
-## 2. What Has Been Added
+The problem is that these inputs are unstructured. A learner usually has to:
 
-### Main Features Added
+- watch or read everything manually
+- take notes separately
+- create revision material separately
+- create questions separately
+- remember previous sessions separately
 
-- Register and login
-- JWT-based protected APIs
-- Profile page with password change
-- Home dashboard for learning workflows
-- YouTube video summarization
-- Study photo summarization
-- Study file summarization
-- PPTX summarization support through backend slide-text extraction
-- Topic-wise summary sections
-- Quiz generation
-- Teaching path generation
-- Formula guide generation
-- Doubt solving
-- Study history page
-- Learning detail page
-- Quiz progress saving
-- Backend Redis caching
-- Frontend React Query caching
-- Home session persistence
-- Security headers, rate limiting, and restricted CORS
-- Gemini error shielding in the UI
+Web Tutor solves this by building one unified learning pipeline:
 
-### Recent Major Additions
+1. accept raw learning input
+2. convert it into structured study data
+3. generate extra learning tools from that summary
+4. store the full session for later use
 
-- `Photos` mode added in Home
-- `Files` mode added in Home
-- maximum `10` photos upload limit
-- topic-wise summary blocks rendered in the summary UI
-- `New Summary` now opens the composer without removing the current summary
-- composer close button now works properly
-- frontend cache folder created in `src/cache`
-- shared local persistence storage added in `src/shared/storage`
-- Gemini API errors normalized before reaching the UI
+## 2. Project Goal
 
-## 3. Full Feature Logic
+The main goal is to create a reusable AI study workflow where the summary becomes the central learning object.
+
+That summary is then used to power:
+
+- teaching
+- quiz
+- formula
+- doubt solving
+- saved history
+
+This design avoids rebuilding everything from scratch for each feature and gives a consistent study path.
+
+## 3. Core Approach
+
+The application is designed around one main idea:
+
+`input -> normalized summary -> derived study features -> saved history`
+
+This means Web Tutor does not treat quiz, teaching, formula, and doubt as isolated tools. Instead:
+
+1. the user provides one source
+2. backend converts it into one structured summary shape
+3. all other learning features use that same summary
+4. the result is stored as one growing learning session
+
+Why this approach was used:
+
+- it keeps all AI features consistent
+- it reduces repeated preprocessing
+- it simplifies frontend rendering
+- it makes history reopening easier
+- it makes caching much more effective
+
+## 4. System Architecture
+
+### Frontend
+
+Frontend is built with:
+
+- `react`
+- `vite`
+- `redux toolkit`
+- `react query`
+- `tailwindcss`
+
+Frontend responsibilities:
+
+- collect user input
+- manage UI state
+- persist current Home session
+- call backend APIs
+- cache server data like history and profile
+- render study results in different feature views
+
+### Backend
+
+Backend is built with:
+
+- `express`
+- `mongoose`
+- `redis`
+- `@google/generative-ai`
+- `socket.io`
+- `yt-dlp-wrap`
+- `fluent-ffmpeg`
+- `jszip`
+
+Backend responsibilities:
+
+- authenticate users
+- validate requests
+- process input formats
+- build AI prompts
+- sanitize AI output
+- cache repeated results
+- save study sessions
+- return safe UI-friendly responses
+
+### Database
+
+MongoDB stores permanent user and study session data.
+
+### Cache
+
+Redis stores temporary backend cache.
+React Query stores temporary frontend server-state cache.
+
+## 5. Data Storage Design
+
+### A. MongoDB
+
+MongoDB is the permanent storage layer.
+
+The main study model is `StudyHistory`. One document stores one learning session.
+
+Each history item can contain:
+
+- `sourceType`
+- `sourceLabel`
+- `summary`
+- `quiz`
+- `teaching`
+- `formula`
+- `doubt`
+- `quizProgress`
+
+Why this design was used:
+
+- all learning generated from one source stays together
+- reopening history becomes simple
+- later-generated features can be attached to the same session
+- the app does not need separate tables/collections for every feature
+
+Implementation logic:
+
+1. summary is saved first
+2. when quiz is generated, the same history item is updated
+3. when teaching is generated, the same history item is updated
+4. when formula is generated, the same history item is updated
+5. when doubt is generated, the same history item is updated
+6. quiz progress is saved back into the same item
+
+Main file:
+
+- `Backend/features/history/models/StudyHistory.js`
+
+### B. Redis
+
+Redis is the backend temporary cache.
+
+Why Redis is used:
+
+- AI responses can be expensive and slow
+- repeated history/profile queries should not hit MongoDB every time
+- same payload should return faster when possible
+
+Implementation logic:
+
+1. backend builds a stable cache key
+2. complex payloads are sorted deterministically
+3. payload is hashed using SHA-256
+4. backend checks Redis
+5. if cache exists, it returns cached JSON
+6. if cache does not exist, backend computes the result and stores it with TTL
+
+What is cached:
+
+- video summary
+- notes/files summary
+- Ask AI summary
+- quiz
+- teaching
+- formula
+- doubt answers
+- history list
+- history details
+- profile
+
+Main files:
+
+- `Backend/services/cache/index.js`
+- `Backend/features/summarize/cache/*`
+- `Backend/features/history/cache/historyCache.js`
+- `Backend/features/auth/cache/profileCache.js`
+
+### C. Frontend Cache
+
+Frontend cache is handled by React Query.
+
+Why React Query is used:
+
+- history and profile are server state, not just UI state
+- repeated navigation should not refetch unnecessarily
+- invalidation should be easy after delete or update
+
+Implementation logic:
+
+1. app is wrapped with `QueryClientProvider`
+2. shared query keys are created
+3. screens use React Query for history/profile/detail requests
+4. cache can be set or invalidated with helper functions
+
+Main files:
+
+- `WeB-Tutor/src/cache/queryClient.js`
+- `WeB-Tutor/src/cache/queryKeys.js`
+- `WeB-Tutor/src/cache/cacheUtils.js`
+
+### D. Browser Storage
+
+Two browser storages are used.
+
+`sessionStorage`:
+
+- stores authentication session
+- keeps user logged in during current browser session
+
+Why:
+
+- safer than long-lived local storage auth in this project setup
+
+`localStorage`:
+
+- stores current Home study session
+- restores unfinished learning flow
+
+Why:
+
+- user should not lose current summary state after refresh or reopen
+
+Implementation logic:
+
+1. Home state is serialized
+2. state is tied to current user identity
+3. state is restored only if still valid
+4. stale state expires after configured time window
+
+Main files:
+
+- `WeB-Tutor/src/component/Auth/store/authSlice.js`
+- `WeB-Tutor/src/shared/storage/homeSession.js`
+- `WeB-Tutor/src/component/Home/hooks/useHomePersistence.js`
+
+## 6. Cache Behaviour
+
+### Normal Behaviour
+
+For AI features:
+
+1. frontend sends request
+2. backend checks Redis
+3. if hit, cached result is returned
+4. if miss, backend generates new result
+5. result is cached
+6. result is saved to MongoDB when needed
+
+For history/profile:
+
+1. frontend checks React Query
+2. if frontend cache is fresh, cached data is used
+3. if stale, backend is called
+4. backend may still use Redis before going to MongoDB
+
+### Regenerate Behaviour
+
+Regenerate is intentionally different from normal cached flow.
+
+Why regenerate was added:
+
+- user may want a different version of the same output
+- cache should not block fresh AI output
+
+Implementation logic:
+
+1. user clicks regenerate inside a feature
+2. frontend sends `forceRegenerate: true`
+3. backend skips Redis for that request
+4. backend generates fresh AI output
+5. current MongoDB history item is updated
+6. user remains in the same feature view
+
+Special summary regenerate logic:
+
+when summary is regenerated, dependent feature outputs are cleared:
+
+- quiz
+- teaching
+- formula
+- doubt
+- quizProgress
+
+Why:
+
+- old derived data may no longer match the new summary
+
+## 7. Full Feature Documentation
 
 ### A. Authentication
 
+Reason for this feature:
+
+- the platform needs personal study history
+- saved learning should belong to one user
+- protected APIs should not be public
+
 What it does:
 
-- allows a user to register
+- register
 - login
-- stay authenticated in the current session
-- view profile
+- get current user profile
 - change password
 
-Logic used:
+Implementation logic:
 
-1. frontend sends auth request
-2. backend validates credentials
-3. JWT token is created
-4. frontend stores auth in `sessionStorage`
-5. protected routes are shown only when token exists
+1. frontend sends credentials
+2. backend validates email and password
+3. password is hashed with `bcryptjs`
+4. JWT token is generated
+5. frontend stores auth in `sessionStorage`
+6. protected requests send `Authorization: Bearer <token>`
 
 Main backend files:
 
@@ -91,7 +353,6 @@ Main backend files:
 - `Backend/features/auth/controllers/register.js`
 - `Backend/features/auth/controllers/me.js`
 - `Backend/features/auth/controllers/changePassword.js`
-- `Backend/features/auth/services/auth/*`
 
 Main frontend files:
 
@@ -99,348 +360,444 @@ Main frontend files:
 - `WeB-Tutor/src/component/Auth/store/authSlice.js`
 - `WeB-Tutor/src/App.jsx`
 
-Main React/JS libraries used:
-
-- `react`
-- `react-router-dom`
-- `@reduxjs/toolkit`
-- `react-redux`
-- `jsonwebtoken` on backend
-- `bcryptjs` on backend
-
 ### B. YouTube Video Summary
+
+Reason for this feature:
+
+- students often learn from lectures and tutorials
+- video content is long and difficult to revise quickly
 
 What it does:
 
-- accepts a YouTube URL
+- accepts a YouTube link
 - downloads audio
-- chunks the audio
-- sends chunk understanding to Gemini
-- creates a final structured summary
-- saves it into history
+- chunks audio
+- asks AI to understand the content
+- returns a structured summary
 
-Logic used:
+Implementation logic:
 
-1. user pastes a YouTube URL
+1. user pastes video URL
 2. frontend calls `POST /api/summarize`
-3. backend downloads audio using `yt-dlp`
-4. backend processes audio with `ffmpeg`
-5. audio is split into chunks
-6. Gemini summarizes chunks
-7. backend creates one final structured summary
-8. result is saved to MongoDB
-9. result is cached in Redis
+3. backend downloads audio with `yt-dlp`
+4. backend uses `ffmpeg` to process audio
+5. audio is chunked because long media cannot be sent as one request safely
+6. AI summarizes chunks
+7. backend combines chunk understanding into a structured summary shape
+8. summary is saved to MongoDB
+9. summary is cached in Redis
 
-Main backend files:
+Why chunking was used:
+
+- long audio cannot be processed reliably in one request
+- chunking reduces failure risk
+- chunk summaries make final summarization more stable
+
+Main files:
 
 - `Backend/features/summarize/controllers/summarizeVideo.js`
 - `Backend/features/summarize/services/youtube-audio/*`
 - `Backend/features/summarize/services/gemini/summary.js`
-
-Main frontend files:
-
 - `WeB-Tutor/src/component/Home/Home.jsx`
-- `WeB-Tutor/src/component/Home/api/homeApi.js`
-
-Main libraries used:
-
-- `yt-dlp-wrap`
-- `fluent-ffmpeg`
-- `ffmpeg-static`
-- `@google/generative-ai`
 
 ### C. Study Photos Summary
 
+Reason for this feature:
+
+- students often have handwritten notes or whiteboard photos
+- those notes need to become structured text
+
 What it does:
 
-- accepts one or more study photos
-- maximum 10 photos
-- combines them into one structured study summary
-- creates topic-wise sections
+- accepts multiple photos
+- reads them as study material
+- creates one combined structured summary
 
-Logic used:
+Implementation logic:
 
 1. user switches to `Photos`
-2. user selects up to 10 images
-3. frontend converts images to base64
-4. frontend calls `POST /api/summarize-notes`
-5. backend validates file count and image types
-6. Gemini reads uploaded images
-7. backend creates one combined summary
-8. summary contains timeline, paragraphs, and topic blocks
-9. result is saved to history and cached
+2. frontend enforces maximum 10 images
+3. browser converts images to base64 payloads
+4. frontend sends them to `POST /api/summarize-notes`
+5. backend validates image count and type
+6. AI reads image content
+7. backend creates summary JSON
+8. summary is saved to history and cached
 
-Main backend files:
+Why 10-photo limit was added:
+
+- prevents oversized payloads
+- reduces AI request failures
+- keeps UX manageable
+
+Main files:
 
 - `Backend/features/summarize/controllers/summarizeNotes.js`
 - `Backend/features/summarize/services/gemini/notes.js`
-
-Main frontend files:
-
-- `WeB-Tutor/src/component/Home/features/PasteLink/PasteLinkFeature.jsx`
 - `WeB-Tutor/src/component/Home/utils/studyUploadUtils.js`
-- `WeB-Tutor/src/component/Home/Home.jsx`
+- `WeB-Tutor/src/component/Home/features/PasteLink/PasteLinkFeature.jsx`
 
 ### D. Study Files Summary
 
+Reason for this feature:
+
+- students study from PDFs, text files, slides, and exported notes
+- one upload flow should support common academic files
+
 What it does:
 
-- accepts files like PDF, TXT, CSV, JSON, markdown, images, and PPTX
-- summarizes them into one structured learning result
+- accepts files
+- normalizes them depending on file type
+- summarizes them into one structured result
 
-Logic used:
+Implementation logic:
 
 1. user switches to `Files`
-2. user uploads study files
-3. frontend converts them into upload payloads
-4. backend validates supported types
-5. text-like files are decoded into text
-6. image/PDF files are sent as inline Gemini parts
-7. PPTX files are converted into slide text on backend
-8. Gemini builds a structured summary
-9. result is saved and cached
+2. frontend validates file types
+3. frontend reads files and builds upload payloads
+4. backend checks MIME type
+5. text-based files are decoded into text
+6. image and PDF content is sent as AI-readable parts
+7. PPTX is extracted into text using `jszip`
+8. backend sends normalized content to AI
+9. summary is saved and cached
 
-Important note:
+Why format conversion was used:
+
+- AI does not handle every file type equally
+- some formats need preprocessing before prompting
+
+Important support note:
 
 - `.pptx` is supported
-- old `.ppt` is not supported yet
+- `.ppt` is not supported yet
 
-Main backend files:
+Main files:
 
 - `Backend/features/summarize/services/gemini/notes.js`
 - `Backend/features/summarize/controllers/summarizeNotes.js`
+- `WeB-Tutor/src/component/Home/Home.jsx`
 
-### E. Topic-Wise Summary
+### E. Ask AI Learning Path
+
+Reason for this feature:
+
+- sometimes the user does not have a file or video
+- they only want to learn a topic directly from a question
 
 What it does:
 
-- summary now includes topic blocks
-- each topic has:
-  - title
-  - short explanation
-  - key revision points
+- accepts any topic/question
+- creates a structured summary
+- immediately creates a teaching path
+- opens as a learning experience instead of a plain answer
 
-Logic used:
+Implementation logic:
 
-1. Gemini returns summary JSON
-2. backend sanitizes the response
-3. if topic blocks are missing, fallback topic sections are created from summary paragraphs
-4. frontend renders topic-wise summary cards
+1. user switches to `Ask AI`
+2. user writes a question or topic
+3. frontend calls `POST /api/ask-anything`
+4. backend generates summary from the question
+5. backend generates teaching from that summary
+6. both are saved to one MongoDB history entry
+7. summary and teaching can be cached in Redis
 
-Main backend files:
+Why Ask AI opens Teaching first:
+
+- the user intent is usually “help me learn”
+- teaching path is a better first experience than raw summary text
+
+Main files:
+
+- `Backend/features/summarize/controllers/askAnything.js`
+- `Backend/features/summarize/services/gemini/ask.js`
+- `WeB-Tutor/src/component/Home/Home.jsx`
+- `WeB-Tutor/src/component/Home/features/PasteLink/PasteLinkFeature.jsx`
+
+### F. Topic-Wise Summary
+
+Reason for this feature:
+
+- one long paragraph is hard to revise
+- students need sections and quick revision points
+
+What it does:
+
+- divides summary into topic blocks
+- adds key points per topic
+
+Implementation logic:
+
+1. backend asks AI for structured JSON
+2. parser sanitizes returned shape
+3. if topic blocks are missing, fallback topics are built from summary paragraphs
+4. frontend renders topic cards
+
+Why fallback topic logic was added:
+
+- AI may sometimes omit topic arrays
+- UI still needs stable topic-wise rendering
+
+Main files:
 
 - `Backend/features/summarize/services/gemini/parser.js`
-- `Backend/features/summarize/services/gemini/summary.js`
-- `Backend/features/summarize/services/gemini/notes.js`
-
-Main frontend files:
-
 - `WeB-Tutor/src/component/Home/features/Summary/SummaryFeature.jsx`
-- `WeB-Tutor/src/component/Home/homeUtils.js`
 
-### F. Teaching Path
+### G. Teaching Path
+
+Reason for this feature:
+
+- students need guided explanation, not only summary
+- learning should feel like a sequence of lesson parts
 
 What it does:
 
-- converts a summary into topic-wise teaching lessons
+- converts summary into 4 to 8 lesson parts
+- each part includes richer study sections
+- can include part-wise visual study guides
 
-Logic used:
+Implementation logic:
 
-1. frontend sends the current summary
-2. backend asks Gemini to divide the summary into 3 to 6 learning topics
-3. each topic returns:
+1. frontend sends summary to `POST /api/teaching`
+2. backend prompts AI to build a structured teaching path
+3. each topic can include:
+   - title
    - summary
+   - why it matters
    - lesson
+   - steps
    - notes
+   - practice task
    - reflection question
-4. teaching output is stored in history
-5. frontend renders it topic by topic
+   - visual aid
+4. parser sanitizes teaching shape
+5. frontend shows left-side topic navigation
+6. frontend shows part-wise lesson sections
+7. frontend renders visual study block when `visualAid` exists
 
-Main backend files:
+Why richer teaching structure was added:
 
-- `Backend/features/summarize/controllers/generateTeaching.js`
+- summary alone is not enough for learning
+- topic sections create a better study path
+- visual blocks help when process or relationship explanation is needed
+
+Main files:
+
 - `Backend/features/summarize/services/gemini/teaching.js`
-
-Main frontend files:
-
+- `Backend/features/summarize/services/gemini/parser.js`
 - `WeB-Tutor/src/component/Home/features/Teaching/TeachingFeature.jsx`
 
-### G. Formula Guide
+### H. Formula Guide
+
+Reason for this feature:
+
+- some subjects need equations, rules, and application contexts
+- formula revision should be separate from plain summary
 
 What it does:
 
-- builds a formula-based revision path from a summary
+- creates formula-based study sections
+- explains each formula and when to use it
+- adds practice questions
 
-Logic used:
+Implementation logic:
 
-1. frontend sends the summary
-2. backend asks Gemini to decide whether formulas are important
-3. output is divided into sections
-4. each section contains:
-   - formula name
-   - formula
-   - when to use
-   - explanation
-   - practice questions
-5. output is saved in history and cached
+1. frontend sends summary to `POST /api/formula`
+2. backend asks AI to derive formula-focused sections
+3. parser sanitizes each section
+4. frontend divides each section into explanation and practice views
 
-Main backend files:
+Why separate formula mode exists:
+
+- formula study needs different presentation than plain explanation
+
+Main files:
 
 - `Backend/features/summarize/controllers/generateFormula.js`
 - `Backend/features/summarize/services/gemini/formula.js`
-
-Main frontend files:
-
 - `WeB-Tutor/src/component/Home/features/FormulaLab/FormulaLabFeature.jsx`
 
-### H. Quiz Generation
+### I. Quiz Generation
+
+Reason for this feature:
+
+- students need active recall, not only passive reading
 
 What it does:
 
-- creates MCQ-style quiz questions from the summary
+- creates multiple-choice questions
+- stores answers and explanations
+- saves quiz progress
 
-Logic used:
+Implementation logic:
 
-1. summary is sent to backend
-2. Gemini creates quiz questions and answers
-3. quiz is saved to history
-4. user submits quiz
-5. score and wrong answers are saved
+1. frontend sends summary to `POST /api/quiz`
+2. backend asks AI for structured quiz JSON
+3. parser validates question shape
+4. frontend renders question options
+5. user submits answers
+6. frontend calculates score
+7. backend saves quiz progress into history
 
-Main backend files:
+Why quiz progress is saved:
+
+- it makes history more meaningful
+- user can revisit previous performance
+
+Main files:
 
 - `Backend/features/summarize/controllers/generateQuiz.js`
 - `Backend/features/summarize/services/gemini/quiz.js`
 - `Backend/features/history/controllers/saveQuizProgress.js`
-
-Main frontend files:
-
 - `WeB-Tutor/src/component/Home/features/GenerateQuiz/GenerateQuizFeature.jsx`
 
-### I. Doubt Solving
+### J. Doubt Solving
+
+Reason for this feature:
+
+- after summary and teaching, students still need direct answers
+- those answers should use the learning context already created
 
 What it does:
 
-- answers a user’s doubt using the saved summary and optional teaching/formula context
+- answers user doubts
+- can use summary, formula, and teaching context
+- returns structured explanation
 
-Logic used:
+Implementation logic:
 
-1. user writes a doubt
-2. if required, formula context is generated first
-3. backend sends summary + context + question to Gemini
-4. answer is saved to history
+1. user types a question
+2. frontend checks current learning context
+3. if formula support is needed, formula can be generated first
+4. backend sends summary + teaching + formula + question to AI
+5. backend returns structured answer
+6. answer is saved to history
 
-Main backend files:
+Why structured doubt answer was used:
+
+- plain chat text is less useful for revision
+- structure improves readability and reuse
+
+Main files:
 
 - `Backend/features/summarize/controllers/answerDoubt.js`
 - `Backend/features/summarize/services/gemini/doubt.js`
-
-Main frontend files:
-
 - `WeB-Tutor/src/component/Home/features/AskDoubt/AskDoubtFeature.jsx`
 
-### J. History and Learning Details
+### K. History and Learning Detail
+
+Reason for this feature:
+
+- students need to reopen previous work
+- AI generation should not be repeated for already saved sessions
 
 What it does:
 
-- shows all saved study sessions
-- allows delete and clear
-- opens one full learning record
+- lists saved sessions
+- shows one full session
+- supports delete and clear
 
-Logic used:
+Implementation logic:
 
-1. frontend fetches history list
-2. list is cached in React Query
-3. user opens a history record
-4. detail page loads one learning item
-5. data is rendered from saved history instead of regenerating everything
+1. history list is requested from backend
+2. backend loads from cache or MongoDB
+3. frontend caches the list with React Query
+4. user opens one item
+5. detail screen renders saved result from MongoDB
 
-Main backend files:
+Why saved-history-first design was used:
 
-- `Backend/features/history/routes/history.js`
+- faster revisit experience
+- lower AI cost
+- stable old sessions
+
+Main files:
+
 - `Backend/features/history/services/history.js`
-- `Backend/features/history/controllers/*`
-
-Main frontend files:
-
 - `WeB-Tutor/src/component/History/History.jsx`
 - `WeB-Tutor/src/component/Profile/LearningDetails.jsx`
-- `WeB-Tutor/src/component/History/api/historyApi.js`
-- `WeB-Tutor/src/component/Profile/api/learningDetailsApi.js`
 
-### K. Home Session Persistence
+### L. Home Session Persistence
+
+Reason for this feature:
+
+- user should not lose active study context after refresh
 
 What it does:
 
-- keeps important Home screen state after reload/reopen
+- restores current Home state
+- preserves current summary/result and active view
 
-Logic used:
+Implementation logic:
 
-1. Home state is saved to local storage
-2. state is tied to the current user
-3. state is restored on reopen
-4. old state expires after a fixed time window
+1. selected Home state is serialized
+2. state is stored locally
+3. restore happens on reopen
+4. restore is limited to correct current user
+5. stale state is discarded
 
 Main files:
 
-- `WeB-Tutor/src/component/Home/hooks/useHomePersistence.js`
 - `WeB-Tutor/src/shared/storage/homeSession.js`
+- `WeB-Tutor/src/component/Home/hooks/useHomePersistence.js`
 
-### L. Frontend Cache Logic
+### M. Regenerate Feature
+
+Reason for this feature:
+
+- user may want a new version of the same AI output
+- cache should not always force identical output
 
 What it does:
 
-- caches server data in the frontend
+- adds regenerate buttons to major study features
 
-Logic used:
+Implemented regenerate targets:
 
-1. `QueryClientProvider` wraps the app
-2. shared query keys are used
-3. profile/history/learning detail data is cached
-4. components read server state through React Query
+- summary
+- quiz
+- teaching
+- formula
+- doubt
+
+Implementation logic:
+
+1. frontend shows feature-specific regenerate button
+2. click triggers same API with `forceRegenerate: true`
+3. backend bypasses Redis
+4. backend creates fresh output
+5. MongoDB history entry is updated
+6. UI remains on same panel
 
 Main files:
 
-- `WeB-Tutor/src/cache/queryClient.js`
-- `WeB-Tutor/src/cache/queryKeys.js`
-- `WeB-Tutor/src/cache/cacheUtils.js`
-- `WeB-Tutor/src/component/Home/hooks/useHomeHistory.js`
-- `WeB-Tutor/src/component/History/History.jsx`
-- `WeB-Tutor/src/component/Profile/Profile.jsx`
-- `WeB-Tutor/src/component/Profile/LearningDetails.jsx`
+- `WeB-Tutor/src/component/Home/Home.jsx`
+- `WeB-Tutor/src/component/Home/api/homeApi.js`
+- `Backend/features/summarize/controllers/*`
 
-### M. Backend Cache Logic
+### N. AI Error Shielding
 
-What it does:
+Reason for this feature:
 
-- prevents repeated DB reads and repeated Gemini cost
-
-Logic used:
-
-- Redis key generation per user and payload
-- history list/detail cache
-- profile cache
-- summary/quiz/teaching/formula/doubt cache
-- invalidation after update/delete/clear/progress save
-
-Main backend files:
-
-- `Backend/services/cache/*`
-- `Backend/features/summarize/cache/*`
-- `Backend/features/history/cache/historyCache.js`
-- `Backend/features/auth/cache/profileCache.js`
-
-### N. Gemini Error Handling
+- raw provider errors are confusing and unsafe for UI
+- the user should see clean Web Tutor messages
 
 What it does:
 
-- hides raw Gemini/provider errors from the UI
+- converts provider failures into safe messages
+- distinguishes validation, setup, file, busy, and limit issues
 
-Logic used:
+Implementation logic:
 
-1. Gemini service catches provider errors
-2. summarize controllers convert errors into typed responses
-3. frontend AI API helpers only surface Gemini-safe messages or direct validation messages
+1. backend parser detects upstream error patterns
+2. backend maps them into safe WebTutor messages
+3. controllers return typed errors
+4. frontend only surfaces safe AI or validation messages
+
+Why this was added:
+
+- better user experience
+- no provider internals leaked to UI
 
 Main files:
 
@@ -448,60 +805,63 @@ Main files:
 - `Backend/features/summarize/controllers/errorResponse.js`
 - `WeB-Tutor/src/component/Home/api/homeApi.js`
 
-## 4. Main Frontend and Backend Entry Files
+## 8. Main File Roles
 
-### Main Frontend JS / JSX Files
+### Main Frontend Files
 
 - `WeB-Tutor/src/main.jsx`
-  - React app entry point
-  - wraps app with Redux and React Query providers
+  - app entry
+  - wraps Redux and React Query providers
 
 - `WeB-Tutor/src/App.jsx`
-  - routing
-  - auth-based route switching
-  - theme persistence
-  - session auth persistence
+  - routing and auth gating
 
 - `WeB-Tutor/src/component/Home/Home.jsx`
-  - main learning workflow logic
-  - upload handling
+  - main workflow coordinator
   - summary generation
-  - quiz/teaching/formula/doubt actions
+  - derived feature actions
+  - regenerate logic
 
-- `WeB-Tutor/src/store/store.js`
-  - Redux store setup
+- `WeB-Tutor/src/component/Home/store/homeSlice.js`
+  - Home UI state
 
-### Main Backend JS Files
+- `WeB-Tutor/src/cache/*`
+  - frontend cache setup
+
+### Main Backend Files
 
 - `Backend/index.js`
-  - main Express server entry point
+  - Express server setup
+  - middleware
   - CORS
-  - rate limiting
-  - JSON body limits
-  - Socket.io
-  - route mounting
+  - rate limit
+  - JSON limit
+  - socket setup
 
 - `Backend/Routes/summarize.js`
   - AI feature routes
 
-- `Backend/features/auth/routes/auth.js`
-  - auth routes
+- `Backend/features/summarize/services/gemini/*`
+  - AI prompt building and parsing
 
-- `Backend/features/history/routes/history.js`
-  - history routes
+- `Backend/features/history/services/history.js`
+  - history create/update/list/load logic
 
-## 5. APIs Made In This Project
+- `Backend/services/cache/index.js`
+  - Redis cache abstraction
 
-Total backend API routes made: `15`
+## 9. APIs Created
 
-### Auth APIs: 4
+Total backend APIs: `16`
+
+### Auth APIs
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `GET /api/auth/me`
 - `POST /api/auth/change-password`
 
-### History APIs: 5
+### History APIs
 
 - `GET /api/history`
 - `GET /api/history/:id`
@@ -509,154 +869,133 @@ Total backend API routes made: `15`
 - `DELETE /api/history`
 - `DELETE /api/history/:id`
 
-### Study / AI APIs: 6
+### Study / AI APIs
 
 - `POST /api/summarize`
 - `POST /api/summarize-notes`
+- `POST /api/ask-anything`
 - `POST /api/quiz`
 - `POST /api/teaching`
 - `POST /api/formula`
 - `POST /api/doubt`
 
-## 6. API Calls Used In Frontend
+## 10. Frontend API Helpers Used
 
-Total main frontend API helper functions used: `14`
+Total main frontend API helpers: `15`
 
-### Home API calls: 8
+### Home API helpers
 
 - `fetchHomeHistory`
 - `requestVideoSummary`
 - `requestStudySummary`
+- `requestAskAnything`
 - `requestQuiz`
 - `requestTeaching`
 - `requestFormula`
 - `requestDoubtAnswer`
 - `saveQuizProgress`
 
-### Profile API calls: 2
+### Other helpers
 
 - `fetchProfile`
 - `changePassword`
-
-### History API calls: 3
-
 - `fetchHistory`
 - `clearHistory`
 - `deleteHistoryItem`
-
-### Learning detail API calls: 1
-
 - `fetchLearningDetails`
 
-## 7. Main React and JS Libraries Used
+## 11. Main Libraries Used
 
-### Frontend Main Libraries
+### Frontend
 
 - `react`
-  - UI rendering
-
 - `react-dom`
-  - browser rendering entry point
-
 - `react-router-dom`
-  - route navigation
-  - Home / History / Profile / Learning Detail routing
-
 - `@reduxjs/toolkit`
-  - client-side state management
-  - auth, theme, Home UI state, history UI state, profile UI state
-
 - `react-redux`
-  - connects React components to Redux store
-
 - `@tanstack/react-query`
-  - frontend server-state caching
-  - history, profile, and learning detail fetch caching
-
 - `tailwindcss`
-  - styling
-
 - `vite`
-  - frontend build tool and dev server
 
-### Backend Main Libraries
+### Backend
 
 - `express`
-  - API server
-
 - `mongoose`
-  - MongoDB models and DB access
-
 - `redis`
-  - caching
-
 - `jsonwebtoken`
-  - JWT auth
-
 - `bcryptjs`
-  - password hashing
-
 - `cors`
-  - origin protection
-
 - `socket.io`
-  - progress event communication
-
 - `@google/generative-ai`
-  - Gemini integration
-
 - `yt-dlp-wrap`
-  - YouTube audio download
-
 - `fluent-ffmpeg`
-  - media processing
-
 - `ffmpeg-static`
-  - ffmpeg binary
-
 - `multer`
-  - file upload parsing for auth avatar upload
-
 - `jszip`
-  - PPTX slide text extraction
 
-## 8. Conversions Used In The Project
+## 12. Conversion Logic Used
 
-### YouTube Conversion Logic
+### YouTube
 
-- YouTube URL -> downloaded audio
-- audio -> chunked audio files
-- chunked audio -> Gemini chunk summaries
-- chunk summaries -> final structured summary
+- URL -> audio download
+- audio -> chunks
+- chunks -> AI understanding
+- AI understanding -> final summary
 
-### Image Conversion Logic
+### Images
 
-- browser file -> base64 string
-- base64 image -> Gemini inline image input
-- Gemini output -> structured summary JSON
+- browser file -> base64
+- base64 -> AI inline part
+- AI output -> structured summary JSON
 
-### Text File Conversion Logic
-
-- file -> base64
-- base64 -> UTF-8 decoded text
-- text -> Gemini prompt input
-
-### PPTX Conversion Logic
+### Text Files
 
 - file -> base64
-- base64 -> zip archive buffer
-- zip archive -> slide XML
-- slide XML -> extracted readable text
-- extracted text -> Gemini prompt input
+- base64 -> text decode
+- text -> AI prompt content
 
-### Summary Conversion Logic
+### PPTX
 
-- raw Gemini output -> parsed JSON
-- parsed JSON -> sanitized shape
-- sanitized summary -> topic-wise UI rendering
-- summary -> teaching / formula / quiz / doubt generation input
+- file -> base64
+- base64 -> ZIP buffer
+- ZIP -> slide XML
+- XML -> extracted text
+- extracted text -> AI prompt input
 
-## 9. Folder Structure
+### Ask AI
+
+- user question -> summary
+- summary -> teaching path
+
+### Derived Features
+
+- summary -> quiz
+- summary -> teaching
+- summary -> formula
+- summary + context + question -> doubt answer
+
+## 13. Security
+
+Security measures added:
+
+- restricted CORS
+- JWT protected APIs
+- password hashing with `bcryptjs`
+- session-based auth storage on frontend
+- security headers
+- body size limits
+- disabled `x-powered-by`
+- rate limiting
+- safe AI error shielding
+
+Why these were added:
+
+- prevent open-origin misuse
+- protect private user history
+- reduce brute force and abuse risk
+- reduce provider error leakage
+
+## 14. Folder Structure
 
 ```text
 Web-Tutor version 1/
@@ -667,6 +1006,10 @@ Web-Tutor version 1/
 |  |  |- auth/
 |  |  |- history/
 |  |  |- summarize/
+|  |  |  |- cache/
+|  |  |  |- controllers/
+|  |  |  |- services/
+|  |  |  |  |- gemini/
 |  |- middleware/
 |  |- routes/
 |  |- services/
@@ -678,6 +1021,12 @@ Web-Tutor version 1/
 |  |- src/
 |  |  |- cache/
 |  |  |- component/
+|  |  |  |- Home/
+|  |  |  |  |- api/
+|  |  |  |  |- features/
+|  |  |  |  |- hooks/
+|  |  |  |  |- store/
+|  |  |  |  |- utils/
 |  |  |- shared/
 |  |  |  |- storage/
 |  |  |- store/
@@ -686,52 +1035,22 @@ Web-Tutor version 1/
 |  |- README.md
 ```
 
-## 10. Setup
-
-### Required Software
-
-- Node.js
-- npm
-- MongoDB URI
-- Redis server or Redis Cloud URL
-- ffmpeg
-- yt-dlp
-
-### Install Frontend
-
-From `WeB-Tutor/`:
-
-```bash
-npm install
-```
-
-### Install Backend
-
-From `Backend/`:
-
-```bash
-npm install
-```
+## 15. Setup
 
 ### Backend `.env`
-
-Create `Backend/.env`:
 
 ```env
 PORT=5001
 MONGODB_URI=your_mongodb_connection_string
 DB_NAME=your_database_name
 
-GEMINI_API_KEY=your_gemini_api_key
+GEMINI_API_KEY=your_api_key
 GEMINI_MODEL=gemini-2.5-flash
+GEMINI_FALLBACK_MODELS=gemini-2.5-flash-lite,gemini-2.0-flash,gemini-flash-latest
 GEMINI_AUDIO_CHUNK_SECONDS=300
 
 ACCESS_TOKEN_SECRET=your_jwt_secret
 ACCESS_TOKEN_ENTRY=7d
-
-CLOUDINARY_CLOUD_NAME=your_cloudinary_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
 CORS_ALLOWED_ORIGINS=http://localhost:5173
 REDIS_URL=redis://localhost:6379
@@ -739,25 +1058,17 @@ REDIS_URL=redis://localhost:6379
 
 ### Frontend `.env`
 
-Optional in `WeB-Tutor/.env`:
-
 ```env
 VITE_API_BASE=http://localhost:5001
 ```
 
-## 11. How To Run
+## 16. Run
 
 ### Backend
 
 ```bash
 cd Backend
 npm run dev
-```
-
-or
-
-```bash
-node index.js
 ```
 
 ### Frontend
@@ -767,27 +1078,22 @@ cd WeB-Tutor
 npm run dev
 ```
 
-Default local frontend URL:
+## 17. Current Notes
 
-```text
-http://localhost:5173
-```
-
-## 12. Security Added
-
-- restricted CORS
-- JWT protected APIs
-- session-based frontend auth storage
-- security headers
-- rate limiting
-- body size limits
-- disabled `x-powered-by`
-- Gemini error shielding
-
-## 13. Current Notes
-
-- `.pptx` is supported through backend text extraction
+- `.pptx` is supported
 - `.ppt` is not supported yet
-- Gemini/provider errors are hidden behind controlled UI messages
-- React Query is used only for server data cache, while Redux is still used for app UI state
+- React Query is used for server-state cache
+- Redux is used for app/UI state
+- regenerate bypasses cache intentionally
 - if PowerShell blocks `npm`, use `npm.cmd`
+
+## 18. Future Features
+
+- true AI image generation for teaching visuals
+- DOCX support
+- export study session as PDF
+- bookmarks and favorites
+- learning streaks and analytics
+- spaced repetition planner
+- voice input and speech output
+- compare two study sessions side by side

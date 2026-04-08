@@ -289,6 +289,30 @@ function sanitiseTeachingShape(teaching) {
           const notes = Array.isArray(topic?.notes)
             ? topic.notes.map((note) => normaliseParagraph(note)).filter(Boolean).slice(0, 6)
             : []
+          const steps = Array.isArray(topic?.steps)
+            ? topic.steps.map((step) => normaliseParagraph(step)).filter(Boolean).slice(0, 5)
+            : []
+          const visualItems = Array.isArray(topic?.visualAid?.items)
+            ? topic.visualAid.items
+                .map((item) => normaliseParagraph(item))
+                .filter(Boolean)
+                .slice(0, 6)
+            : []
+          const visualType = normaliseParagraph(topic?.visualAid?.type || 'flow').toLowerCase()
+          const visualAid =
+            Boolean(topic?.visualAid?.needed) &&
+            visualItems.length >= 2 &&
+            normaliseParagraph(topic?.visualAid?.title)
+              ? {
+                  needed: true,
+                  title: normaliseParagraph(topic.visualAid.title),
+                  type: ['flow', 'comparison', 'cycle', 'layers', 'process'].includes(visualType)
+                    ? visualType
+                    : 'flow',
+                  items: visualItems,
+                  caption: normaliseParagraph(topic?.visualAid?.caption),
+                }
+              : null
 
           if (!normaliseParagraph(topic?.title) || !normaliseParagraph(topic?.lesson)) {
             return null
@@ -298,8 +322,12 @@ function sanitiseTeachingShape(teaching) {
             id: `topic-${index + 1}`,
             title: normaliseParagraph(topic.title),
             summary: normaliseParagraph(topic.summary),
+            whyItMatters: normaliseParagraph(topic.whyItMatters),
             lesson: normaliseParagraph(topic.lesson),
+            steps,
             notes,
+            practiceTask: normaliseParagraph(topic.practiceTask),
+            visualAid,
             reflectionQuestion: normaliseParagraph(topic.reflectionQuestion),
           }
         })

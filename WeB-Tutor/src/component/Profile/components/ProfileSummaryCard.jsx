@@ -1,11 +1,19 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { useAppSelector } from '../../../store/hooks'
+import { PROFILE_FEATURE_CONFIG } from '../utils/profileFeatureUtils'
 
 export default function ProfileSummaryCard({ panelStyle }) {
   const authUser = useAppSelector((state) => state.auth.auth?.user)
   const { profile, loading } = useAppSelector((state) => state.profile)
   const user = profile?.user || authUser
   const learning = profile?.learning
+  const featureCards = [
+    { key: 'summaries', label: 'Summaries' },
+    { key: 'quizzes', label: 'Quizzes' },
+    { key: 'teaching', label: 'Teaching' },
+    { key: 'doubts', label: 'Doubts Solved' },
+  ]
 
   return (
     <div className="rounded-[1.9rem] border p-5 backdrop-blur-xl sm:p-6" style={panelStyle}>
@@ -26,22 +34,22 @@ export default function ProfileSummaryCard({ panelStyle }) {
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-[1.2rem] border border-(--border) bg-(--card-strong) px-4 py-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-(--muted)">Summaries</p>
-          <p className="mt-2 text-2xl font-bold">{loading ? '...' : learning?.totalSummaries || 0}</p>
-        </div>
-        <div className="rounded-[1.2rem] border border-(--border) bg-(--card-strong) px-4 py-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-(--muted)">Quizzes</p>
-          <p className="mt-2 text-2xl font-bold">{loading ? '...' : learning?.totalQuizzes || 0}</p>
-        </div>
-        <div className="rounded-[1.2rem] border border-(--border) bg-(--card-strong) px-4 py-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-(--muted)">Teaching</p>
-          <p className="mt-2 text-2xl font-bold">{loading ? '...' : learning?.totalTeachingSessions || 0}</p>
-        </div>
-        <div className="rounded-[1.2rem] border border-(--border) bg-(--card-strong) px-4 py-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-(--muted)">Doubts Solved</p>
-          <p className="mt-2 text-2xl font-bold">{loading ? '...' : learning?.totalDoubts || 0}</p>
-        </div>
+        {featureCards.map((card) => {
+          const config = PROFILE_FEATURE_CONFIG[card.key]
+          const count = learning?.[config?.countKey] || 0
+
+          return (
+            <Link
+              key={card.key}
+              to={`/profile/library/${card.key}`}
+              className="rounded-[1.2rem] border border-(--border) bg-(--card-strong) px-4 py-4 transition hover:-translate-y-0.5"
+            >
+              <p className="text-xs uppercase tracking-[0.14em] text-(--muted)">{card.label}</p>
+              <p className="mt-2 text-2xl font-bold">{loading ? '...' : count}</p>
+              <p className="mt-2 text-xs text-(--muted)">Open this feature page</p>
+            </Link>
+          )
+        })}
       </div>
     </div>
   )

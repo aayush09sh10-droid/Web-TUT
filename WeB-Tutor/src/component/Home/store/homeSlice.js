@@ -5,6 +5,7 @@ const initialState = {
   url: '',
   studyUploads: [],
   askPrompt: '',
+  summaryPrompt: '',
   result: null,
   loading: false,
   error: '',
@@ -69,9 +70,9 @@ const homeSlice = createSlice({
       state.url = ''
       state.studyUploads = []
       state.askPrompt = ''
+      state.summaryPrompt = ''
       state.loading = false
       state.error = ''
-      state.activeView = 'summary'
       state.doubtLoading = false
       state.doubtError = ''
       state.showComposer = true

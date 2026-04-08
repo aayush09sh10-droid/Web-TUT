@@ -7,6 +7,11 @@ export default function ActivityList({ onDelete }) {
   const dispatch = useAppDispatch()
   const history = useAppSelector((state) => state.history.items)
 
+  function handleSelectItem(event, itemId) {
+    event.stopPropagation()
+    dispatch(selectHistoryItem(itemId))
+  }
+
   if (history.length === 0) {
     return (
       <div className="rounded-[1.5rem] border border-(--border) bg-(--card) p-6 text-sm text-(--text) shadow-(--shadow) backdrop-blur-xl">
@@ -27,9 +32,11 @@ export default function ActivityList({ onDelete }) {
           </div>
           <div className="mt-1 text-xs text-(--muted)">{new Date(item.timestamp).toLocaleString()}</div>
           <div className="mt-2 flex flex-wrap gap-2">
-            {item.result?.quiz && <span className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Quiz</span>}
-            {item.result?.teaching && <span className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Teaching</span>}
-            {item.result?.doubt && <span className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Doubt</span>}
+            {item.result?.summary && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Summary</button>}
+            {item.result?.quiz && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Quiz</button>}
+            {item.result?.teaching && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Teaching</button>}
+            {item.result?.formula && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Formula</button>}
+            {item.result?.doubt && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Doubt</button>}
           </div>
         </button>
         {item.id && (

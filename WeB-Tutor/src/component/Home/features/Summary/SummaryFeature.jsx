@@ -2,8 +2,8 @@ import React from 'react'
 import { normalizeSummaryPayload } from '../../homeUtils'
 import { useAppSelector } from '../../../../store/hooks'
 
-export default function SummaryFeature() {
-  const result = useAppSelector((state) => state.home.result)
+export default function SummaryFeature({ onRegenerate }) {
+  const { result, loading } = useAppSelector((state) => state.home)
   const normalizedSummary = normalizeSummaryPayload(result)
   const summaryParagraphs = [
     normalizedSummary.paragraphs.overview,
@@ -14,7 +14,7 @@ export default function SummaryFeature() {
   return (
     <>
       {normalizedSummary.timeline.length > 0 && (
-        <div className="rounded-[1.25rem] border border-(--border) bg-(--card-strong) p-4 shadow-sm">
+        <div className="rounded-[1.25rem] border border-(--border) bg-(--card) p-4 shadow-sm">
           <h3 className="text-lg font-semibold text-(--text)">Timeline</h3>
           <div className="mt-3 space-y-2">
             {normalizedSummary.timeline.map((item, index) => (
@@ -27,8 +27,18 @@ export default function SummaryFeature() {
         </div>
       )}
 
-      <div className="rounded-[1.25rem] border border-(--border) bg-(--card-strong) p-4 shadow-sm">
-        <h3 className="text-lg font-semibold text-(--text)">Summary</h3>
+      <div className="rounded-[1.25rem] border border-(--border) bg-(--card) p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-lg font-semibold text-(--text)">Summary</h3>
+          <button
+            type="button"
+            onClick={onRegenerate}
+            disabled={loading}
+            className="rounded-full border border-(--border) bg-(--card) px-4 py-2 text-sm font-semibold text-(--text) transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? 'Regenerating...' : 'Regenerate'}
+          </button>
+        </div>
         <div className="mt-3 space-y-3">
           {summaryParagraphs.length > 0 ? (
             summaryParagraphs.map((paragraph, index) => (
@@ -43,17 +53,17 @@ export default function SummaryFeature() {
       </div>
 
       {normalizedSummary.topics.length > 0 && (
-        <div className="rounded-[1.25rem] border border-(--border) bg-(--card-strong) p-4 shadow-sm">
+        <div className="rounded-[1.25rem] border border-(--border) bg-(--card) p-4 shadow-sm">
           <h3 className="text-lg font-semibold text-(--text)">Topic-Wise Breakdown</h3>
           <div className="mt-4 grid gap-3">
             {normalizedSummary.topics.map((topic) => (
-              <div key={topic.id || topic.title} className="rounded-[1.1rem] border border-(--border) bg-(--card) p-4">
+              <div key={topic.id || topic.title} className="rounded-[1.1rem] border border-(--border) bg-(--card-strong) p-4">
                 <h4 className="text-sm font-semibold text-(--text)">{topic.title}</h4>
                 <p className="mt-2 text-sm leading-relaxed text-(--text)">{topic.summary}</p>
                 {Array.isArray(topic.keyPoints) && topic.keyPoints.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {topic.keyPoints.map((point, index) => (
-                      <p key={`${topic.id || topic.title}-${index}`} className="rounded-xl border border-(--border) bg-(--card-strong) px-3 py-2 text-xs text-(--text)">
+                      <p key={`${topic.id || topic.title}-${index}`} className="rounded-xl border border-(--border) bg-(--card) px-3 py-2 text-xs text-(--text)">
                         {point}
                       </p>
                     ))}

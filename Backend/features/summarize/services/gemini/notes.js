@@ -8,10 +8,11 @@ const MAX_TEXT_FILE_CHARS = 12000
 const PPTX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
 const PPT_MIME_TYPE = 'application/vnd.ms-powerpoint'
 
-function buildStudyMaterialSummaryPrompt({ sourceMode, uploads }) {
+function buildStudyMaterialSummaryPrompt({ sourceMode, uploads, studyPrompt }) {
   const uploadLabels = uploads
     .map((upload, index) => `${index + 1}. ${upload.fileName} (${upload.mimeType})`)
     .join('\n')
+  const safeStudyPrompt = normaliseParagraph(studyPrompt)
 
   return `
 You are reading uploaded study materials for a student.
@@ -33,6 +34,8 @@ Follow these rules strictly:
 - Make the result useful for later teaching-path and formula generation.
 
 Input mode: ${sourceMode}
+Student summary instructions: ${safeStudyPrompt || 'No extra instructions provided'}
+If the student asks for a visual or image-style part, make the summary suitable for a later visual study guide.
 Uploaded materials:
 ${uploadLabels}
 
@@ -254,7 +257,11 @@ function buildSourceLabel(sourceMode, uploads) {
   return `Study Files (${uploads.length}): ${fileNames}${suffix}`
 }
 
-async function generateSummaryFromStudyUploads({ uploads, sourceMode = 'files' }) {
+async function generateSummaryFromStudyUploads({
+  uploads,
+  sourceMode = 'files',
+  studyPrompt = '',
+}) {
   const safeUploads = normaliseUploads(uploads)
   const safeSourceMode = String(sourceMode || 'files').trim().toLowerCase()
 
@@ -271,6 +278,7 @@ async function generateSummaryFromStudyUploads({ uploads, sourceMode = 'files' }
   const summaryPrompt = buildStudyMaterialSummaryPrompt({
     sourceMode: safeSourceMode,
     uploads: safeUploads,
+    studyPrompt,
   })
 
   const summaryParts = [{ text: summaryPrompt }]
@@ -289,6 +297,7 @@ async function generateSummaryFromStudyUploads({ uploads, sourceMode = 'files' }
 async function generateSummaryFromNotesImage({ imageData, mimeType, fileName }) {
   return generateSummaryFromStudyUploads({
     sourceMode: 'photos',
+    studyPrompt: '',
     uploads: [
       {
         data: imageData,

@@ -6,8 +6,10 @@ import Footer from './component/Footer/Footer'
 import Header from './component/Header/Header'
 import History from './component/History/History'
 import Home from './component/Home/Home'
+import ProfileFeatureLibrary from './component/Profile/ProfileFeatureLibrary'
 import LearningDetails from './component/Profile/LearningDetails'
 import Profile from './component/Profile/Profile'
+import ProfileSubjects from './component/Profile/ProfileSubjects'
 import { useAppSelector } from './store/hooks'
 
 function App() {
@@ -44,6 +46,8 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/history" element={<History />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/subjects" element={<ProfileSubjects />} />
+              <Route path="/profile/library/:feature" element={<ProfileFeatureLibrary />} />
               <Route path="/profile/learning/:id" element={<LearningDetails />} />
             </Routes>
           ) : (

@@ -85,7 +85,7 @@ export default function LearningDetails() {
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <button type="button" onClick={handleOpenInHome} className="rounded-full px-4 py-2 text-center text-xs font-semibold text-[var(--bg)] transition hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))' }}>
+            <button type="button" onClick={handleOpenInHome} className="rounded-full border border-[rgba(99,102,241,0.18)] bg-[linear-gradient(135deg,rgba(99,102,241,0.14),rgba(56,189,248,0.12))] px-4 py-2 text-center text-xs font-semibold text-(--text) shadow-[0_10px_24px_rgba(99,102,241,0.08)] transition hover:-translate-y-0.5 hover:border-[rgba(99,102,241,0.32)] hover:bg-[linear-gradient(135deg,rgba(99,102,241,0.2),rgba(56,189,248,0.18))]">
               Open in Home
             </button>
             <Link to="/history" className="rounded-full border border-(--border) bg-(--card) px-4 py-2 text-center text-xs font-medium transition hover:-translate-y-0.5">
@@ -136,7 +136,7 @@ export default function LearningDetails() {
               )}
             </div>
 
-            <div className="mt-6 rounded-[1.3rem] border border-(--border) bg-(--card-strong) p-4">
+            <div className="mt-6 rounded-[1.3rem] border border-(--border) bg-(--card) p-4">
               <h4 className="text-base font-semibold">{normalizedSummary.title}</h4>
               {normalizedSummary.timeline.length > 0 && (
                 <div className="mt-4 space-y-2 border-b border-(--border) pb-4">

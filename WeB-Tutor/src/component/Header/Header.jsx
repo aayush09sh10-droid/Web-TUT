@@ -171,6 +171,13 @@ function Header() {
                     >
                       Profile
                     </Link>
+                    <Link
+                      to="/profile/subjects"
+                      onClick={() => dispatch(closeHeaderMenu())}
+                      className="mt-1 block rounded-[0.95rem] px-4 py-3 text-sm font-medium text-(--text) transition hover:bg-(--card)"
+                    >
+                      Subjects
+                    </Link>
                     <button
                       type="button"
                       onClick={() => {

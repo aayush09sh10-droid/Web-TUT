@@ -5,7 +5,8 @@ import { MAX_PHOTO_UPLOADS, formatUploadNames } from '../../utils/studyUploadUti
 
 export default function PasteLinkFeature({ canClose, handleClose, handleStudyFilesChange, handleSubmit }) {
   const dispatch = useAppDispatch()
-  const { inputMode, url, studyUploads, askPrompt, loading, error } = useAppSelector((state) => state.home)
+  const { inputMode, url, studyUploads, askPrompt, summaryPrompt, loading, error } =
+    useAppSelector((state) => state.home)
   const isDarkMode = useAppSelector((state) => state.auth.theme === 'dark')
 
   function switchInputMode(nextMode) {
@@ -42,6 +43,11 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
           'Upload PDF, PPTX, text, CSV, JSON, markdown, or image files to summarize them.'
         )
 
+  const softActionButtonClass =
+    'border-[rgba(99,102,241,0.18)] bg-[linear-gradient(135deg,rgba(99,102,241,0.12),rgba(56,189,248,0.1))] text-(--text) shadow-[0_10px_24px_rgba(99,102,241,0.08)] hover:-translate-y-0.5 hover:border-[rgba(99,102,241,0.32)] hover:bg-[linear-gradient(135deg,rgba(99,102,241,0.18),rgba(56,189,248,0.16))]'
+  const activeModeClass =
+    'border-[rgba(99,102,241,0.28)] bg-[linear-gradient(135deg,rgba(99,102,241,0.16),rgba(56,189,248,0.14))] text-(--text) shadow-[0_10px_24px_rgba(99,102,241,0.08)]'
+
   return (
     <form
       className="mt-5 rounded-[1.75rem] border border-(--border) p-3 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl sm:mt-6 sm:p-4"
@@ -49,17 +55,17 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
       onSubmit={handleSubmit}
     >
       <div className="mb-3 grid gap-2 sm:inline-flex sm:grid-cols-none">
-        <button type="button" onClick={() => switchInputMode('video')} className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${inputMode === 'video' ? 'border-[var(--text)] bg-[var(--text)] text-[var(--bg)]' : 'border-(--border) bg-(--card) text-(--text)'}`}>
+        <button type="button" onClick={() => switchInputMode('video')} className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${inputMode === 'video' ? activeModeClass : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
           YouTube Link
         </button>
-        <button type="button" onClick={() => switchInputMode('photos')} className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${inputMode === 'photos' ? 'border-[var(--text)] bg-[var(--text)] text-[var(--bg)]' : 'border-(--border) bg-(--card) text-(--text)'}`}>
+        <button type="button" onClick={() => switchInputMode('photos')} className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${inputMode === 'photos' ? activeModeClass : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
           Photos
         </button>
-        <button type="button" onClick={() => switchInputMode('files')} className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${inputMode === 'files' ? 'border-[var(--text)] bg-[var(--text)] text-[var(--bg)]' : 'border-(--border) bg-(--card) text-(--text)'}`}>
+        <button type="button" onClick={() => switchInputMode('files')} className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${inputMode === 'files' ? activeModeClass : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
           Files
         </button>
-        <button type="button" onClick={() => switchInputMode('ask')} className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${inputMode === 'ask' ? 'border-[var(--text)] bg-[var(--text)] text-[var(--bg)]' : 'border-(--border) bg-(--card) text-(--text)'}`}>
-          Ask AI
+        <button type="button" onClick={() => switchInputMode('ask')} className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${inputMode === 'ask' ? activeModeClass : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
+          Ask WebTutor
         </button>
       </div>
 
@@ -88,15 +94,15 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
           </label>
         )}
 
-        <button type="submit" disabled={loading} className="inline-flex w-full items-center justify-center rounded-[1.1rem] px-6 py-3 text-sm font-semibold text-(--text) shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))' }}>
+        <button type="submit" disabled={loading} className={`inline-flex w-full items-center justify-center rounded-[1.1rem] border px-6 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${softActionButtonClass}`}>
           {loading
             ? inputMode === 'ask'
-              ? 'Building Learning Path...'
+              ? 'Thinking...'
               : 'Summarizing...'
             : inputMode === 'video'
               ? 'Summarize Video'
             : inputMode === 'ask'
-                ? 'Create Learning Path'
+                ? 'Ask WebTutor'
               : inputMode === 'photos'
                 ? 'Summarize Photos'
                 : 'Summarize Files'}
@@ -108,6 +114,72 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
           </button>
         ) : null}
       </div>
+
+      {inputMode !== 'ask' ? (
+        <div className="mt-3 rounded-[1.1rem] border border-(--border) bg-(--card-strong) p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-(--text)">Study Prompt</p>
+              <p className="mt-1 text-xs text-(--muted)">
+                Tell WebTutor how you want to study, what to focus on, and what you want generated.
+              </p>
+            </div>
+            <span className="rounded-full border border-(--border) bg-(--card) px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-(--muted)">
+              Optional
+            </span>
+          </div>
+
+          <textarea
+            value={summaryPrompt}
+            onChange={(e) => dispatch(setHomeField({ field: 'summaryPrompt', value: e.target.value }))}
+            placeholder="Example: Summarize this for exam revision, focus on formulas first, explain like a teacher, and if helpful add one visual or image-style part."
+            rows={4}
+            className="mt-3 w-full rounded-[1.1rem] border border-(--border) bg-(--card) px-4 py-3 text-sm text-(--text) shadow-sm focus:border-[var(--accent-2)] focus:outline-none focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]"
+          />
+
+          <div className="mt-3 flex flex-wrap gap-2 text-xs text-(--muted)">
+            <span className="rounded-full border border-(--border) bg-(--card) px-3 py-1.5">
+              Beginner friendly
+            </span>
+            <span className="rounded-full border border-(--border) bg-(--card) px-3 py-1.5">
+              Exam focused
+            </span>
+            <span className="rounded-full border border-(--border) bg-(--card) px-3 py-1.5">
+              Formula first
+            </span>
+            <span className="rounded-full border border-(--border) bg-(--card) px-3 py-1.5">
+              Generate quiz
+            </span>
+            <span className="rounded-full border border-(--border) bg-(--card) px-3 py-1.5">
+              Add one visual part
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-3 rounded-[1.1rem] border border-(--border) bg-(--card-strong) p-4 shadow-sm">
+          <p className="text-sm font-semibold text-(--text)">Ask AI</p>
+          <p className="mt-1 text-xs text-(--muted)">
+            Ask anything you want to know, research, compare, explain, or generate. If you want a teaching path, quiz flow, formula guide, or visual study breakdown, ask for it directly here.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs text-(--muted)">
+            <span className="rounded-full border border-(--border) bg-(--card) px-3 py-1.5">
+              Research topic
+            </span>
+            <span className="rounded-full border border-(--border) bg-(--card) px-3 py-1.5">
+              Explain concept
+            </span>
+            <span className="rounded-full border border-(--border) bg-(--card) px-3 py-1.5">
+              Compare ideas
+            </span>
+            <span className="rounded-full border border-(--border) bg-(--card) px-3 py-1.5">
+              Generate teaching path
+            </span>
+            <span className="rounded-full border border-(--border) bg-(--card) px-3 py-1.5">
+              Generate anything
+            </span>
+          </div>
+        </div>
+      )}
 
       {error && <div className="mt-3"><p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">{error}</p></div>}
     </form>

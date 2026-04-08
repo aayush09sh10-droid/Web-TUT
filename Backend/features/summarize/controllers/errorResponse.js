@@ -13,10 +13,13 @@ function sendValidationError(res, message, statusCode = 400) {
 
 function sendSummarizeError(res, error, fallbackMessage) {
   if (error instanceof GeminiServiceError) {
+    const isSilentInUi = Number(error.statusCode) === 429
+
     return res.status(error.statusCode || 502).json({
       success: false,
-      error: error.message || fallbackMessage || DEFAULT_GEMINI_UI_ERROR,
+      error: isSilentInUi ? '' : error.message || fallbackMessage || DEFAULT_GEMINI_UI_ERROR,
       errorType: 'gemini',
+      silentInUi: isSilentInUi,
     })
   }
 

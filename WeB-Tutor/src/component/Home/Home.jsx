@@ -21,6 +21,7 @@ import { useHomeHistory } from './hooks/useHomeHistory'
 import { useHomePersistence } from './hooks/useHomePersistence'
 import { normalizeSummaryPayload, questionNeedsFormulaSupport } from './homeUtils'
 import { MAX_PHOTO_UPLOADS, buildStudyUploads } from './utils/studyUploadUtils'
+import { setHistoryCache } from '../../cache'
 import {
   addHistoryItem,
   resetHomeForNewSummary,
@@ -40,6 +41,7 @@ function Home() {
     url,
     studyUploads,
     askPrompt,
+    summaryPrompt,
     result,
     history,
     activeView,
@@ -60,6 +62,7 @@ function Home() {
       url,
       inputMode,
       askPrompt,
+      summaryPrompt,
       result,
       activeView,
       selectedAnswers,
@@ -78,6 +81,7 @@ function Home() {
       askPrompt,
       doubtQuestion,
       inputMode,
+      summaryPrompt,
       quizSubmitted,
       result,
       selectedAnswers,
@@ -93,6 +97,14 @@ function Home() {
   const authHeaders = authToken ? { Authorization: `Bearer ${authToken}` } : {}
   useHomeHistory(authToken)
 
+  function getVisibleErrorMessage(err, fallbackMessage = 'Unexpected error') {
+    if (err?.silentInUi) {
+      return ''
+    }
+
+    return err?.message || fallbackMessage
+  }
+
   function getCurrentSourceLabel(nextResult = result) {
     if (nextResult?.sourceLabel) return nextResult.sourceLabel
     if (url.trim()) return url.trim()
@@ -106,6 +118,13 @@ function Home() {
     }
 
     return ''
+  }
+
+  function getSummaryRequestOptions(options = {}) {
+    return {
+      ...options,
+      studyPrompt: inputMode === 'ask' ? '' : summaryPrompt.trim(),
+    }
   }
 
   function updateHistoryResult(nextResult) {
@@ -124,17 +143,20 @@ function Home() {
     )
 
     dispatch(setHomeHistory(updatedHistory))
+    setHistoryCache(authToken, updatedHistory)
   }
 
-  async function requestSummaryForCurrentInput() {
+  async function requestSummaryForCurrentInput(options = {}) {
+    const requestOptions = getSummaryRequestOptions(options)
+
     if (inputMode === 'video') {
       if (!url.trim()) throw new Error('Please paste a valid YouTube video URL.')
-      return requestVideoSummary(authHeaders, url.trim())
+      return requestVideoSummary(authHeaders, url.trim(), requestOptions)
     }
 
     if (inputMode === 'ask') {
       if (!askPrompt.trim()) throw new Error('Please enter a topic or question first.')
-      return requestAskAnything(authHeaders, askPrompt.trim())
+      return requestAskAnything(authHeaders, askPrompt.trim(), requestOptions)
     }
 
     if (!studyUploads.length) {
@@ -145,10 +167,14 @@ function Home() {
       )
     }
 
-    return requestStudySummary(authHeaders, {
-      uploads: studyUploads,
-      sourceMode: inputMode,
-    })
+    return requestStudySummary(
+      authHeaders,
+      {
+        uploads: studyUploads,
+        sourceMode: inputMode,
+      },
+      requestOptions
+    )
   }
 
   function applySummaryPayload(payload, nextView = 'summary') {
@@ -170,6 +196,11 @@ function Home() {
       })
     )
 
+    if (result?.historyId && payload?.historyId && result.historyId === payload.historyId) {
+      updateHistoryResult(payload)
+      return
+    }
+
     dispatch(
       addHistoryItem({
         url: payload.sourceLabel || url.trim() || askPrompt.trim() || studyUploads[0]?.fileName || '',
@@ -177,6 +208,24 @@ function Home() {
         timestamp: Date.now(),
       })
     )
+
+    const nextHistory = [
+      {
+        id: payload.historyId,
+        url: payload.sourceLabel || url.trim() || askPrompt.trim() || studyUploads[0]?.fileName || '',
+        sourceLabel: payload.sourceLabel,
+        sourceType: payload.sourceType,
+        timestamp: Date.now(),
+        result: payload,
+      },
+      ...history.filter((item) => item.id !== payload.historyId && item.url !== (payload.sourceLabel || url.trim() || askPrompt.trim() || studyUploads[0]?.fileName || '')),
+    ].slice(0, 12)
+
+    setHistoryCache(authToken, nextHistory)
+  }
+
+  async function continueAfterSummary(payload) {
+    applySummaryPayload(payload, 'summary')
   }
 
   async function handleSubmit(e) {
@@ -184,9 +233,30 @@ function Home() {
     dispatch(setHomeFields({ error: '', quizError: '', teachingError: '', formulaError: '', doubtError: '', loading: true }))
     try {
       const payload = await requestSummaryForCurrentInput()
-      applySummaryPayload(payload, inputMode === 'ask' ? 'teaching' : 'summary')
+      await continueAfterSummary(payload)
     } catch (err) {
-      dispatch(setHomeField({ field: 'error', value: err.message || 'Unexpected error' }))
+      const nextError = getVisibleErrorMessage(err)
+      if (nextError) {
+        dispatch(setHomeField({ field: 'error', value: nextError }))
+      }
+    } finally {
+      dispatch(setHomeField({ field: 'loading', value: false }))
+    }
+  }
+
+  async function handleRegenerateSummary() {
+    dispatch(setHomeFields({ error: '', quizError: '', teachingError: '', formulaError: '', doubtError: '', loading: true }))
+    try {
+      const payload = await requestSummaryForCurrentInput({
+        historyId: result?.historyId,
+        forceRegenerate: true,
+      })
+      applySummaryPayload(payload, activeView || 'summary')
+    } catch (err) {
+      const nextError = getVisibleErrorMessage(err)
+      if (nextError) {
+        dispatch(setHomeField({ field: 'error', value: nextError }))
+      }
     } finally {
       dispatch(setHomeField({ field: 'loading', value: false }))
     }
@@ -277,9 +347,8 @@ function Home() {
     dispatch(setHomeFields({ showComposer: false, error: '', studyUploads: [], askPrompt: '' }))
   }
 
-  async function handleSubmitDoubt(e) {
-    e.preventDefault()
-    if (!doubtQuestion.trim()) {
+  async function submitDoubtRequest(questionValue, forceRegenerate = false) {
+    if (!questionValue.trim()) {
       dispatch(setHomeField({ field: 'doubtError', value: 'Please type your doubt first.' }))
       return
     }
@@ -304,79 +373,121 @@ function Home() {
         summary: workingResult.summary,
         formula: workingResult.formula || null,
         teaching: workingResult.teaching || null,
-        question: doubtQuestion.trim(),
+        question: questionValue.trim(),
         historyId: workingResult.historyId,
         sourceLabel: workingResult.sourceLabel || getCurrentSourceLabel(workingResult),
         sourceType: workingResult.sourceType || inputMode,
+      }, {
+        forceRegenerate,
       })
 
-      const nextResult = { ...workingResult, doubt: { question: doubtQuestion.trim(), answer: payload.answer } }
+      const nextResult = { ...workingResult, doubt: { question: questionValue.trim(), answer: payload.answer } }
       dispatch(setHomeField({ field: 'result', value: nextResult }))
       updateHistoryResult(nextResult)
     } catch (err) {
-      dispatch(setHomeField({ field: 'doubtError', value: err.message || 'Unexpected error' }))
+      const nextError = getVisibleErrorMessage(err)
+      if (nextError) {
+        dispatch(setHomeField({ field: 'doubtError', value: nextError }))
+      }
     } finally {
       dispatch(setHomeField({ field: 'doubtLoading', value: false }))
     }
   }
 
-  async function handleGenerateQuiz() {
-    if (!result?.summary) return
+  async function handleSubmitDoubt(e) {
+    e.preventDefault()
+    await submitDoubtRequest(doubtQuestion)
+  }
+
+  async function handleRegenerateDoubt() {
+    const questionValue = result?.doubt?.question || doubtQuestion
+    await submitDoubtRequest(questionValue, true)
+  }
+
+  async function handleGenerateQuiz(forceRegenerate = false, workingResult = result) {
+    if (!workingResult?.summary) return
     dispatch(setHomeFields({ activeView: 'quiz', quizError: '' }))
-    if (result.quiz) return
+    if (workingResult.quiz && !forceRegenerate) return
 
     dispatch(setHomeFields({ selectedAnswers: {}, quizSubmitted: false, quizLoading: true }))
     try {
-      const payload = await requestQuiz(authHeaders, result.summary, result.historyId)
-      const nextResult = { ...result, quiz: payload.quiz }
+      const payload = await requestQuiz(authHeaders, workingResult.summary, workingResult.historyId, { forceRegenerate })
+      const nextResult = { ...workingResult, quiz: payload.quiz }
       dispatch(setHomeField({ field: 'result', value: nextResult }))
       updateHistoryResult(nextResult)
     } catch (err) {
-      dispatch(setHomeField({ field: 'quizError', value: err.message || 'Unexpected error' }))
+      const nextError = getVisibleErrorMessage(err)
+      if (nextError) {
+        dispatch(setHomeField({ field: 'quizError', value: nextError }))
+      }
     } finally {
       dispatch(setHomeField({ field: 'quizLoading', value: false }))
     }
   }
 
-  async function handleGenerateTeaching() {
-    if (!result?.summary) return
+  async function handleGenerateTeaching(forceRegenerate = false, workingResult = result) {
+    if (!workingResult?.summary) return
     dispatch(setHomeFields({ activeView: 'teaching', teachingError: '' }))
-    if (result.teaching?.topics?.length) {
-      if (!activeTopicId) dispatch(setHomeField({ field: 'activeTopicId', value: result.teaching.topics[0].id }))
+    if (workingResult.teaching?.topics?.length && !forceRegenerate) {
+      if (!activeTopicId) dispatch(setHomeField({ field: 'activeTopicId', value: workingResult.teaching.topics[0].id }))
       return
     }
 
     dispatch(setHomeField({ field: 'teachingLoading', value: true }))
     try {
-      const payload = await requestTeaching(authHeaders, result.summary, result.historyId)
-      const nextResult = { ...result, teaching: payload.teaching }
+      const payload = await requestTeaching(authHeaders, workingResult.summary, workingResult.historyId, { forceRegenerate })
+      const nextResult = { ...workingResult, teaching: payload.teaching }
       dispatch(setHomeFields({ result: nextResult, activeTopicId: payload.teaching?.topics?.[0]?.id || '' }))
       updateHistoryResult(nextResult)
     } catch (err) {
-      dispatch(setHomeField({ field: 'teachingError', value: err.message || 'Unexpected error' }))
+      const nextError = getVisibleErrorMessage(err)
+      if (nextError) {
+        dispatch(setHomeField({ field: 'teachingError', value: nextError }))
+      }
     } finally {
       dispatch(setHomeField({ field: 'teachingLoading', value: false }))
     }
   }
 
-  async function handleGenerateFormula() {
-    if (!result?.summary) return
+  async function handleGenerateFormula(forceRegenerate = false, workingResult = result) {
+    if (!workingResult?.summary) return
     dispatch(setHomeFields({ activeView: 'formula', formulaError: '' }))
-    if (result.formula?.sections?.length) {
-      if (!activeFormulaSectionId) dispatch(setHomeField({ field: 'activeFormulaSectionId', value: result.formula.sections[0].id }))
+    if (workingResult.formula?.sections?.length && !forceRegenerate) {
+      if (!activeFormulaSectionId) dispatch(setHomeField({ field: 'activeFormulaSectionId', value: workingResult.formula.sections[0].id }))
       return
     }
 
     dispatch(setHomeField({ field: 'formulaLoading', value: true }))
     try {
-      const payload = await requestFormula(authHeaders, result.summary, result.historyId)
-      const nextResult = { ...result, formula: payload.formula }
+      const payload = await requestFormula(authHeaders, workingResult.summary, workingResult.historyId, { forceRegenerate })
+      const nextResult = { ...workingResult, formula: payload.formula }
       dispatch(setHomeFields({ result: nextResult, activeFormulaSectionId: payload.formula?.sections?.[0]?.id || '', activeFormulaPanel: 'explanation' }))
       updateHistoryResult(nextResult)
     } catch (err) {
-      dispatch(setHomeField({ field: 'formulaError', value: err.message || 'Unexpected error' }))
+      const nextError = getVisibleErrorMessage(err)
+      if (nextError) {
+        dispatch(setHomeField({ field: 'formulaError', value: nextError }))
+      }
     } finally {
       dispatch(setHomeField({ field: 'formulaLoading', value: false }))
+    }
+  }
+
+  function handleOpenQuizView() {
+    dispatch(setHomeFields({ activeView: 'quiz', quizError: '' }))
+  }
+
+  function handleOpenTeachingView() {
+    dispatch(setHomeFields({ activeView: 'teaching', teachingError: '' }))
+    if (result?.teaching?.topics?.length && !activeTopicId) {
+      dispatch(setHomeField({ field: 'activeTopicId', value: result.teaching.topics[0].id }))
+    }
+  }
+
+  function handleOpenFormulaView() {
+    dispatch(setHomeFields({ activeView: 'formula', formulaError: '' }))
+    if (result?.formula?.sections?.length && !activeFormulaSectionId) {
+      dispatch(setHomeField({ field: 'activeFormulaSectionId', value: result.formula.sections[0].id }))
     }
   }
 
@@ -429,7 +540,7 @@ function Home() {
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-3 pb-10 pt-6 sm:px-4 sm:pb-12 sm:pt-8">
           <HeaderFeature
             title="Learn from video, files, or Ask AI"
-            description="Paste a YouTube link, upload study photos or files, or ask AI about any topic and turn it into a summary, teaching path, quiz, formula help, and guided study flow."
+            description="Paste a YouTube link, upload study photos or files, or ask AI anything you want to learn, research, explain, compare, or generate with WebTutor."
           />
 
           {(showComposer || !showResult) && (
@@ -448,10 +559,10 @@ function Home() {
                   <div className="space-y-4">
                     <div className="grid gap-3 sm:flex sm:flex-wrap">
                       <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'summary' }))} className={`w-full rounded-full border px-4 py-2 text-sm font-semibold transition sm:w-auto ${activeView === 'summary' ? 'border-[var(--text)] bg-[var(--text)] text-[var(--bg)]' : 'border-(--border) bg-(--card) text-(--text)'}`}>{isAskResult ? 'Response' : 'Summary'}</button>
-                      <button type="button" onClick={handleGenerateQuiz} disabled={quizLoading} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_8px_24px_rgba(255,153,0,0.22)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto" style={{ background: 'linear-gradient(135deg, oklch(75% 0.204 54), oklch(80% 0.186 80))', borderColor: 'oklch(72% 0.217 24)', color: '#4a2313' }}>{quizLoading ? 'Generating Quiz...' : 'Generate Quiz'}</button>
-                      <button type="button" onClick={handleGenerateTeaching} disabled={teachingLoading} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(96,112,255,0.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto" style={{ background: 'linear-gradient(135deg, oklch(72% 0.167 244), oklch(84% 0.118 214))', borderColor: 'oklch(65% 0.19 278)', color: '#1d2957' }}>{teachingLoading ? 'Generating Teaching...' : 'Teaching'}</button>
-                      <button type="button" onClick={handleGenerateFormula} disabled={formulaLoading} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(58,168,118,0.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto" style={{ background: 'linear-gradient(135deg, oklch(74% 0.18 145), oklch(87% 0.11 120))', borderColor: 'oklch(63% 0.16 155)', color: '#183d2e' }}>{formulaLoading ? 'Generating Formula...' : 'Formula Lab'}</button>
-                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'doubt' }))} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(173,78,167,0.18)] transition hover:-translate-y-0.5 sm:w-auto" style={{ background: 'linear-gradient(135deg, oklch(70% 0.16 330), oklch(86% 0.09 320))', borderColor: 'oklch(62% 0.18 320)', color: '#4f1d4a' }}>Ask Doubt</button>
+                      <button type="button" onClick={handleOpenQuizView} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_8px_24px_rgba(255,153,0,0.22)] transition hover:-translate-y-0.5 sm:w-auto" style={{ background: activeView === 'quiz' ? 'linear-gradient(135deg, oklch(75% 0.204 54), oklch(80% 0.186 80))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(72% 0.217 24)', color: '#4a2313' }}>{quizLoading ? 'Quiz' : 'Quiz'}</button>
+                      <button type="button" onClick={handleOpenTeachingView} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(96,112,255,0.18)] transition hover:-translate-y-0.5 sm:w-auto" style={{ background: activeView === 'teaching' ? 'linear-gradient(135deg, oklch(72% 0.167 244), oklch(84% 0.118 214))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(65% 0.19 278)', color: '#1d2957' }}>{teachingLoading ? 'Teaching' : 'Teaching'}</button>
+                      <button type="button" onClick={handleOpenFormulaView} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(58,168,118,0.18)] transition hover:-translate-y-0.5 sm:w-auto" style={{ background: activeView === 'formula' ? 'linear-gradient(135deg, oklch(74% 0.18 145), oklch(87% 0.11 120))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(63% 0.16 155)', color: '#183d2e' }}>{formulaLoading ? 'Formula Lab' : 'Formula Lab'}</button>
+                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'doubt' }))} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(173,78,167,0.18)] transition hover:-translate-y-0.5 sm:w-auto" style={{ background: activeView === 'doubt' ? 'linear-gradient(135deg, oklch(70% 0.16 330), oklch(86% 0.09 320))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(62% 0.18 320)', color: '#4f1d4a' }}>Ask Doubt</button>
                       <NewSummaryFeature onClick={handleOpenNewSummaryComposer} />
                     </div>
 
@@ -459,17 +570,17 @@ function Home() {
                       <h3 className="text-lg font-semibold text-(--text)">{normalizedSummary.title}</h3>
                     </div>
 
-                    {activeView === 'summary' && <SummaryFeature />}
-                    {activeView === 'quiz' && <GenerateQuizFeature handleSubmitQuiz={handleSubmitQuiz} />}
-                    {activeView === 'teaching' && <TeachingFeature />}
-                    {activeView === 'formula' && <FormulaLabFeature />}
-                    {activeView === 'doubt' && <AskDoubtFeature handleSubmitDoubt={handleSubmitDoubt} hasLearningContext={Boolean(result?.summary)} />}
+                    {activeView === 'summary' && <SummaryFeature onRegenerate={handleRegenerateSummary} />}
+                    {activeView === 'quiz' && <GenerateQuizFeature handleSubmitQuiz={handleSubmitQuiz} onRegenerate={() => handleGenerateQuiz(true)} onGenerate={() => handleGenerateQuiz(false)} />}
+                    {activeView === 'teaching' && <TeachingFeature onRegenerate={() => handleGenerateTeaching(true)} onGenerate={() => handleGenerateTeaching(false)} />}
+                    {activeView === 'formula' && <FormulaLabFeature onRegenerate={() => handleGenerateFormula(true)} onGenerate={() => handleGenerateFormula(false)} />}
+                    {activeView === 'doubt' && <AskDoubtFeature handleSubmitDoubt={handleSubmitDoubt} hasLearningContext={Boolean(result?.summary)} onRegenerate={handleRegenerateDoubt} />}
                   </div>
                 ) : activeView === 'doubt' ? (
-                  <AskDoubtFeature handleSubmitDoubt={handleSubmitDoubt} hasLearningContext={false} />
+                  <AskDoubtFeature handleSubmitDoubt={handleSubmitDoubt} hasLearningContext={false} onRegenerate={handleRegenerateDoubt} />
                 ) : (
                   <div className="flex flex-1 items-center justify-center px-2 text-center text-sm leading-relaxed text-(--muted)">
-                    <p>Paste a YouTube link, upload study photos or files, or ask AI about any topic to get a clean, topic-wise summary.</p>
+                    <p>Paste a YouTube link, upload study photos or files, or ask AI anything you want to understand, research, or generate with WebTutor.</p>
                   </div>
                 )}
               </div>

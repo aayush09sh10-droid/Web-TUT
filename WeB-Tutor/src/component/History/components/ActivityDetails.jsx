@@ -2,8 +2,10 @@ import React from 'react'
 import { clearSelectedHistoryItem } from '../store/historySlice'
 import { useAppDispatch } from '../../../store/hooks'
 import HistoryDoubtCard from './HistoryDoubtCard'
+import SubjectOrganizerCard from './SubjectOrganizerCard'
 
 export default function ActivityDetails({
+  selectedItem,
   selectedResult,
   selectedTopicTitles,
   normalizedSummary,
@@ -53,6 +55,8 @@ export default function ActivityDetails({
           </div>
         </div>
       )}
+
+      <SubjectOrganizerCard selectedItem={selectedItem} />
 
       <div className="mt-4 rounded-[1.2rem] border border-(--border) bg-(--card-strong) p-4">
         <h4 className="text-base font-semibold text-(--text)">{normalizedSummary.title}</h4>

@@ -35,7 +35,24 @@ Approximate audio range: ${startTime} to ${endTime}
 `.trim()
 }
 
-function buildFinalPrompt(compiledNotes, durationInSeconds) {
+function buildLearningPreferencesBlock(options = {}) {
+  const studyPrompt = normaliseParagraph(options.studyPrompt)
+
+  if (!studyPrompt) {
+    return ''
+  }
+
+  return `
+Student preferences:
+- Summary instructions: ${studyPrompt || 'No special instructions provided'}
+- Respect these instructions while keeping the result accurate, structured, and useful for later feature generation.
+- If the student asks for a visual or image-style part, shape the summary so later teaching can include a useful visual study guide.
+`.trim()
+}
+
+function buildFinalPrompt(compiledNotes, durationInSeconds, options = {}) {
+  const preferencesBlock = buildLearningPreferencesBlock(options)
+
   return `
 You are creating the final summary for a YouTube video's audio.
 
@@ -51,6 +68,8 @@ Follow these rules strictly:
 - Paragraph 3: add extra insights and suggest what to explore next.
 
 Video duration hint: ${formatTimestamp(durationInSeconds || 0)}
+
+${preferencesBlock ? `${preferencesBlock}\n` : ''}
 
 Use these chunk notes:
 ${compiledNotes}
@@ -116,7 +135,7 @@ async function generateSummaryFromAudioChunks(chunks, options = {}) {
 
   const compiledNotes = JSON.stringify(partialSummaries, null, 2)
   const finalSummary = await requestJsonFromGeminiParts([
-    { text: buildFinalPrompt(compiledNotes, durationInSeconds) },
+    { text: buildFinalPrompt(compiledNotes, durationInSeconds, options) },
   ])
 
   const sanitised = sanitiseSummaryShape(finalSummary)

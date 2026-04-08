@@ -5,17 +5,16 @@ const { sendSummarizeError, sendValidationError } = require('./errorResponse')
 
 async function generateFormula(req, res) {
   try {
-    const { summary, historyId } = req.body
+    const { summary, historyId, forceRegenerate } = req.body
 
     if (!summary) {
       return sendValidationError(res, 'Missing `summary` in request body.')
     }
 
-    const formula = await getCachedFormula(
-      req.user._id,
-      summary,
-      async () => generateFormulaGuideFromSummary(summary)
-    )
+    const buildFormula = async () => generateFormulaGuideFromSummary(summary)
+    const formula = forceRegenerate
+      ? await buildFormula()
+      : await getCachedFormula(req.user._id, summary, buildFormula)
     await updateHistoryEntry({
       historyId,
       userId: req.user._id,

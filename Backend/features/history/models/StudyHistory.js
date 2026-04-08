@@ -18,6 +18,12 @@ const studyHistorySchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    sourceFingerprint: {
+      type: String,
+      default: '',
+      trim: true,
+      index: true,
+    },
     summary: {
       type: mongoose.Schema.Types.Mixed,
       default: null,

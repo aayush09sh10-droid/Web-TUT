@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 
 const StudyHistory = require('../models/StudyHistory')
+const SubjectCollection = require('../models/SubjectCollection')
 const {
   getCachedHistoryItem,
   getCachedHistoryList,
@@ -66,11 +67,13 @@ function serialiseHistoryEntry(entry) {
     url: entry.sourceLabel,
     sourceLabel: entry.sourceLabel,
     sourceType: entry.sourceType,
+    sourceFingerprint: entry.sourceFingerprint || '',
     timestamp: new Date(entry.updatedAt || entry.createdAt).getTime(),
     result: {
       sourceType: entry.sourceType,
       sourceLabel: entry.sourceLabel,
       historyId: String(entry._id),
+      sourceFingerprint: entry.sourceFingerprint || '',
       summary: entry.summary,
       quiz: entry.quiz,
       teaching: entry.teaching,
@@ -81,11 +84,28 @@ function serialiseHistoryEntry(entry) {
   }
 }
 
-async function createHistoryEntry({ userId, sourceType, sourceLabel, summary }) {
+function serialiseSubjectCollection(collection, historyEntries = []) {
+  const entryMap = new Map(historyEntries.map((entry) => [String(entry.id), entry]))
+  const orderedItems = collection.itemIds
+    .map((itemId) => entryMap.get(String(itemId)))
+    .filter(Boolean)
+
+  return {
+    id: String(collection._id),
+    name: collection.name,
+    itemIds: collection.itemIds.map((itemId) => String(itemId)),
+    items: orderedItems,
+    updatedAt: new Date(collection.updatedAt || collection.createdAt).getTime(),
+    createdAt: new Date(collection.createdAt).getTime(),
+  }
+}
+
+async function createHistoryEntry({ userId, sourceType, sourceLabel, sourceFingerprint = '', summary }) {
   const entry = await StudyHistory.create({
     user: userId,
     sourceType,
     sourceLabel,
+    sourceFingerprint,
     summary,
   })
 
@@ -141,6 +161,20 @@ async function getHistoryEntry(userId, historyId) {
   })
 }
 
+async function findExistingHistoryEntryByFingerprint(userId, sourceType, sourceFingerprint) {
+  if (!sourceFingerprint) {
+    return null
+  }
+
+  const entry = await StudyHistory.findOne({
+    user: userId,
+    sourceType,
+    sourceFingerprint,
+  }).sort({ updatedAt: -1 })
+
+  return entry ? serialiseHistoryEntry(entry) : null
+}
+
 async function deleteHistoryEntry(userId, historyId) {
   if (!historyId || !mongoose.Types.ObjectId.isValid(historyId)) {
     return false
@@ -152,6 +186,10 @@ async function deleteHistoryEntry(userId, historyId) {
   })
 
   if (result.deletedCount > 0) {
+    await SubjectCollection.updateMany(
+      { user: userId },
+      { $pull: { itemIds: new mongoose.Types.ObjectId(historyId) } }
+    )
     await invalidateUserHistoryCache(userId, historyId)
   }
 
@@ -160,7 +198,154 @@ async function deleteHistoryEntry(userId, historyId) {
 
 async function clearHistoryEntries(userId) {
   await StudyHistory.deleteMany({ user: userId })
+  await SubjectCollection.updateMany({ user: userId }, { $set: { itemIds: [] } })
   await invalidateUserHistoryCache(userId)
+}
+
+async function listSubjectCollections(userId) {
+  const [collections, entries] = await Promise.all([
+    SubjectCollection.find({ user: userId }).sort({ updatedAt: -1 }),
+    listHistoryEntries(userId),
+  ])
+
+  return collections.map((collection) => serialiseSubjectCollection(collection, entries))
+}
+
+async function createSubjectCollection(userId, name) {
+  const cleanName = cleanTopicLabel(name)
+
+  if (!cleanName) {
+    const error = new Error('Please enter a subject name.')
+    error.statusCode = 400
+    throw error
+  }
+
+  let collection
+
+  try {
+    collection = await SubjectCollection.create({
+      user: userId,
+      name: cleanName,
+      itemIds: [],
+    })
+  } catch (error) {
+    if (error?.code === 11000) {
+      const existing = await SubjectCollection.findOne({ user: userId, name: cleanName })
+      if (existing) {
+        return serialiseSubjectCollection(existing, await listHistoryEntries(userId))
+      }
+    }
+
+    throw error
+  }
+
+  return serialiseSubjectCollection(collection, await listHistoryEntries(userId))
+}
+
+async function addHistoryItemToSubject(userId, subjectId, historyId) {
+  if (!subjectId || !mongoose.Types.ObjectId.isValid(subjectId)) {
+    const error = new Error('Invalid subject id.')
+    error.statusCode = 400
+    throw error
+  }
+
+  if (!historyId || !mongoose.Types.ObjectId.isValid(historyId)) {
+    const error = new Error('Invalid learning item id.')
+    error.statusCode = 400
+    throw error
+  }
+
+  const historyEntry = await StudyHistory.findOne({
+    _id: historyId,
+    user: userId,
+  })
+
+  if (!historyEntry) {
+    const error = new Error('Learning item not found.')
+    error.statusCode = 404
+    throw error
+  }
+
+  const collection = await SubjectCollection.findOne({
+    _id: subjectId,
+    user: userId,
+  })
+
+  if (!collection) {
+    const error = new Error('Subject not found.')
+    error.statusCode = 404
+    throw error
+  }
+
+  const nextItemIds = collection.itemIds
+    .map((itemId) => String(itemId))
+    .filter((itemId) => itemId !== historyId)
+    .concat(historyId)
+    .map((itemId) => new mongoose.Types.ObjectId(itemId))
+
+  collection.itemIds = nextItemIds
+  await collection.save()
+
+  return serialiseSubjectCollection(collection, await listHistoryEntries(userId))
+}
+
+async function removeHistoryItemFromSubject(userId, subjectId, historyId) {
+  if (!subjectId || !mongoose.Types.ObjectId.isValid(subjectId)) {
+    const error = new Error('Invalid subject id.')
+    error.statusCode = 400
+    throw error
+  }
+
+  if (!historyId || !mongoose.Types.ObjectId.isValid(historyId)) {
+    const error = new Error('Invalid learning item id.')
+    error.statusCode = 400
+    throw error
+  }
+
+  const collection = await SubjectCollection.findOneAndUpdate(
+    { _id: subjectId, user: userId },
+    { $pull: { itemIds: new mongoose.Types.ObjectId(historyId) } },
+    { new: true }
+  )
+
+  if (!collection) {
+    const error = new Error('Subject not found.')
+    error.statusCode = 404
+    throw error
+  }
+
+  return serialiseSubjectCollection(collection, await listHistoryEntries(userId))
+}
+
+async function reorderSubjectItems(userId, subjectId, itemIds = []) {
+  if (!subjectId || !mongoose.Types.ObjectId.isValid(subjectId)) {
+    const error = new Error('Invalid subject id.')
+    error.statusCode = 400
+    throw error
+  }
+
+  const collection = await SubjectCollection.findOne({ _id: subjectId, user: userId })
+
+  if (!collection) {
+    const error = new Error('Subject not found.')
+    error.statusCode = 404
+    throw error
+  }
+
+  const uniqueRequestedIds = Array.from(
+    new Set(
+      (Array.isArray(itemIds) ? itemIds : []).filter((itemId) => mongoose.Types.ObjectId.isValid(itemId))
+    )
+  )
+
+  const currentIds = collection.itemIds.map((itemId) => String(itemId))
+  const reorderedIds = uniqueRequestedIds.filter((itemId) => currentIds.includes(itemId))
+  const missingIds = currentIds.filter((itemId) => !reorderedIds.includes(itemId))
+
+  collection.itemIds = [...reorderedIds, ...missingIds].map((itemId) => new mongoose.Types.ObjectId(itemId))
+  await collection.save()
+
+  return serialiseSubjectCollection(collection, await listHistoryEntries(userId))
 }
 
 async function getLearningSnapshot(userId) {
@@ -212,8 +397,14 @@ module.exports = {
   updateHistoryEntry,
   listHistoryEntries,
   getHistoryEntry,
+  findExistingHistoryEntryByFingerprint,
   deleteHistoryEntry,
   clearHistoryEntries,
   getLearningSnapshot,
   invalidateUserHistoryCache,
+  listSubjectCollections,
+  createSubjectCollection,
+  addHistoryItemToSubject,
+  removeHistoryItemFromSubject,
+  reorderSubjectItems,
 }

@@ -113,6 +113,7 @@ export default function History() {
 
           <div className="lg:col-span-2">
             <ActivityDetails
+              selectedItem={selected}
               selectedResult={selectedResult}
               selectedTopicTitles={selectedTopicTitles}
               normalizedSummary={normalizedSummary}

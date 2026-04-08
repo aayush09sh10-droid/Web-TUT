@@ -5,7 +5,7 @@ const { sendSummarizeError, sendValidationError } = require('./errorResponse')
 
 async function answerDoubt(req, res) {
   try {
-    const { summary, question, historyId, formula, teaching, sourceLabel, sourceType } = req.body
+    const { summary, question, historyId, formula, teaching, sourceLabel, sourceType, forceRegenerate } = req.body
 
     if (!summary) {
       return sendValidationError(res, 'Missing `summary` in request body.')
@@ -24,11 +24,10 @@ async function answerDoubt(req, res) {
       sourceType,
     }
 
-    const answer = await getCachedDoubtAnswer(
-      req.user._id,
-      doubtPayload,
-      async () => answerDoubtFromSummary(doubtPayload)
-    )
+    const buildDoubtAnswer = async () => answerDoubtFromSummary(doubtPayload)
+    const answer = forceRegenerate
+      ? await buildDoubtAnswer()
+      : await getCachedDoubtAnswer(req.user._id, doubtPayload, buildDoubtAnswer)
 
     if (historyId) {
       await updateHistoryEntry({

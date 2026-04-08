@@ -5,13 +5,16 @@ const { sendSummarizeError, sendValidationError } = require('./errorResponse')
 
 async function generateQuiz(req, res) {
   try {
-    const { summary, historyId } = req.body
+    const { summary, historyId, forceRegenerate } = req.body
 
     if (!summary) {
       return sendValidationError(res, 'Missing `summary` in request body.')
     }
 
-    const quiz = await getCachedQuiz(req.user._id, summary, async () => generateQuizFromSummary(summary))
+    const buildQuiz = async () => generateQuizFromSummary(summary)
+    const quiz = forceRegenerate
+      ? await buildQuiz()
+      : await getCachedQuiz(req.user._id, summary, buildQuiz)
     await updateHistoryEntry({
       historyId,
       userId: req.user._id,

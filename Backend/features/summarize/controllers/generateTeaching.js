@@ -5,17 +5,16 @@ const { sendSummarizeError, sendValidationError } = require('./errorResponse')
 
 async function generateTeaching(req, res) {
   try {
-    const { summary, historyId } = req.body
+    const { summary, historyId, forceRegenerate } = req.body
 
     if (!summary) {
       return sendValidationError(res, 'Missing `summary` in request body.')
     }
 
-    const teaching = await getCachedTeaching(
-      req.user._id,
-      summary,
-      async () => generateTeachingFromSummary(summary)
-    )
+    const buildTeaching = async () => generateTeachingFromSummary(summary)
+    const teaching = forceRegenerate
+      ? await buildTeaching()
+      : await getCachedTeaching(req.user._id, summary, buildTeaching)
     await updateHistoryEntry({
       historyId,
       userId: req.user._id,

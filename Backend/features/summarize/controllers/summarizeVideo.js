@@ -4,8 +4,13 @@ const {
   removeFiles,
 } = require('../services/youtube-audio')
 const { generateSummaryFromAudioChunks } = require('../services/gemini')
+const { getVideoSourceFingerprint } = require('../services/sourceFingerprint')
 const { getCachedVideoSummary } = require('../cache')
-const { createHistoryEntry } = require('../../history/services/history')
+const {
+  createHistoryEntry,
+  updateHistoryEntry,
+  findExistingHistoryEntryByFingerprint,
+} = require('../../history/services/history')
 const { sendSummarizeError, sendValidationError } = require('./errorResponse')
 
 async function summarizeVideo(req, res) {
@@ -13,7 +18,7 @@ async function summarizeVideo(req, res) {
   let chunkPaths = []
 
   try {
-    const { url } = req.body
+    const { url, historyId, forceRegenerate, studyPrompt = '' } = req.body
     const io = req.app.get('io')
 
     const emitProgress = (step) => {
@@ -26,7 +31,41 @@ async function summarizeVideo(req, res) {
       return sendValidationError(res, 'Missing `url` in request body.')
     }
 
-    const summary = await getCachedVideoSummary(req.user._id, url, async () => {
+    const sourceFingerprint = getVideoSourceFingerprint(url)
+
+    if (!forceRegenerate && !historyId) {
+      const existingEntry = await findExistingHistoryEntryByFingerprint(
+        req.user._id,
+        'youtube-video',
+        sourceFingerprint
+      )
+
+      if (existingEntry?.result?.summary) {
+        emitProgress('Summary ready')
+
+        return res.json({
+          success: true,
+          reusedExisting: true,
+          sourceType: existingEntry.sourceType,
+          sourceLabel: existingEntry.sourceLabel,
+          historyId: existingEntry.id,
+          videoUrl: existingEntry.sourceLabel,
+          summary: existingEntry.result.summary,
+          quiz: existingEntry.result.quiz,
+          teaching: existingEntry.result.teaching,
+          formula: existingEntry.result.formula,
+          doubt: existingEntry.result.doubt,
+          quizProgress: existingEntry.result.quizProgress,
+        })
+      }
+    }
+
+    const summaryCachePayload = {
+      url,
+      studyPrompt: String(studyPrompt || '').trim(),
+    }
+
+    const buildSummary = async () => {
         emitProgress('Downloading audio')
         const audioResult = await downloadYoutubeAudio(url)
         downloadedAudioPath = audioResult.audioPath
@@ -47,15 +86,42 @@ async function summarizeVideo(req, res) {
         return generateSummaryFromAudioChunks(chunks, {
           durationInSeconds: audioResult.durationInSeconds,
           sourceUrl: url,
+          studyPrompt,
         })
-      })
+      }
 
-    const historyEntry = await createHistoryEntry({
-      userId: req.user._id,
-      sourceType: 'youtube-video',
-      sourceLabel: url,
-      summary,
-    })
+    const summary = forceRegenerate
+      ? await buildSummary()
+      : await getCachedVideoSummary(req.user._id, summaryCachePayload, buildSummary)
+
+    const historyEntry =
+      historyId
+        ? await updateHistoryEntry({
+            historyId,
+            userId: req.user._id,
+            updates: {
+              sourceType: 'youtube-video',
+              sourceLabel: url,
+              sourceFingerprint,
+              summary,
+              quiz: null,
+              teaching: null,
+              formula: null,
+              doubt: null,
+              quizProgress: null,
+            },
+          })
+        : null
+
+    const resolvedHistoryEntry =
+      historyEntry ||
+      (await createHistoryEntry({
+        userId: req.user._id,
+        sourceType: 'youtube-video',
+        sourceLabel: url,
+        sourceFingerprint,
+        summary,
+      }))
 
     emitProgress('Summary ready')
 
@@ -63,7 +129,7 @@ async function summarizeVideo(req, res) {
       success: true,
       sourceType: 'youtube-video',
       sourceLabel: url,
-      historyId: historyEntry.id,
+      historyId: resolvedHistoryEntry.id,
       videoUrl: url,
       summary,
     })

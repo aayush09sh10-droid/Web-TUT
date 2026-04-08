@@ -11,14 +11,20 @@ async function parseJsonResponse(res) {
 
 function throwAiRequestError(payload, fallbackMessage) {
   const errorType = payload?.errorType
+  const silentInUi = Boolean(payload?.silentInUi)
   const message =
-    errorType === 'validation'
+    silentInUi
+      ? ''
+      : errorType === 'validation'
       ? payload?.error || fallbackMessage
       : payload?.errorType === 'gemini'
         ? payload?.error || DEFAULT_GEMINI_UI_ERROR
         : fallbackMessage || DEFAULT_GEMINI_UI_ERROR
 
-  throw new Error(message)
+  const error = new Error(message)
+  error.silentInUi = silentInUi
+  error.errorType = errorType || 'unknown'
+  throw error
 }
 
 export async function fetchHomeHistory(headers, signal) {
@@ -35,11 +41,16 @@ export async function fetchHomeHistory(headers, signal) {
   return Array.isArray(payload.history) ? payload.history : []
 }
 
-export async function requestVideoSummary(headers, url) {
+export async function requestVideoSummary(headers, url, options = {}) {
   const res = await fetch(`${API_BASE}/api/summarize`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify({ url }),
+    body: JSON.stringify({
+      url,
+      studyPrompt: options.studyPrompt,
+      historyId: options.historyId,
+      forceRegenerate: Boolean(options.forceRegenerate),
+    }),
   })
 
   const payload = await parseJsonResponse(res)
@@ -50,11 +61,16 @@ export async function requestVideoSummary(headers, url) {
   return payload
 }
 
-export async function requestStudySummary(headers, studyPayload) {
+export async function requestStudySummary(headers, studyPayload, options = {}) {
   const res = await fetch(`${API_BASE}/api/summarize-notes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify(studyPayload),
+    body: JSON.stringify({
+      ...studyPayload,
+      studyPrompt: options.studyPrompt,
+      historyId: options.historyId,
+      forceRegenerate: Boolean(options.forceRegenerate),
+    }),
   })
 
   const payload = await parseJsonResponse(res)
@@ -65,11 +81,16 @@ export async function requestStudySummary(headers, studyPayload) {
   return payload
 }
 
-export async function requestAskAnything(headers, question) {
+export async function requestAskAnything(headers, question, options = {}) {
   const res = await fetch(`${API_BASE}/api/ask-anything`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({
+      question,
+      studyPrompt: options.studyPrompt,
+      historyId: options.historyId,
+      forceRegenerate: Boolean(options.forceRegenerate),
+    }),
   })
 
   const payload = await parseJsonResponse(res)
@@ -80,11 +101,15 @@ export async function requestAskAnything(headers, question) {
   return payload
 }
 
-export async function requestQuiz(headers, summary, historyId) {
+export async function requestQuiz(headers, summary, historyId, options = {}) {
   const res = await fetch(`${API_BASE}/api/quiz`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify({ summary, historyId }),
+    body: JSON.stringify({
+      summary,
+      historyId,
+      forceRegenerate: Boolean(options.forceRegenerate),
+    }),
   })
 
   const payload = await parseJsonResponse(res)
@@ -95,11 +120,15 @@ export async function requestQuiz(headers, summary, historyId) {
   return payload
 }
 
-export async function requestTeaching(headers, summary, historyId) {
+export async function requestTeaching(headers, summary, historyId, options = {}) {
   const res = await fetch(`${API_BASE}/api/teaching`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify({ summary, historyId }),
+    body: JSON.stringify({
+      summary,
+      historyId,
+      forceRegenerate: Boolean(options.forceRegenerate),
+    }),
   })
 
   const payload = await parseJsonResponse(res)
@@ -110,11 +139,15 @@ export async function requestTeaching(headers, summary, historyId) {
   return payload
 }
 
-export async function requestFormula(headers, summary, historyId) {
+export async function requestFormula(headers, summary, historyId, options = {}) {
   const res = await fetch(`${API_BASE}/api/formula`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify({ summary, historyId }),
+    body: JSON.stringify({
+      summary,
+      historyId,
+      forceRegenerate: Boolean(options.forceRegenerate),
+    }),
   })
 
   const payload = await parseJsonResponse(res)
@@ -125,11 +158,14 @@ export async function requestFormula(headers, summary, historyId) {
   return payload
 }
 
-export async function requestDoubtAnswer(headers, doubtPayload) {
+export async function requestDoubtAnswer(headers, doubtPayload, options = {}) {
   const res = await fetch(`${API_BASE}/api/doubt`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify(doubtPayload),
+    body: JSON.stringify({
+      ...doubtPayload,
+      forceRegenerate: Boolean(options.forceRegenerate),
+    }),
   })
 
   const payload = await parseJsonResponse(res)

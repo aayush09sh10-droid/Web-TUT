@@ -17,7 +17,7 @@ const app = express()
 const allowedOrigins = parseAllowedOrigins()
 const corsOptions = {
   origin: createCorsOriginValidator(allowedOrigins),
-  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }
 const authRateLimiter = createRateLimiter({

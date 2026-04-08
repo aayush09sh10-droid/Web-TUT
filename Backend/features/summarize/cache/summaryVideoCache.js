@@ -3,13 +3,13 @@ const { getOrSetJson } = require('../../../services/cache')
 const { FEATURE_CACHE_TTL } = require('./cacheConfig')
 const { buildFeatureCacheKey } = require('./cacheUtils')
 
-function getSummaryVideoCacheKey(userId, url) {
-  return buildFeatureCacheKey('summary-video', userId, { url })
+function getSummaryVideoCacheKey(userId, payload) {
+  return buildFeatureCacheKey('summary-video', userId, payload)
 }
 
-async function getCachedVideoSummary(userId, url, provider) {
+async function getCachedVideoSummary(userId, payload, provider) {
   return getOrSetJson(
-    getSummaryVideoCacheKey(userId, url),
+    getSummaryVideoCacheKey(userId, payload),
     FEATURE_CACHE_TTL.summaryVideo,
     provider
   )
