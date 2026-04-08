@@ -1,16 +1,14 @@
 const { generateFormulaGuideFromSummary } = require('../services/gemini')
 const { getCachedFormula } = require('../cache')
 const { updateHistoryEntry } = require('../../history/services/history')
+const { sendSummarizeError, sendValidationError } = require('./errorResponse')
 
 async function generateFormula(req, res) {
   try {
     const { summary, historyId } = req.body
 
     if (!summary) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing `summary` in request body.',
-      })
+      return sendValidationError(res, 'Missing `summary` in request body.')
     }
 
     const formula = await getCachedFormula(
@@ -33,10 +31,11 @@ async function generateFormula(req, res) {
   } catch (error) {
     console.error('Generate formula error:', error)
 
-    return res.status(error.statusCode || 500).json({
-      success: false,
-      error: error.message || 'Failed to generate formula guide.',
-    })
+    return sendSummarizeError(
+      res,
+      error,
+      'Gemini could not generate the formula guide right now. Please try again.'
+    )
   }
 }
 

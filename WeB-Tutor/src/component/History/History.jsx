@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { queryKeys, setHistoryCache } from '../../cache'
 import ActivityDetails from './components/ActivityDetails'
 import ActivityList from './components/ActivityList'
 import { clearHistory, deleteHistoryItem, fetchHistory } from './api/historyApi'
@@ -27,40 +29,53 @@ export default function History() {
     [history, selectedId]
   )
 
+  const historyQuery = useQuery({
+    queryKey: queryKeys.history(authToken),
+    enabled: Boolean(authToken),
+    queryFn: ({ signal }) => fetchHistory(authToken, signal),
+  })
+
+  const clearHistoryMutation = useMutation({
+    mutationFn: () => clearHistory(authToken),
+    onSuccess: () => {
+      setHistoryCache(authToken, [])
+      dispatch(clearAllHistoryItems())
+    },
+  })
+
+  const deleteHistoryMutation = useMutation({
+    mutationFn: (itemId) => deleteHistoryItem(authToken, itemId),
+    onSuccess: (_, itemId) => {
+      const nextItems = history.filter((item) => item.id !== itemId)
+      setHistoryCache(authToken, nextItems)
+      dispatch(removeHistoryItemFromState(itemId))
+    },
+  })
+
   useEffect(() => {
-    if (!authToken) return
+    dispatch(setHistoryLoading(historyQuery.isLoading || historyQuery.isFetching))
+  }, [dispatch, historyQuery.isFetching, historyQuery.isLoading])
 
-    const controller = new AbortController()
-
-    async function loadHistory() {
-      try {
-        dispatch(setHistoryLoading(true))
-        dispatch(setHistoryError(''))
-        dispatch(setHistoryItems(await fetchHistory(authToken, controller.signal)))
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error('History load error:', err)
-          dispatch(setHistoryError(err.message || 'Failed to load history.'))
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          dispatch(setHistoryLoading(false))
-        }
-      }
+  useEffect(() => {
+    if (historyQuery.data) {
+      dispatch(setHistoryError(''))
+      dispatch(setHistoryItems(historyQuery.data))
     }
+  }, [dispatch, historyQuery.data])
 
-    loadHistory()
-    return () => controller.abort()
-  }, [authToken, dispatch])
+  useEffect(() => {
+    if (historyQuery.error && historyQuery.error.name !== 'AbortError') {
+      console.error('History load error:', historyQuery.error)
+      dispatch(setHistoryError(historyQuery.error.message || 'Failed to load history.'))
+    }
+  }, [dispatch, historyQuery.error])
 
   async function handleClearHistory() {
-    await clearHistory(authToken)
-    dispatch(clearAllHistoryItems())
+    await clearHistoryMutation.mutateAsync()
   }
 
   async function handleRemoveItem(item) {
-    await deleteHistoryItem(authToken, item.id)
-    dispatch(removeHistoryItemFromState(item.id))
+    await deleteHistoryMutation.mutateAsync(item.id)
   }
 
   const selectedResult = selected?.result

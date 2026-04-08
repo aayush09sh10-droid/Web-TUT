@@ -1,5 +1,3 @@
-export const HOME_STATE_STORAGE_KEY = 'yt-summarizer-home-state'
-
 export function normalizeLearningSummary(result) {
   const summary = result?.summary
 
@@ -50,10 +48,19 @@ export function extractLearningTopics(item) {
 
 export function buildLearningHomeState(item) {
   const quizProgress = item?.result?.quizProgress
+  const sourceType = item?.sourceType
+  const inputMode =
+    sourceType === 'study-photos' || sourceType === 'notes-image' || sourceType === 'notes-photo'
+      ? 'photos'
+      : sourceType === 'study-files'
+        ? 'files'
+        : sourceType === 'ask-ai'
+          ? 'ask'
+        : 'video'
 
   return {
     url: item?.sourceLabel || '',
-    inputMode: item?.sourceType === 'notes-photo' ? 'notes' : 'video',
+    inputMode,
     result: item?.result,
     activeView: 'summary',
     selectedAnswers: quizProgress?.selectedAnswers || {},

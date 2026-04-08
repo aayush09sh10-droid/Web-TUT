@@ -1,16 +1,14 @@
 const { generateTeachingFromSummary } = require('../services/gemini')
 const { getCachedTeaching } = require('../cache')
 const { updateHistoryEntry } = require('../../history/services/history')
+const { sendSummarizeError, sendValidationError } = require('./errorResponse')
 
 async function generateTeaching(req, res) {
   try {
     const { summary, historyId } = req.body
 
     if (!summary) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing `summary` in request body.',
-      })
+      return sendValidationError(res, 'Missing `summary` in request body.')
     }
 
     const teaching = await getCachedTeaching(
@@ -33,10 +31,11 @@ async function generateTeaching(req, res) {
   } catch (error) {
     console.error('Generate teaching error:', error)
 
-    return res.status(error.statusCode || 500).json({
-      success: false,
-      error: error.message || 'Failed to generate teaching content.',
-    })
+    return sendSummarizeError(
+      res,
+      error,
+      'Gemini could not generate the teaching path right now. Please try again.'
+    )
   }
 }
 

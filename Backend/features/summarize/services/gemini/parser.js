@@ -1,22 +1,40 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai')
 
-const { GEMINI_MODEL, MAX_TIMELINE_ITEMS } = require('./constants')
+const { GEMINI_MODEL, GEMINI_FALLBACK_MODELS, MAX_TIMELINE_ITEMS } = require('./constants')
 const { GeminiServiceError } = require('./errors')
 const { cleanJsonFence, formatTimestamp, normaliseParagraph } = require('./text')
+const WEBTUTOR_BUSY_MESSAGE =
+  'WebTutor AI is busy right now. Please try again in a moment.'
+const WEBTUTOR_PLAN_MESSAGE =
+  'WebTutor AI usage limit has been reached. Please upgrade your WebTutor plan and try again.'
+const WEBTUTOR_FILE_MESSAGE =
+  'WebTutor could not read this file format for AI study generation. Please change the file and try again.'
+const WEBTUTOR_RESPONSE_MESSAGE =
+  'WebTutor AI returned an incomplete response. Please try again.'
+const WEBTUTOR_CONFIG_MESSAGE =
+  'WebTutor AI is not configured correctly right now. Please contact support or try again later.'
+const WEBTUTOR_SETUP_MESSAGE =
+  'WebTutor AI is not available for this API setup yet. Please check the API key, model access, and project configuration.'
 
 function ensureGeminiConfig() {
   const apiKey = String(process.env.GEMINI_API_KEY || '').trim()
 
   if (!apiKey || /your_.*key_here/i.test(apiKey)) {
-    throw new GeminiServiceError('GEMINI_API_KEY is missing or still using a placeholder value.', 500)
+    throw new GeminiServiceError(WEBTUTOR_CONFIG_MESSAGE, 500)
   }
 }
 
-function getGeminiModel() {
+function getGeminiModels() {
   ensureGeminiConfig()
 
   const client = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-  return client.getGenerativeModel({ model: GEMINI_MODEL })
+  const candidateModels = [GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS].filter(Boolean)
+  const uniqueModels = Array.from(new Set(candidateModels))
+
+  return uniqueModels.map((modelName) => ({
+    modelName,
+    model: client.getGenerativeModel({ model: modelName }),
+  }))
 }
 
 function isGeminiQuotaError(error) {
@@ -25,17 +43,84 @@ function isGeminiQuotaError(error) {
 
   return (
     status === 429 ||
-    status === 503 ||
-    message.includes('quota') ||
     message.includes('rate limit') ||
     message.includes('too many requests') ||
-    message.includes('resource has been exhausted') ||
-    message.includes('token limit') ||
-    message.includes('billing') ||
-    message.includes('exceeded') ||
-    message.includes('service unavailable') ||
+    message.includes('resource has been exhausted')
+  )
+}
+
+function isInvalidApiKeyError(error) {
+  const message = String(error?.message || '').toLowerCase()
+  const status = Number(error?.status || error?.statusCode || 0)
+
+  return (
+    status === 401 ||
+    status === 403 ||
+    message.includes('api key not valid') ||
+    message.includes('invalid api key') ||
+    message.includes('api_key_invalid') ||
+    message.includes('permission denied') ||
+    message.includes('authentication')
+  )
+}
+
+function isGeminiSetupError(error) {
+  const message = String(error?.message || '').toLowerCase()
+  const status = Number(error?.status || error?.statusCode || 0)
+
+  return (
+    status === 400 ||
+    status === 404 ||
+    message.includes('api has not been used') ||
+    message.includes('api is not enabled') ||
+    message.includes('billing account') ||
+    message.includes('method doesn\'t allow') ||
+    message.includes('model not found') ||
+    message.includes('not found for api version') ||
+    message.includes('developer instruction') ||
+    message.includes('permission denied on resource') ||
+    message.includes('request contains an invalid argument')
+  )
+}
+
+function isRetryableModelError(error) {
+  const message = String(error?.message || '').toLowerCase()
+  const status = Number(error?.status || error?.statusCode || 0)
+
+  return (
+    status === 503 ||
+    status === 404 ||
     message.includes('high demand') ||
-    message.includes('try again later')
+    message.includes('service unavailable') ||
+    message.includes('try again later') ||
+    message.includes('model not found') ||
+    message.includes('not found for api version') ||
+    message.includes('is not found') ||
+    message.includes('does not have access to model')
+  )
+}
+
+function isGeminiUpstreamError(error) {
+  const message = String(error?.message || '').toLowerCase()
+  const status = Number(error?.status || error?.statusCode || 0)
+
+  return (
+    status >= 400 ||
+    message.includes('googlegenerativeai error') ||
+    message.includes('generativelanguage.googleapis.com') ||
+    message.includes('unsupported mime type') ||
+    message.includes('generatecontent')
+  )
+}
+
+function isUnsupportedInputError(error) {
+  const message = String(error?.message || '').toLowerCase()
+
+  return (
+    message.includes('unsupported mime type') ||
+    message.includes('unsupported file') ||
+    message.includes('invalid argument') ||
+    message.includes('bad request')
   )
 }
 
@@ -49,13 +134,13 @@ function parseGeminiJson(rawText) {
     const lastBrace = cleaned.lastIndexOf('}')
 
     if (firstBrace === -1 || lastBrace === -1) {
-      throw new GeminiServiceError('Gemini returned an invalid response format.')
+      throw new GeminiServiceError(WEBTUTOR_RESPONSE_MESSAGE)
     }
 
     try {
       return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1))
     } catch {
-      throw new GeminiServiceError('Gemini returned malformed JSON.')
+      throw new GeminiServiceError(WEBTUTOR_RESPONSE_MESSAGE)
     }
   }
 }
@@ -70,9 +155,50 @@ function sanitiseTimeline(items = []) {
     }))
 }
 
+function sanitiseSummaryTopics(items = [], summaryParagraphs = {}) {
+  const topics = Array.isArray(items)
+    ? items
+        .map((item, index) => {
+          const keyPoints = Array.isArray(item?.keyPoints)
+            ? item.keyPoints.map((point) => normaliseParagraph(point)).filter(Boolean).slice(0, 4)
+            : []
+
+          if (!normaliseParagraph(item?.title) || !normaliseParagraph(item?.summary)) {
+            return null
+          }
+
+          return {
+            id: `summary-topic-${index + 1}`,
+            title: normaliseParagraph(item.title),
+            summary: normaliseParagraph(item.summary),
+            keyPoints,
+          }
+        })
+        .filter(Boolean)
+        .slice(0, 8)
+    : []
+
+  if (topics.length) {
+    return topics
+  }
+
+  const fallbackParagraphs = [
+    summaryParagraphs.overview,
+    summaryParagraphs.coreIdeas,
+    summaryParagraphs.exploreMore,
+  ].filter(Boolean)
+
+  return fallbackParagraphs.map((paragraph, index) => ({
+    id: `summary-topic-${index + 1}`,
+    title: ['Overview', 'Core Ideas', 'Explore More'][index] || `Topic ${index + 1}`,
+    summary: paragraph,
+    keyPoints: [],
+  }))
+}
+
 function sanitiseSummaryShape(summary) {
   if (!summary || typeof summary !== 'object') {
-    throw new GeminiServiceError('Gemini did not return a valid summary object.')
+    throw new GeminiServiceError(WEBTUTOR_RESPONSE_MESSAGE)
   }
 
   const sanitised = {
@@ -83,6 +209,7 @@ function sanitiseSummaryShape(summary) {
       coreIdeas: normaliseParagraph(summary.paragraphs?.coreIdeas),
       exploreMore: normaliseParagraph(summary.paragraphs?.exploreMore),
     },
+    topics: [],
   }
 
   if (
@@ -90,15 +217,17 @@ function sanitiseSummaryShape(summary) {
     !sanitised.paragraphs.coreIdeas ||
     !sanitised.paragraphs.exploreMore
   ) {
-    throw new GeminiServiceError('Gemini returned an incomplete summary structure.')
+    throw new GeminiServiceError(WEBTUTOR_RESPONSE_MESSAGE)
   }
+
+  sanitised.topics = sanitiseSummaryTopics(summary.topics, sanitised.paragraphs)
 
   return sanitised
 }
 
 function sanitiseQuizShape(quiz) {
   if (!quiz || typeof quiz !== 'object') {
-    throw new GeminiServiceError('Gemini did not return a valid quiz object.')
+    throw new GeminiServiceError(WEBTUTOR_RESPONSE_MESSAGE)
   }
 
   const questions = Array.isArray(quiz.questions)
@@ -132,7 +261,7 @@ function sanitiseQuizShape(quiz) {
     : []
 
   if (!questions.length) {
-    throw new GeminiServiceError('Gemini returned an incomplete quiz structure.')
+    throw new GeminiServiceError(WEBTUTOR_RESPONSE_MESSAGE)
   }
 
   return {
@@ -151,7 +280,7 @@ function sanitiseQuizShape(quiz) {
 
 function sanitiseTeachingShape(teaching) {
   if (!teaching || typeof teaching !== 'object') {
-    throw new GeminiServiceError('Gemini did not return a valid teaching object.')
+    throw new GeminiServiceError(WEBTUTOR_RESPONSE_MESSAGE)
   }
 
   const topics = Array.isArray(teaching.topics)
@@ -179,7 +308,7 @@ function sanitiseTeachingShape(teaching) {
     : []
 
   if (!topics.length) {
-    throw new GeminiServiceError('Gemini returned an incomplete teaching structure.')
+    throw new GeminiServiceError(WEBTUTOR_RESPONSE_MESSAGE)
   }
 
   return {
@@ -191,7 +320,7 @@ function sanitiseTeachingShape(teaching) {
 
 function sanitiseDoubtAnswerShape(answer) {
   if (!answer || typeof answer !== 'object') {
-    throw new GeminiServiceError('Gemini did not return a valid doubt answer object.')
+    throw new GeminiServiceError(WEBTUTOR_RESPONSE_MESSAGE)
   }
 
   const explanation = normaliseParagraph(answer.explanation)
@@ -252,7 +381,7 @@ function sanitiseDoubtAnswerShape(answer) {
 
 function sanitiseFormulaShape(formula) {
   if (!formula || typeof formula !== 'object') {
-    throw new GeminiServiceError('Gemini did not return a valid formula object.')
+    throw new GeminiServiceError(WEBTUTOR_RESPONSE_MESSAGE)
   }
 
   const sections = Array.isArray(formula.sections)
@@ -282,7 +411,7 @@ function sanitiseFormulaShape(formula) {
     : []
 
   if (!sections.length) {
-    throw new GeminiServiceError('Gemini returned an incomplete formula structure.')
+    throw new GeminiServiceError(WEBTUTOR_RESPONSE_MESSAGE)
   }
 
   return {
@@ -293,35 +422,88 @@ function sanitiseFormulaShape(formula) {
 }
 
 async function requestJsonFromGeminiParts(parts) {
-  const model = getGeminiModel()
+  const modelCandidates = getGeminiModels()
+  let lastError = null
 
-  try {
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts }],
-      generationConfig: {
-        temperature: 0.3,
-        responseMimeType: 'application/json',
-      },
-    })
+  for (let index = 0; index < modelCandidates.length; index += 1) {
+    const { modelName, model } = modelCandidates[index]
 
-    return parseGeminiJson(result.response.text())
-  } catch (error) {
-    if (error instanceof GeminiServiceError) {
-      throw error
-    }
+    try {
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+          temperature: 0.3,
+          responseMimeType: 'application/json',
+        },
+      })
 
-    if (isGeminiQuotaError(error)) {
+      return parseGeminiJson(result.response.text())
+    } catch (error) {
+      if (error instanceof GeminiServiceError) {
+        throw error
+      }
+
+      lastError = error
+
+      const debugStatus = Number(error?.status || error?.statusCode || 0) || 'unknown'
+      const debugMessage = String(error?.message || 'Unknown error')
+      const debugFlags = {
+        modelName,
+        invalidApiKey: isInvalidApiKeyError(error),
+        quota: isGeminiQuotaError(error),
+        setup: isGeminiSetupError(error),
+        unsupportedInput: isUnsupportedInputError(error),
+        upstream: isGeminiUpstreamError(error),
+        retryableModel: isRetryableModelError(error),
+      }
+
+      console.error('WebTutor AI debug:', {
+        status: debugStatus,
+        message: debugMessage,
+        flags: debugFlags,
+      })
+
+      if (isRetryableModelError(error) && index < modelCandidates.length - 1) {
+        continue
+      }
+
+      if (isGeminiQuotaError(error)) {
+        throw new GeminiServiceError(
+          WEBTUTOR_PLAN_MESSAGE,
+          429
+        )
+      }
+
+      if (isInvalidApiKeyError(error)) {
+        throw new GeminiServiceError(WEBTUTOR_CONFIG_MESSAGE, 401)
+      }
+
+      if (isGeminiSetupError(error)) {
+        throw new GeminiServiceError(WEBTUTOR_SETUP_MESSAGE, Number(error?.status || error?.statusCode || 400))
+      }
+
+      if (isUnsupportedInputError(error)) {
+        throw new GeminiServiceError(WEBTUTOR_FILE_MESSAGE, 400)
+      }
+
+      if (isGeminiUpstreamError(error)) {
+        throw new GeminiServiceError(
+          WEBTUTOR_BUSY_MESSAGE,
+          Number(error?.status || error?.statusCode || 400) || 400
+        )
+      }
+
       throw new GeminiServiceError(
-        'Gemini token finished. Please take subscription.',
-        429
+        WEBTUTOR_BUSY_MESSAGE,
+        error.status || 502
       )
     }
-
-    throw new GeminiServiceError(
-      `Gemini request failed: ${error.message || 'Unknown error'}`,
-      error.status || 502
-    )
   }
+
+  throw new GeminiServiceError(
+    WEBTUTOR_BUSY_MESSAGE,
+    Number(lastError?.status || lastError?.statusCode || 502)
+  )
 }
 
 function buildFallbackTimeline(chunks = [], durationInSeconds = 0) {

@@ -1,16 +1,14 @@
 const { generateQuizFromSummary } = require('../services/gemini')
 const { getCachedQuiz } = require('../cache')
 const { updateHistoryEntry } = require('../../history/services/history')
+const { sendSummarizeError, sendValidationError } = require('./errorResponse')
 
 async function generateQuiz(req, res) {
   try {
     const { summary, historyId } = req.body
 
     if (!summary) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing `summary` in request body.',
-      })
+      return sendValidationError(res, 'Missing `summary` in request body.')
     }
 
     const quiz = await getCachedQuiz(req.user._id, summary, async () => generateQuizFromSummary(summary))
@@ -29,10 +27,11 @@ async function generateQuiz(req, res) {
   } catch (error) {
     console.error('Generate quiz error:', error)
 
-    return res.status(error.statusCode || 500).json({
-      success: false,
-      error: error.message || 'Failed to generate quiz.',
-    })
+    return sendSummarizeError(
+      res,
+      error,
+      'Gemini could not generate the quiz right now. Please try again.'
+    )
   }
 }
 

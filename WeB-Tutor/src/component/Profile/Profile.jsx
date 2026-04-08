@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { queryKeys, setProfileCache } from '../../cache'
 import { changePassword, fetchProfile } from './api/profileApi'
 import PasswordSettingsCard from './components/PasswordSettingsCard'
 import ProfileSummaryCard from './components/ProfileSummaryCard'
@@ -27,31 +29,33 @@ function Profile() {
   const isDark = theme === 'dark'
   const panelStyle = useMemo(() => getProfilePanelStyle(isDark), [isDark])
 
+  const profileQuery = useQuery({
+    queryKey: queryKeys.profile(authToken),
+    enabled: Boolean(authToken),
+    queryFn: ({ signal }) => fetchProfile(authToken, signal),
+  })
+
+  const changePasswordMutation = useMutation({
+    mutationFn: (nextPasswordForm) => changePassword(authToken, nextPasswordForm),
+  })
+
   useEffect(() => {
-    if (!authToken) return
+    dispatch(setProfileLoading(profileQuery.isLoading || profileQuery.isFetching))
+  }, [dispatch, profileQuery.isFetching, profileQuery.isLoading])
 
-    const controller = new AbortController()
-
-    async function loadProfile() {
-      dispatch(setProfileLoading(true))
+  useEffect(() => {
+    if (profileQuery.data) {
       dispatch(setProfileError(''))
-
-      try {
-        dispatch(setProfileData(await fetchProfile(authToken, controller.signal)))
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          dispatch(setProfileError(err.message || 'Unexpected error'))
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          dispatch(setProfileLoading(false))
-        }
-      }
+      dispatch(setProfileData(profileQuery.data))
+      setProfileCache(authToken, profileQuery.data)
     }
+  }, [authToken, dispatch, profileQuery.data])
 
-    loadProfile()
-    return () => controller.abort()
-  }, [authToken, dispatch])
+  useEffect(() => {
+    if (profileQuery.error && profileQuery.error.name !== 'AbortError') {
+      dispatch(setProfileError(profileQuery.error.message || 'Unexpected error'))
+    }
+  }, [dispatch, profileQuery.error])
 
   async function handleChangePassword(e) {
     e.preventDefault()
@@ -66,7 +70,7 @@ function Profile() {
     dispatch(setPasswordLoading(true))
 
     try {
-      const payload = await changePassword(authToken, passwordForm)
+      const payload = await changePasswordMutation.mutateAsync(passwordForm)
       dispatch(setPasswordMessage(payload.message || 'Password updated successfully.'))
       dispatch(resetPasswordForm())
     } catch (err) {

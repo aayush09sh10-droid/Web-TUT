@@ -1,28 +1,22 @@
 import { useEffect, useRef } from 'react'
 import { useAppDispatch } from '../../../store/hooks'
 import { hydrateHomeState } from '../store/homeSlice'
+import { readPersistedHomeState, writePersistedHomeState } from '../../../shared/storage/homeSession'
 
-export const HOME_STATE_STORAGE_KEY = 'yt-summarizer-home-state'
-
-export function useHomePersistence(state) {
+export function useHomePersistence(state, ownerId) {
   const dispatch = useAppDispatch()
   const hasHydratedHomeState = useRef(false)
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(HOME_STATE_STORAGE_KEY)
+    const stored = readPersistedHomeState(ownerId)
     if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        dispatch(hydrateHomeState(parsed))
-      } catch {
-        // ignore malformed stored value
-      }
+      dispatch(hydrateHomeState(stored))
     }
     hasHydratedHomeState.current = true
-  }, [dispatch])
+  }, [dispatch, ownerId])
 
   useEffect(() => {
     if (!hasHydratedHomeState.current) return
-    window.localStorage.setItem(HOME_STATE_STORAGE_KEY, JSON.stringify(state))
-  }, [state])
+    writePersistedHomeState(state, ownerId)
+  }, [ownerId, state])
 }

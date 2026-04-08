@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react'
 import {
+  requestAskAnything,
   requestDoubtAnswer,
   requestFormula,
-  requestNotesSummary,
   requestQuiz,
+  requestStudySummary,
   requestTeaching,
   requestVideoSummary,
   saveQuizProgress,
@@ -18,7 +19,8 @@ import SummaryFeature from './features/Summary'
 import TeachingFeature from './features/Teaching'
 import { useHomeHistory } from './hooks/useHomeHistory'
 import { useHomePersistence } from './hooks/useHomePersistence'
-import { fileToBase64, normalizeSummaryPayload, questionNeedsFormulaSupport } from './homeUtils'
+import { normalizeSummaryPayload, questionNeedsFormulaSupport } from './homeUtils'
+import { MAX_PHOTO_UPLOADS, buildStudyUploads } from './utils/studyUploadUtils'
 import {
   addHistoryItem,
   resetHomeForNewSummary,
@@ -30,12 +32,14 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 
 function Home() {
   const dispatch = useAppDispatch()
-  const authToken = useAppSelector((state) => state.auth.auth?.token)
+  const auth = useAppSelector((state) => state.auth.auth)
+  const authToken = auth?.token
   const home = useAppSelector((state) => state.home)
   const {
     inputMode,
     url,
-    notesImage,
+    studyUploads,
+    askPrompt,
     result,
     history,
     activeView,
@@ -55,6 +59,7 @@ function Home() {
     () => ({
       url,
       inputMode,
+      askPrompt,
       result,
       activeView,
       selectedAnswers,
@@ -70,6 +75,7 @@ function Home() {
       activeFormulaSectionId,
       activeTopicId,
       activeView,
+      askPrompt,
       doubtQuestion,
       inputMode,
       quizSubmitted,
@@ -80,15 +86,25 @@ function Home() {
     ]
   )
 
-  useHomePersistence(persistedHomeState)
+  const homeStateOwnerId = auth?.user?.id || auth?.user?._id || auth?.user?.email || ''
+
+  useHomePersistence(persistedHomeState, homeStateOwnerId)
 
   const authHeaders = authToken ? { Authorization: `Bearer ${authToken}` } : {}
-  useHomeHistory(authToken, authHeaders)
+  useHomeHistory(authToken)
 
   function getCurrentSourceLabel(nextResult = result) {
     if (nextResult?.sourceLabel) return nextResult.sourceLabel
     if (url.trim()) return url.trim()
-    if (notesImage?.fileName) return `Notes Photo: ${notesImage.fileName}`
+    if (askPrompt.trim()) return `Ask AI: ${askPrompt.trim()}`
+    if (studyUploads.length > 0) {
+      if (inputMode === 'photos') {
+        return `Study Photos: ${studyUploads.map((upload) => upload.fileName).join(', ')}`
+      }
+
+      return `Study Files: ${studyUploads.map((upload) => upload.fileName).join(', ')}`
+    }
+
     return ''
   }
 
@@ -116,8 +132,23 @@ function Home() {
       return requestVideoSummary(authHeaders, url.trim())
     }
 
-    if (!notesImage?.imageData) throw new Error('Please upload a notes photo first.')
-    return requestNotesSummary(authHeaders, notesImage)
+    if (inputMode === 'ask') {
+      if (!askPrompt.trim()) throw new Error('Please enter a topic or question first.')
+      return requestAskAnything(authHeaders, askPrompt.trim())
+    }
+
+    if (!studyUploads.length) {
+      throw new Error(
+        inputMode === 'photos'
+          ? 'Please upload at least one study photo first.'
+          : 'Please upload at least one study file first.'
+      )
+    }
+
+    return requestStudySummary(authHeaders, {
+      uploads: studyUploads,
+      sourceMode: inputMode,
+    })
   }
 
   function applySummaryPayload(payload, nextView = 'summary') {
@@ -132,7 +163,7 @@ function Home() {
         activeView: nextView,
         selectedAnswers: {},
         quizSubmitted: false,
-        activeTopicId: '',
+        activeTopicId: payload.teaching?.topics?.[0]?.id || '',
         activeFormulaSectionId: '',
         activeFormulaPanel: 'explanation',
         showComposer: false,
@@ -141,7 +172,7 @@ function Home() {
 
     dispatch(
       addHistoryItem({
-        url: payload.sourceLabel || url.trim() || notesImage?.fileName || '',
+        url: payload.sourceLabel || url.trim() || askPrompt.trim() || studyUploads[0]?.fileName || '',
         result: payload,
         timestamp: Date.now(),
       })
@@ -153,7 +184,7 @@ function Home() {
     dispatch(setHomeFields({ error: '', quizError: '', teachingError: '', formulaError: '', doubtError: '', loading: true }))
     try {
       const payload = await requestSummaryForCurrentInput()
-      applySummaryPayload(payload, 'summary')
+      applySummaryPayload(payload, inputMode === 'ask' ? 'teaching' : 'summary')
     } catch (err) {
       dispatch(setHomeField({ field: 'error', value: err.message || 'Unexpected error' }))
     } finally {
@@ -161,24 +192,89 @@ function Home() {
     }
   }
 
-  async function handleNotesFileChange(e) {
-    const file = e.target.files?.[0]
-    if (!file) {
-      dispatch(setHomeField({ field: 'notesImage', value: null }))
-      return
-    }
-    if (!file.type.startsWith('image/')) {
-      dispatch(setHomeFields({ error: 'Please choose an image file for your notes.', notesImage: null }))
+  async function handleStudyFilesChange(e) {
+    const files = Array.from(e.target.files || [])
+
+    if (!files.length) {
+      dispatch(setHomeField({ field: 'studyUploads', value: [] }))
       return
     }
 
-    dispatch(setHomeField({ field: 'error', value: '' }))
-    try {
-      const imageData = await fileToBase64(file)
-      dispatch(setHomeField({ field: 'notesImage', value: { imageData, mimeType: file.type, fileName: file.name } }))
-    } catch (err) {
-      dispatch(setHomeFields({ error: err.message || 'Failed to read the selected image.', notesImage: null }))
+    if (inputMode === 'photos') {
+      if (files.length > MAX_PHOTO_UPLOADS) {
+        dispatch(
+          setHomeFields({
+            error: `You can upload a maximum of ${MAX_PHOTO_UPLOADS} photos at one time.`,
+            studyUploads: [],
+          })
+        )
+        return
+      }
+
+      if (files.some((file) => !file.type.startsWith('image/'))) {
+        dispatch(
+          setHomeFields({
+            error: 'Photo mode accepts image files only.',
+            studyUploads: [],
+          })
+        )
+        return
+      }
     }
+
+    if (inputMode === 'files') {
+      const allowedMimeTypes = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/json',
+        'application/ld+json',
+        'application/xml',
+        'application/javascript',
+        'application/x-javascript',
+        'application/csv',
+        'text/csv',
+      ]
+
+      const hasUnsupportedFile = files.some(
+        (file) =>
+          !file.type.startsWith('text/') &&
+          !file.type.startsWith('image/') &&
+          !allowedMimeTypes.includes(file.type)
+      )
+
+      if (hasUnsupportedFile) {
+        dispatch(
+          setHomeFields({
+            error: 'Please upload PDF, PPTX, text, CSV, JSON, markdown, or image files.',
+            studyUploads: [],
+          })
+        )
+        return
+      }
+    }
+
+    dispatch(setHomeField({ field: 'error', value: '' }))
+
+    try {
+      const uploads = await buildStudyUploads(files)
+      dispatch(setHomeField({ field: 'studyUploads', value: uploads }))
+    } catch (err) {
+      dispatch(setHomeFields({ error: err.message || 'Failed to read the selected files.', studyUploads: [] }))
+    } finally {
+      e.target.value = ''
+    }
+  }
+
+  function handleOpenNewSummaryComposer() {
+    dispatch(resetHomeForNewSummary())
+  }
+
+  function handleCloseComposer() {
+    if (!result) {
+      return
+    }
+
+    dispatch(setHomeFields({ showComposer: false, error: '', studyUploads: [], askPrompt: '' }))
   }
 
   async function handleSubmitDoubt(e) {
@@ -325,17 +421,25 @@ function Home() {
 
   const normalizedSummary = normalizeSummaryPayload(result)
   const showResult = Boolean(result)
+  const isAskResult = result?.sourceType === 'ask-ai'
 
   return (
     <main className="min-h-140 text-(--text)">
       <section className="flex flex-1 flex-col overflow-hidden">
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-3 pb-10 pt-6 sm:px-4 sm:pb-12 sm:pt-8">
           <HeaderFeature
-            title="Summarize a video or notes photo"
-            description="Paste a YouTube link or upload study notes and turn them into a colorful study flow with summaries, quizzes, formula help, and guided teaching."
+            title="Learn from video, files, or Ask AI"
+            description="Paste a YouTube link, upload study photos or files, or ask AI about any topic and turn it into a summary, teaching path, quiz, formula help, and guided study flow."
           />
 
-          <PasteLinkFeature handleNotesFileChange={handleNotesFileChange} handleSubmit={handleSubmit} />
+          {(showComposer || !showResult) && (
+            <PasteLinkFeature
+              handleClose={handleCloseComposer}
+              handleStudyFilesChange={handleStudyFilesChange}
+              handleSubmit={handleSubmit}
+              canClose={showResult}
+            />
+          )}
 
           <div className="mt-5 flex flex-1 flex-col gap-4 sm:mt-6">
             <div className="flex flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-(--border) bg-(--card) shadow-(--shadow) backdrop-blur-xl">
@@ -343,12 +447,12 @@ function Home() {
                 {showResult ? (
                   <div className="space-y-4">
                     <div className="grid gap-3 sm:flex sm:flex-wrap">
-                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'summary' }))} className={`w-full rounded-full border px-4 py-2 text-sm font-semibold transition sm:w-auto ${activeView === 'summary' ? 'border-[var(--text)] bg-[var(--text)] text-[var(--bg)]' : 'border-(--border) bg-(--card) text-(--text)'}`}>Summary</button>
+                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'summary' }))} className={`w-full rounded-full border px-4 py-2 text-sm font-semibold transition sm:w-auto ${activeView === 'summary' ? 'border-[var(--text)] bg-[var(--text)] text-[var(--bg)]' : 'border-(--border) bg-(--card) text-(--text)'}`}>{isAskResult ? 'Response' : 'Summary'}</button>
                       <button type="button" onClick={handleGenerateQuiz} disabled={quizLoading} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_8px_24px_rgba(255,153,0,0.22)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto" style={{ background: 'linear-gradient(135deg, oklch(75% 0.204 54), oklch(80% 0.186 80))', borderColor: 'oklch(72% 0.217 24)', color: '#4a2313' }}>{quizLoading ? 'Generating Quiz...' : 'Generate Quiz'}</button>
                       <button type="button" onClick={handleGenerateTeaching} disabled={teachingLoading} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(96,112,255,0.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto" style={{ background: 'linear-gradient(135deg, oklch(72% 0.167 244), oklch(84% 0.118 214))', borderColor: 'oklch(65% 0.19 278)', color: '#1d2957' }}>{teachingLoading ? 'Generating Teaching...' : 'Teaching'}</button>
                       <button type="button" onClick={handleGenerateFormula} disabled={formulaLoading} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(58,168,118,0.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto" style={{ background: 'linear-gradient(135deg, oklch(74% 0.18 145), oklch(87% 0.11 120))', borderColor: 'oklch(63% 0.16 155)', color: '#183d2e' }}>{formulaLoading ? 'Generating Formula...' : 'Formula Lab'}</button>
                       <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'doubt' }))} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(173,78,167,0.18)] transition hover:-translate-y-0.5 sm:w-auto" style={{ background: 'linear-gradient(135deg, oklch(70% 0.16 330), oklch(86% 0.09 320))', borderColor: 'oklch(62% 0.18 320)', color: '#4f1d4a' }}>Ask Doubt</button>
-                      <NewSummaryFeature onClick={() => dispatch(resetHomeForNewSummary())} />
+                      <NewSummaryFeature onClick={handleOpenNewSummaryComposer} />
                     </div>
 
                     <div className="rounded-[1.25rem] border border-(--border) bg-(--card-strong) p-4 shadow-sm">
@@ -365,7 +469,7 @@ function Home() {
                   <AskDoubtFeature handleSubmitDoubt={handleSubmitDoubt} hasLearningContext={false} />
                 ) : (
                   <div className="flex flex-1 items-center justify-center px-2 text-center text-sm leading-relaxed text-(--muted)">
-                    <p>Paste a YouTube link or upload a notes photo to get a clean, easy-to-read summary.</p>
+                    <p>Paste a YouTube link, upload study photos or files, or ask AI about any topic to get a clean, topic-wise summary.</p>
                   </div>
                 )}
               </div>

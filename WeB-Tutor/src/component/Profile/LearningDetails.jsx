@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { queryKeys } from '../../cache'
 import { fetchLearningDetails } from './api/learningDetailsApi'
 import LearningDoubtCard from './components/LearningDoubtCard'
 import { hydrateHomeState } from '../Home/store/homeSlice'
@@ -26,31 +28,28 @@ export default function LearningDetails() {
   const isDark = theme === 'dark'
   const panelStyle = useMemo(() => getProfilePanelStyle(isDark), [isDark])
 
+  const learningDetailsQuery = useQuery({
+    queryKey: queryKeys.learningDetails(authToken, id),
+    enabled: Boolean(authToken && id),
+    queryFn: ({ signal }) => fetchLearningDetails(authToken, id, signal),
+  })
+
   useEffect(() => {
-    if (!authToken || !id) return
+    dispatch(setLearningLoading(learningDetailsQuery.isLoading || learningDetailsQuery.isFetching))
+  }, [dispatch, learningDetailsQuery.isFetching, learningDetailsQuery.isLoading])
 
-    const controller = new AbortController()
-
-    async function loadItem() {
-      dispatch(setLearningLoading(true))
+  useEffect(() => {
+    if (learningDetailsQuery.data) {
       dispatch(setLearningError(''))
-
-      try {
-        dispatch(setLearningItem(await fetchLearningDetails(authToken, id, controller.signal)))
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          dispatch(setLearningError(err.message || 'Unexpected error'))
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          dispatch(setLearningLoading(false))
-        }
-      }
+      dispatch(setLearningItem(learningDetailsQuery.data))
     }
+  }, [dispatch, learningDetailsQuery.data])
 
-    loadItem()
-    return () => controller.abort()
-  }, [authToken, dispatch, id])
+  useEffect(() => {
+    if (learningDetailsQuery.error && learningDetailsQuery.error.name !== 'AbortError') {
+      dispatch(setLearningError(learningDetailsQuery.error.message || 'Unexpected error'))
+    }
+  }, [dispatch, learningDetailsQuery.error])
 
   const topicsLearnt = extractLearningTopics(item)
   const normalizedSummary = normalizeLearningSummary(item?.result)

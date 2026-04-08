@@ -3,7 +3,8 @@ import { createSlice } from '@reduxjs/toolkit'
 const initialState = {
   inputMode: 'video',
   url: '',
-  notesImage: null,
+  studyUploads: [],
+  askPrompt: '',
   result: null,
   loading: false,
   error: '',
@@ -66,11 +67,13 @@ const homeSlice = createSlice({
     },
     resetHomeForNewSummary(state) {
       state.url = ''
-      state.notesImage = null
+      state.studyUploads = []
+      state.askPrompt = ''
+      state.loading = false
       state.error = ''
-      state.formulaError = ''
-      state.activeFormulaSectionId = ''
-      state.activeFormulaPanel = 'explanation'
+      state.activeView = 'summary'
+      state.doubtLoading = false
+      state.doubtError = ''
       state.showComposer = true
     },
     setSelectedAnswer(state, action) {

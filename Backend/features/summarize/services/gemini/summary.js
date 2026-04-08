@@ -65,7 +65,16 @@ Return valid JSON only in this shape:
     "overview": "short paragraph",
     "coreIdeas": "short paragraph",
     "exploreMore": "short paragraph"
-  }
+  },
+  "topics": [
+    {
+      "title": "topic title",
+      "summary": "short topic explanation",
+      "keyPoints": [
+        "short point"
+      ]
+    }
+  ]
 }
 `.trim()
 }

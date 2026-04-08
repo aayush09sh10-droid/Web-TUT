@@ -29,6 +29,14 @@ function extractTopics(entry) {
     })
   }
 
+  if (Array.isArray(entry?.summary?.topics)) {
+    entry.summary.topics.forEach((topic) => {
+      if (topic?.title) {
+        topicSet.add(cleanTopicLabel(topic.title))
+      }
+    })
+  }
+
   if (entry?.quiz?.teaching?.topic) {
     topicSet.add(cleanTopicLabel(entry.quiz.teaching.topic))
   }

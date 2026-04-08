@@ -6,6 +6,7 @@ const {
 const { generateSummaryFromAudioChunks } = require('../services/gemini')
 const { getCachedVideoSummary } = require('../cache')
 const { createHistoryEntry } = require('../../history/services/history')
+const { sendSummarizeError, sendValidationError } = require('./errorResponse')
 
 async function summarizeVideo(req, res) {
   let downloadedAudioPath = null
@@ -22,10 +23,7 @@ async function summarizeVideo(req, res) {
     }
 
     if (!url) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing `url` in request body.',
-      })
+      return sendValidationError(res, 'Missing `url` in request body.')
     }
 
     const summary = await getCachedVideoSummary(req.user._id, url, async () => {
@@ -72,10 +70,11 @@ async function summarizeVideo(req, res) {
   } catch (error) {
     console.error('Summarize error:', error)
 
-    return res.status(error.statusCode || 500).json({
-      success: false,
-      error: error.message || 'Failed to summarize the video.',
-    })
+    return sendSummarizeError(
+      res,
+      error,
+      'Gemini could not summarize this video right now. Please try again.'
+    )
   } finally {
     await removeFiles([downloadedAudioPath, ...chunkPaths])
   }

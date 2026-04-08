@@ -41,6 +41,29 @@ export default function SummaryFeature() {
           )}
         </div>
       </div>
+
+      {normalizedSummary.topics.length > 0 && (
+        <div className="rounded-[1.25rem] border border-(--border) bg-(--card-strong) p-4 shadow-sm">
+          <h3 className="text-lg font-semibold text-(--text)">Topic-Wise Breakdown</h3>
+          <div className="mt-4 grid gap-3">
+            {normalizedSummary.topics.map((topic) => (
+              <div key={topic.id || topic.title} className="rounded-[1.1rem] border border-(--border) bg-(--card) p-4">
+                <h4 className="text-sm font-semibold text-(--text)">{topic.title}</h4>
+                <p className="mt-2 text-sm leading-relaxed text-(--text)">{topic.summary}</p>
+                {Array.isArray(topic.keyPoints) && topic.keyPoints.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {topic.keyPoints.map((point, index) => (
+                      <p key={`${topic.id || topic.title}-${index}`} className="rounded-xl border border-(--border) bg-(--card-strong) px-3 py-2 text-xs text-(--text)">
+                        {point}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   )
 }

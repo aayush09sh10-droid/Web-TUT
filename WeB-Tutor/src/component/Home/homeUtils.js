@@ -6,6 +6,7 @@ export function normalizeSummaryPayload(result) {
       title: summary.title || 'Video Summary',
       timeline: Array.isArray(summary.timeline) ? summary.timeline : [],
       paragraphs: summary.paragraphs || {},
+      topics: Array.isArray(summary.topics) ? summary.topics : [],
     }
   }
 
@@ -19,6 +20,7 @@ export function normalizeSummaryPayload(result) {
       coreIdeas: '',
       exploreMore: '',
     },
+    topics: [],
   }
 }
 
@@ -54,7 +56,7 @@ export function fileToBase64(file) {
     }
 
     reader.onerror = () => {
-      reject(new Error('Failed to read the selected image.'))
+      reject(new Error('Failed to read the selected file.'))
     }
 
     reader.readAsDataURL(file)

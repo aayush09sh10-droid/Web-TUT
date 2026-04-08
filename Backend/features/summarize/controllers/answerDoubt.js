@@ -1,23 +1,18 @@
 const { answerDoubtFromSummary } = require('../services/gemini')
 const { getCachedDoubtAnswer } = require('../cache')
 const { updateHistoryEntry } = require('../../history/services/history')
+const { sendSummarizeError, sendValidationError } = require('./errorResponse')
 
 async function answerDoubt(req, res) {
   try {
     const { summary, question, historyId, formula, teaching, sourceLabel, sourceType } = req.body
 
     if (!summary) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing `summary` in request body.',
-      })
+      return sendValidationError(res, 'Missing `summary` in request body.')
     }
 
     if (!question) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing `question` in request body.',
-      })
+      return sendValidationError(res, 'Missing `question` in request body.')
     }
 
     const doubtPayload = {
@@ -55,10 +50,11 @@ async function answerDoubt(req, res) {
   } catch (error) {
     console.error('Answer doubt error:', error)
 
-    return res.status(error.statusCode || 500).json({
-      success: false,
-      error: error.message || 'Failed to answer the doubt.',
-    })
+    return sendSummarizeError(
+      res,
+      error,
+      'Gemini could not answer this doubt right now. Please try again.'
+    )
   }
 }
 
