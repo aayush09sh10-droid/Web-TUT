@@ -23,15 +23,17 @@ export default function LearningDetails() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.auth.theme)
-  const authToken = useAppSelector((state) => state.auth.auth?.token)
+  const isAuthenticated = Boolean(useAppSelector((state) => state.auth.auth?.user))
+  const authCacheKey = isAuthenticated ? 'authenticated' : 'guest'
   const { learningItem: item, learningLoading: loading, learningError: error } = useAppSelector((state) => state.profile)
   const isDark = theme === 'dark'
   const panelStyle = useMemo(() => getProfilePanelStyle(isDark), [isDark])
 
   const learningDetailsQuery = useQuery({
-    queryKey: queryKeys.learningDetails(authToken, id),
-    enabled: Boolean(authToken && id),
-    queryFn: ({ signal }) => fetchLearningDetails(authToken, id, signal),
+    queryKey: queryKeys.learningDetails(authCacheKey, id),
+    enabled: Boolean(isAuthenticated && id),
+    queryFn: ({ signal }) => fetchLearningDetails(authCacheKey, id, signal),
+    staleTime: 5 * 60 * 1000, // 5 minutes - prevent duplicate calls
   })
 
   useEffect(() => {

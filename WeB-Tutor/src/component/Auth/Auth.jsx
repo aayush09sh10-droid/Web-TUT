@@ -41,6 +41,12 @@ function Auth() {
 
   async function handleRegister(e) {
     e.preventDefault()
+    
+    // Prevent submission if already loading or form is incomplete
+    if (loading || !form.name.trim() || !form.username.trim() || !form.email.trim() || !form.password) {
+      return
+    }
+    
     setError('')
 
     if (form.password !== form.confirmPassword) {
@@ -62,30 +68,50 @@ function Auth() {
 
       const res = await fetch(`${API_BASE}/api/auth/register`, {
         method: 'POST',
+        credentials: 'include',
         body,
       })
 
       const payload = await res.json()
       if (!res.ok) {
-        throw new Error(payload?.error || 'Failed to register.')
+        // Show user-friendly error messages
+        const errorMsg = payload?.error || 'Registration failed. Please try again.'
+        throw new Error(errorMsg)
       }
 
-      dispatch(setAuth({ token: payload.token, user: payload.user }))
+      dispatch(setAuth({ user: payload.user }))
+      // Clear form on successful registration
+      setForm({
+        name: '',
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        identifier: '',
+      })
+      setAvatar(null)
     } catch (err) {
-      setError(err.message || 'Unexpected error')
-    } finally {
+      const message = err.message || 'Registration failed. Please try again.'
+      setError(message)
       setLoading(false)
     }
   }
 
   async function handleLogin(e) {
     e.preventDefault()
+    
+    // Prevent submission if already loading or form is incomplete
+    if (loading || !form.identifier.trim() || !form.password) {
+      return
+    }
+    
     setError('')
     setLoading(true)
 
     try {
       const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           identifier: form.identifier.trim(),
@@ -95,13 +121,16 @@ function Auth() {
 
       const payload = await res.json()
       if (!res.ok) {
-        throw new Error(payload?.error || 'Failed to login.')
+        // Show user-friendly error messages
+        const errorMsg = payload?.error || 'Invalid username/email or password.'
+        throw new Error(errorMsg)
       }
 
-      dispatch(setAuth({ token: payload.token, user: payload.user }))
+      // Successful login - dispatch auth and form is kept for potential reuse
+      dispatch(setAuth({ user: payload.user }))
     } catch (err) {
-      setError(err.message || 'Unexpected error')
-    } finally {
+      const message = err.message || 'Login failed. Please try again.'
+      setError(message)
       setLoading(false)
     }
   }

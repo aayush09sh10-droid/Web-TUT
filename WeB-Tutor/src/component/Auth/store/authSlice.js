@@ -10,21 +10,8 @@ function getInitialTheme() {
 }
 
 function getInitialAuth() {
-  if (typeof window === 'undefined') return null
-  const stored = window.sessionStorage.getItem(AUTH_STORAGE_KEY)
-
-  if (!stored) {
-    window.localStorage.removeItem(AUTH_STORAGE_KEY)
-    return null
-  }
-
-  try {
-    const parsed = JSON.parse(stored)
-    return parsed?.token && parsed?.user ? parsed : null
-  } catch {
-    window.sessionStorage.removeItem(AUTH_STORAGE_KEY)
-    return null
-  }
+  // Don't clear auth on initialization - let App.jsx verify session with server
+  return null
 }
 
 const authSlice = createSlice({
@@ -32,6 +19,7 @@ const authSlice = createSlice({
   initialState: {
     theme: getInitialTheme(),
     auth: getInitialAuth(),
+    isCheckingSession: true, // Track if we're verifying session with server
   },
   reducers: {
     setTheme(state, action) {
@@ -42,13 +30,18 @@ const authSlice = createSlice({
     },
     setAuth(state, action) {
       state.auth = action.payload
+      state.isCheckingSession = false
     },
     clearAuth(state) {
       state.auth = null
+      state.isCheckingSession = false
+    },
+    setSessionCheckComplete(state, action) {
+      state.isCheckingSession = action.payload
     },
   },
 })
 
-export const { setTheme, toggleTheme, setAuth, clearAuth } = authSlice.actions
+export const { setTheme, toggleTheme, setAuth, clearAuth, setSessionCheckComplete } = authSlice.actions
 export const authReducer = authSlice.reducer
 export { AUTH_STORAGE_KEY, THEME_STORAGE_KEY }

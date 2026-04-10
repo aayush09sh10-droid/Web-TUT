@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs')
+const crypto = require('crypto')
 
 const User = require('../../models/User')
 const { uploadBufferToCloudinary, canUploadToCloudinary } = require('./cloudinary')
@@ -58,16 +59,19 @@ async function registerUser({ name, username, email, password, file }) {
   }
 
   const passwordHash = await bcrypt.hash(safePassword, 10)
+  const sessionId = crypto.randomUUID()
   const user = await User.create({
     name: safeName,
     username: safeUsername,
     email: safeEmail,
     passwordHash,
     avatar,
+    authSessionId: sessionId,
+    authUsesRemaining: 0,
   })
 
   return {
-    token: signAuthToken(user),
+    token: signAuthToken(user, sessionId),
     user: serialiseUser(user),
   }
 }

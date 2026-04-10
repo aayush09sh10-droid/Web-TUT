@@ -12,12 +12,13 @@ function getJwtSecret() {
   return secret
 }
 
-function signAuthToken(user) {
+function signAuthToken(user, sessionId) {
   return jwt.sign(
     {
       sub: String(user._id),
       email: user.email,
       username: user.username,
+      sid: String(sessionId || user.authSessionId || '').trim(),
     },
     getJwtSecret(),
     {

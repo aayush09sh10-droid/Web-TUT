@@ -1,4 +1,4 @@
-const { registerUser } = require('../services/auth')
+const { getAuthCookieName, getAuthCookieOptions, registerUser } = require('../services/auth')
 
 async function register(req, res) {
   try {
@@ -6,10 +6,11 @@ async function register(req, res) {
       ...req.body,
       file: req.file,
     })
+    res.cookie(getAuthCookieName(), result.token, getAuthCookieOptions())
 
     return res.status(201).json({
       success: true,
-      ...result,
+      user: result.user,
     })
   } catch (error) {
     return res.status(error.statusCode || 500).json({

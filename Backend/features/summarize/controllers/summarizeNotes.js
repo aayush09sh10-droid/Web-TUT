@@ -47,7 +47,7 @@ async function summarizeNotes(req, res) {
       notesPayload.sourceMode === 'photos' ? 'study-photos' : 'study-files'
     const sourceFingerprint = getStudySourceFingerprint(notesPayload)
 
-    if (!forceRegenerate && !historyId) {
+    if (req.user && !forceRegenerate && !historyId) {
       const existingEntry = await findExistingHistoryEntryByFingerprint(
         req.user._id,
         resolvedSourceType,
@@ -78,10 +78,12 @@ async function summarizeNotes(req, res) {
 
     const result = forceRegenerate
       ? await buildSummary()
-      : await getCachedNotesSummary(req.user._id, notesPayload, buildSummary)
+      : req.user
+        ? await getCachedNotesSummary(req.user._id, notesPayload, buildSummary)
+        : await buildSummary()
 
     const historyEntry =
-      historyId
+      req.user && historyId
         ? await updateHistoryEntry({
             historyId,
             userId: req.user._id,
@@ -101,19 +103,21 @@ async function summarizeNotes(req, res) {
 
     const resolvedHistoryEntry =
       historyEntry ||
-      (await createHistoryEntry({
-        userId: req.user._id,
-        sourceType: resolvedSourceType,
-        sourceLabel: result.sourceLabel,
-        sourceFingerprint,
-        summary: result.summary,
-      }))
+      (req.user
+        ? await createHistoryEntry({
+            userId: req.user._id,
+            sourceType: resolvedSourceType,
+            sourceLabel: result.sourceLabel,
+            sourceFingerprint,
+            summary: result.summary,
+          })
+        : null)
 
     return res.json({
       success: true,
       sourceType: resolvedSourceType,
       sourceLabel: result.sourceLabel,
-      historyId: resolvedHistoryEntry.id,
+      historyId: resolvedHistoryEntry?.id || null,
       summary: result.summary,
     })
   } catch (error) {

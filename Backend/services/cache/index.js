@@ -3,6 +3,8 @@ const crypto = require('crypto')
 const { getRedisClient } = require('./redisClient')
 
 const CACHE_PREFIX = String(process.env.REDIS_CACHE_PREFIX || 'web-tutor').trim()
+const memoryCache = new Map()
+let hasLoggedMemoryFallback = false
 
 function sortValue(value) {
   if (Array.isArray(value)) {
@@ -38,11 +40,62 @@ function buildCacheKey(parts = []) {
   return [CACHE_PREFIX, ...safeParts].join(':')
 }
 
+function makePatternRegExp(pattern) {
+  const escaped = pattern.replace(/[-\[\]{}()+?.,\\^$|#\s]/g, '\\$&')
+  const regexString = escaped.replace(/\\\*/g, '.*')
+  return new RegExp(`^${regexString}$`)
+}
+
+function logMemoryFallback() {
+  if (!hasLoggedMemoryFallback) {
+    hasLoggedMemoryFallback = true
+    console.info('Redis unavailable: using in-memory cache fallback.')
+  }
+}
+
+function getMemoryEntry(key) {
+  const entry = memoryCache.get(key)
+  if (!entry) {
+    return null
+  }
+
+  if (entry.expiresAt && entry.expiresAt <= Date.now()) {
+    memoryCache.delete(key)
+    return null
+  }
+
+  return entry.value
+}
+
+function setMemoryEntry(key, value, ttlSeconds = 300) {
+  const expiresAt = ttlSeconds ? Date.now() + ttlSeconds * 1000 : undefined
+  memoryCache.set(key, { value, expiresAt })
+  return value
+}
+
+function deleteMemoryEntry(key) {
+  memoryCache.delete(key)
+}
+
+function deleteMemoryEntries(keys = []) {
+  keys.forEach((key) => memoryCache.delete(key))
+}
+
+function deleteMemoryByPattern(pattern) {
+  const matcher = makePatternRegExp(pattern)
+  for (const key of Array.from(memoryCache.keys())) {
+    if (matcher.test(key)) {
+      memoryCache.delete(key)
+    }
+  }
+}
+
 async function getJson(key) {
   const client = await getRedisClient()
 
   if (!client) {
-    return null
+    logMemoryFallback()
+    return getMemoryEntry(key)
   }
 
   try {
@@ -50,7 +103,7 @@ async function getJson(key) {
     return rawValue ? JSON.parse(rawValue) : null
   } catch (error) {
     console.warn(`Cache read skipped for ${key}:`, error.message)
-    return null
+    return getMemoryEntry(key)
   }
 }
 
@@ -58,7 +111,8 @@ async function setJson(key, value, ttlSeconds = 300) {
   const client = await getRedisClient()
 
   if (!client) {
-    return value
+    logMemoryFallback()
+    return setMemoryEntry(key, value, ttlSeconds)
   }
 
   try {
@@ -67,6 +121,7 @@ async function setJson(key, value, ttlSeconds = 300) {
     })
   } catch (error) {
     console.warn(`Cache write skipped for ${key}:`, error.message)
+    return setMemoryEntry(key, value, ttlSeconds)
   }
 
   return value
@@ -88,6 +143,8 @@ async function deleteKey(key) {
   const client = await getRedisClient()
 
   if (!client) {
+    logMemoryFallback()
+    deleteMemoryEntry(key)
     return
   }
 
@@ -95,6 +152,7 @@ async function deleteKey(key) {
     await client.del(key)
   } catch (error) {
     console.warn(`Cache delete skipped for ${key}:`, error.message)
+    deleteMemoryEntry(key)
   }
 }
 
@@ -108,6 +166,8 @@ async function deleteMany(keys = []) {
   const client = await getRedisClient()
 
   if (!client) {
+    logMemoryFallback()
+    deleteMemoryEntries(uniqueKeys)
     return
   }
 
@@ -115,6 +175,7 @@ async function deleteMany(keys = []) {
     await client.del(uniqueKeys)
   } catch (error) {
     console.warn('Cache batch delete skipped:', error.message)
+    deleteMemoryEntries(uniqueKeys)
   }
 }
 
@@ -122,6 +183,8 @@ async function deleteByPattern(pattern) {
   const client = await getRedisClient()
 
   if (!client) {
+    logMemoryFallback()
+    deleteMemoryByPattern(pattern)
     return
   }
 
@@ -140,6 +203,7 @@ async function deleteByPattern(pattern) {
     }
   } catch (error) {
     console.warn(`Cache pattern delete skipped for ${pattern}:`, error.message)
+    deleteMemoryByPattern(pattern)
   }
 }
 

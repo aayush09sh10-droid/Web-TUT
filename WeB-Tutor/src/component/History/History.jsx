@@ -21,7 +21,8 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 
 export default function History() {
   const dispatch = useAppDispatch()
-  const authToken = useAppSelector((state) => state.auth.auth?.token)
+  const isAuthenticated = Boolean(useAppSelector((state) => state.auth.auth?.user))
+  const authCacheKey = isAuthenticated ? 'authenticated' : 'guest'
   const history = useAppSelector((state) => state.history.items)
   const selectedId = useAppSelector((state) => state.history.selectedId)
   const selected = useMemo(
@@ -30,24 +31,25 @@ export default function History() {
   )
 
   const historyQuery = useQuery({
-    queryKey: queryKeys.history(authToken),
-    enabled: Boolean(authToken),
-    queryFn: ({ signal }) => fetchHistory(authToken, signal),
+    queryKey: queryKeys.history(authCacheKey),
+    enabled: isAuthenticated,
+    queryFn: ({ signal }) => fetchHistory(authCacheKey, signal),
+    staleTime: 5 * 60 * 1000, // 5 minutes - prevent duplicate calls
   })
 
   const clearHistoryMutation = useMutation({
-    mutationFn: () => clearHistory(authToken),
+    mutationFn: () => clearHistory(authCacheKey),
     onSuccess: () => {
-      setHistoryCache(authToken, [])
+      setHistoryCache(authCacheKey, [])
       dispatch(clearAllHistoryItems())
     },
   })
 
   const deleteHistoryMutation = useMutation({
-    mutationFn: (itemId) => deleteHistoryItem(authToken, itemId),
+    mutationFn: (itemId) => deleteHistoryItem(authCacheKey, itemId),
     onSuccess: (_, itemId) => {
       const nextItems = history.filter((item) => item.id !== itemId)
-      setHistoryCache(authToken, nextItems)
+      setHistoryCache(authCacheKey, nextItems)
       dispatch(removeHistoryItemFromState(itemId))
     },
   })

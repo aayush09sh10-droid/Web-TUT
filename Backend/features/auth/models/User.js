@@ -39,6 +39,16 @@ const userSchema = new mongoose.Schema(
         default: '',
       },
     },
+    authSessionId: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    authUsesRemaining: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true,

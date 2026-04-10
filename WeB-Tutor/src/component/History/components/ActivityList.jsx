@@ -6,13 +6,14 @@ import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 export default function ActivityList({ onDelete }) {
   const dispatch = useAppDispatch()
   const history = useAppSelector((state) => state.history.items)
+  const recentHistory = [...history].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
 
   function handleSelectItem(event, itemId) {
     event.stopPropagation()
     dispatch(selectHistoryItem(itemId))
   }
 
-  if (history.length === 0) {
+  if (recentHistory.length === 0) {
     return (
       <div className="rounded-[1.5rem] border border-(--border) bg-(--card) p-6 text-sm text-(--text) shadow-(--shadow) backdrop-blur-xl">
         No activity yet. Summarize a video to populate this log.
@@ -20,34 +21,49 @@ export default function ActivityList({ onDelete }) {
     )
   }
 
-  return history.map((item) => (
-    <div
-      key={item.id || item.timestamp}
-      className="flex flex-col gap-3 rounded-[1.4rem] border border-(--border) bg-(--card) p-4 shadow-(--shadow) backdrop-blur-xl sm:flex-row sm:items-start sm:justify-between"
-    >
-      <div className="min-w-0 flex-1">
-        <button type="button" onClick={() => dispatch(selectHistoryItem(item.id))} className="min-w-0 text-left">
-          <div className="max-w-full break-all font-medium text-(--text) sm:w-56 sm:truncate sm:break-normal">
-            {item.result?.summary?.title || item.url}
-          </div>
-          <div className="mt-1 text-xs text-(--muted)">{new Date(item.timestamp).toLocaleString()}</div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {item.result?.summary && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Summary</button>}
-            {item.result?.quiz && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Quiz</button>}
-            {item.result?.teaching && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Teaching</button>}
-            {item.result?.formula && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Formula</button>}
-            {item.result?.doubt && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Doubt</button>}
-          </div>
-        </button>
-        {item.id && (
-          <Link to={`/profile/learning/${item.id}`} className="mt-3 inline-flex rounded-full border border-(--border) bg-(--card-strong) px-3 py-2 text-xs font-medium text-(--text) transition hover:-translate-y-0.5">
-            Open full lesson
-          </Link>
-        )}
+  return (
+    <div className="space-y-3">
+      <div className="rounded-[1.2rem] border border-(--border) bg-(--card) px-4 py-3 text-sm shadow-(--shadow) backdrop-blur-xl">
+        <p className="font-semibold text-(--text)">Recent summaries</p>
+        <p className="mt-1 text-xs text-(--muted)">Your latest learning sessions are shown first.</p>
       </div>
-      <button type="button" onClick={() => onDelete(item)} className="self-start text-xs font-medium text-(--text) opacity-80 hover:text-red-500">
-        Delete
-      </button>
+
+      {recentHistory.map((item) => (
+        <div
+          key={item.id || item.timestamp}
+          className="flex flex-col gap-3 rounded-[1.4rem] border border-(--border) bg-(--card) p-4 shadow-(--shadow) backdrop-blur-xl"
+        >
+          <div className="min-w-0">
+            <button type="button" onClick={() => dispatch(selectHistoryItem(item.id))} className="min-w-0 w-full text-left">
+              <div className="text-sm font-semibold text-(--text)">
+                {item.result?.summary?.title || item.url}
+              </div>
+              <div className="mt-1 text-xs text-(--muted)">{new Date(item.timestamp).toLocaleString()}</div>
+              <div className="mt-2 text-xs text-(--muted)">
+                {item.sourceLabel || item.url}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {item.result?.summary && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Summary</button>}
+                {item.result?.quiz && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Quiz</button>}
+                {item.result?.teaching && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Teaching</button>}
+                {item.result?.formula && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Formula</button>}
+                {item.result?.doubt && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Doubt</button>}
+              </div>
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {item.id && (
+              <Link to={`/profile/learning/${item.id}`} className="inline-flex rounded-full border border-(--border) bg-(--card-strong) px-3 py-2 text-xs font-medium text-(--text) transition hover:-translate-y-0.5">
+                Open full lesson
+              </Link>
+            )}
+            <button type="button" onClick={() => onDelete(item)} className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 transition hover:-translate-y-0.5">
+              Delete
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
-  ))
+  )
 }

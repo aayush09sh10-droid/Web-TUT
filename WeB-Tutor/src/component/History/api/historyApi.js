@@ -1,14 +1,14 @@
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
+import { handleProtectedResponse, parseJsonResponse } from '../../../shared/auth/authSession'
 
-export async function fetchHistory(authToken, signal) {
+export async function fetchHistory(_authToken, signal) {
   const res = await fetch(`${API_BASE}/api/history`, {
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-    },
+    credentials: 'include',
     signal,
   })
 
-  const payload = await res.json()
+  handleProtectedResponse(res)
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to load history.')
   }
@@ -16,43 +16,40 @@ export async function fetchHistory(authToken, signal) {
   return Array.isArray(payload.history) ? payload.history : []
 }
 
-export async function clearHistory(authToken) {
+export async function clearHistory() {
   const res = await fetch(`${API_BASE}/api/history`, {
     method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-    },
+    credentials: 'include',
   })
 
-  const payload = await res.json()
+  handleProtectedResponse(res)
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to clear history.')
   }
 }
 
-export async function deleteHistoryItem(authToken, itemId) {
+export async function deleteHistoryItem(_authToken, itemId) {
   const res = await fetch(`${API_BASE}/api/history/${itemId}`, {
     method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-    },
+    credentials: 'include',
   })
 
-  const payload = await res.json()
+  handleProtectedResponse(res)
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to delete history item.')
   }
 }
 
-export async function fetchSubjects(authToken, signal) {
+export async function fetchSubjects(_authToken, signal) {
   const res = await fetch(`${API_BASE}/api/history/subjects`, {
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-    },
+    credentials: 'include',
     signal,
   })
 
-  const payload = await res.json()
+  handleProtectedResponse(res)
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to load subjects.')
   }
@@ -60,17 +57,18 @@ export async function fetchSubjects(authToken, signal) {
   return Array.isArray(payload.subjects) ? payload.subjects : []
 }
 
-export async function createSubject(authToken, name) {
+export async function createSubject(_authToken, name) {
   const res = await fetch(`${API_BASE}/api/history/subjects`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${authToken}`,
     },
     body: JSON.stringify({ name }),
   })
 
-  const payload = await res.json()
+  handleProtectedResponse(res)
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to create subject.')
   }
@@ -78,17 +76,18 @@ export async function createSubject(authToken, name) {
   return payload.subject
 }
 
-export async function saveHistoryItemToSubject(authToken, subjectId, historyId) {
+export async function saveHistoryItemToSubject(_authToken, subjectId, historyId) {
   const res = await fetch(`${API_BASE}/api/history/subjects/${subjectId}/items`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${authToken}`,
     },
     body: JSON.stringify({ historyId }),
   })
 
-  const payload = await res.json()
+  handleProtectedResponse(res)
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to save lesson into subject.')
   }
@@ -96,17 +95,18 @@ export async function saveHistoryItemToSubject(authToken, subjectId, historyId) 
   return payload.subject
 }
 
-export async function reorderSubjectLessons(authToken, subjectId, itemIds) {
+export async function reorderSubjectLessons(_authToken, subjectId, itemIds) {
   const res = await fetch(`${API_BASE}/api/history/subjects/${subjectId}/items/reorder`, {
     method: 'PATCH',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${authToken}`,
     },
     body: JSON.stringify({ itemIds }),
   })
 
-  const payload = await res.json()
+  handleProtectedResponse(res)
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to rearrange subject lessons.')
   }
@@ -114,15 +114,14 @@ export async function reorderSubjectLessons(authToken, subjectId, itemIds) {
   return payload.subject
 }
 
-export async function removeHistoryItemFromSubject(authToken, subjectId, historyId) {
+export async function removeHistoryItemFromSubject(_authToken, subjectId, historyId) {
   const res = await fetch(`${API_BASE}/api/history/subjects/${subjectId}/items/${historyId}`, {
     method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-    },
+    credentials: 'include',
   })
 
-  const payload = await res.json()
+  handleProtectedResponse(res)
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to remove lesson from subject.')
   }

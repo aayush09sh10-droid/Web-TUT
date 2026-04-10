@@ -21,7 +21,9 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 function Profile() {
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.auth.theme)
-  const authToken = useAppSelector((state) => state.auth.auth?.token)
+  const authUser = useAppSelector((state) => state.auth.auth?.user)
+  const isAuthenticated = Boolean(authUser)
+  const authCacheKey = isAuthenticated ? 'authenticated' : 'guest'
   const {
     error,
     passwordForm,
@@ -30,13 +32,14 @@ function Profile() {
   const panelStyle = useMemo(() => getProfilePanelStyle(isDark), [isDark])
 
   const profileQuery = useQuery({
-    queryKey: queryKeys.profile(authToken),
-    enabled: Boolean(authToken),
-    queryFn: ({ signal }) => fetchProfile(authToken, signal),
+    queryKey: queryKeys.profile(authCacheKey),
+    enabled: isAuthenticated,
+    queryFn: ({ signal }) => fetchProfile(authUser, signal),
+    staleTime: 5 * 60 * 1000, // 5 minutes - prevent duplicate calls
   })
 
   const changePasswordMutation = useMutation({
-    mutationFn: (nextPasswordForm) => changePassword(authToken, nextPasswordForm),
+    mutationFn: (nextPasswordForm) => changePassword(authCacheKey, nextPasswordForm),
   })
 
   useEffect(() => {
@@ -47,9 +50,9 @@ function Profile() {
     if (profileQuery.data) {
       dispatch(setProfileError(''))
       dispatch(setProfileData(profileQuery.data))
-      setProfileCache(authToken, profileQuery.data)
+      setProfileCache(authCacheKey, profileQuery.data)
     }
-  }, [authToken, dispatch, profileQuery.data])
+  }, [authCacheKey, dispatch, profileQuery.data])
 
   useEffect(() => {
     if (profileQuery.error && profileQuery.error.name !== 'AbortError') {

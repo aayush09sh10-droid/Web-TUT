@@ -1,11 +1,13 @@
 import React, { useEffect, useRef } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { clearAuth, toggleTheme } from '../Auth/store/authSlice'
 import { closeHeaderMenu, setHeaderVisible, toggleHeaderMenu } from './store/headerSlice'
+import { queryClient } from '../../cache'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 
 function Header() {
   const location = useLocation()
+  const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.auth.theme)
   const authUser = useAppSelector((state) => state.auth.auth?.user)
@@ -62,6 +64,21 @@ function Header() {
     document.addEventListener('mousedown', handlePointerDown)
     return () => document.removeEventListener('mousedown', handlePointerDown)
   }, [dispatch, isMenuOpen])
+
+  async function handleLogout() {
+    try {
+      await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:5001'}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      queryClient.clear()
+      dispatch(closeHeaderMenu())
+      dispatch(clearAuth())
+    }
+  }
 
   return (
     <>
@@ -133,6 +150,21 @@ function Header() {
               {theme === 'dark' ? 'Light' : 'Dark'}
             </button>
 
+            {!authUser && (
+              <button
+                type="button"
+                onClick={() => navigate('/history')}
+                className="w-full rounded-full px-4 py-2 text-center text-xs font-medium transition hover:-translate-y-0.5 sm:w-auto text-(--bg)"
+                style={{
+                  background: isDark
+                    ? 'linear-gradient(135deg, rgba(108,129,255,0.72), rgba(255,179,107,0.34))'
+                    : 'linear-gradient(135deg, rgba(255,213,138,0.95), rgba(200,221,255,0.95))',
+                }}
+              >
+                Login
+              </button>
+            )}
+
             {authUser && (
               <div className="relative w-full sm:w-auto" ref={menuRef}>
                 <button
@@ -180,10 +212,7 @@ function Header() {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => {
-                        dispatch(closeHeaderMenu())
-                        dispatch(clearAuth())
-                      }}
+                      onClick={handleLogout}
                       className="mt-1 block w-full rounded-[0.95rem] px-4 py-3 text-left text-sm font-medium text-(--text) transition hover:bg-(--card)"
                     >
                       Logout

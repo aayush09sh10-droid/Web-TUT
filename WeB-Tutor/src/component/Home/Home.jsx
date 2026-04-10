@@ -22,6 +22,7 @@ import { useHomePersistence } from './hooks/useHomePersistence'
 import { normalizeSummaryPayload, questionNeedsFormulaSupport } from './homeUtils'
 import { MAX_PHOTO_UPLOADS, buildStudyUploads } from './utils/studyUploadUtils'
 import { setHistoryCache } from '../../cache'
+import { hasUsedGuestSummary, markGuestSummaryUsed } from '../../shared/auth/guestAccess'
 import {
   addHistoryItem,
   resetHomeForNewSummary,
@@ -34,7 +35,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 function Home() {
   const dispatch = useAppDispatch()
   const auth = useAppSelector((state) => state.auth.auth)
-  const authToken = auth?.token
+  const isAuthenticated = Boolean(auth?.user)
   const home = useAppSelector((state) => state.home)
   const {
     inputMode,
@@ -93,9 +94,7 @@ function Home() {
   const homeStateOwnerId = auth?.user?.id || auth?.user?._id || auth?.user?.email || ''
 
   useHomePersistence(persistedHomeState, homeStateOwnerId)
-
-  const authHeaders = authToken ? { Authorization: `Bearer ${authToken}` } : {}
-  useHomeHistory(authToken)
+  useHomeHistory(isAuthenticated)
 
   function getVisibleErrorMessage(err, fallbackMessage = 'Unexpected error') {
     if (err?.silentInUi) {
@@ -143,7 +142,9 @@ function Home() {
     )
 
     dispatch(setHomeHistory(updatedHistory))
-    setHistoryCache(authToken, updatedHistory)
+    if (isAuthenticated) {
+      setHistoryCache('authenticated', updatedHistory)
+    }
   }
 
   async function requestSummaryForCurrentInput(options = {}) {
@@ -151,12 +152,12 @@ function Home() {
 
     if (inputMode === 'video') {
       if (!url.trim()) throw new Error('Please paste a valid YouTube video URL.')
-      return requestVideoSummary(authHeaders, url.trim(), requestOptions)
+      return requestVideoSummary(url.trim(), requestOptions)
     }
 
     if (inputMode === 'ask') {
       if (!askPrompt.trim()) throw new Error('Please enter a topic or question first.')
-      return requestAskAnything(authHeaders, askPrompt.trim(), requestOptions)
+      return requestAskAnything(askPrompt.trim(), requestOptions)
     }
 
     if (!studyUploads.length) {
@@ -168,7 +169,6 @@ function Home() {
     }
 
     return requestStudySummary(
-      authHeaders,
       {
         uploads: studyUploads,
         sourceMode: inputMode,
@@ -221,7 +221,9 @@ function Home() {
       ...history.filter((item) => item.id !== payload.historyId && item.url !== (payload.sourceLabel || url.trim() || askPrompt.trim() || studyUploads[0]?.fileName || '')),
     ].slice(0, 12)
 
-    setHistoryCache(authToken, nextHistory)
+    if (isAuthenticated) {
+      setHistoryCache('authenticated', nextHistory)
+    }
   }
 
   async function continueAfterSummary(payload) {
@@ -232,7 +234,14 @@ function Home() {
     e.preventDefault()
     dispatch(setHomeFields({ error: '', quizError: '', teachingError: '', formulaError: '', doubtError: '', loading: true }))
     try {
+      if (!isAuthenticated && hasUsedGuestSummary()) {
+        throw new Error('Please login to continue using WebTutor after your one free summary.')
+      }
+
       const payload = await requestSummaryForCurrentInput()
+      if (!isAuthenticated) {
+        markGuestSummaryUsed()
+      }
       await continueAfterSummary(payload)
     } catch (err) {
       const nextError = getVisibleErrorMessage(err)
@@ -245,6 +254,11 @@ function Home() {
   }
 
   async function handleRegenerateSummary() {
+    if (!isAuthenticated) {
+      dispatch(setHomeField({ field: 'error', value: 'Please login to regenerate this summary.' }))
+      return
+    }
+
     dispatch(setHomeFields({ error: '', quizError: '', teachingError: '', formulaError: '', doubtError: '', loading: true }))
     try {
       const payload = await requestSummaryForCurrentInput({
@@ -348,6 +362,11 @@ function Home() {
   }
 
   async function submitDoubtRequest(questionValue, forceRegenerate = false) {
+    if (!isAuthenticated) {
+      dispatch(setHomeField({ field: 'doubtError', value: 'Please login to use Ask Doubt.' }))
+      return
+    }
+
     if (!questionValue.trim()) {
       dispatch(setHomeField({ field: 'doubtError', value: 'Please type your doubt first.' }))
       return
@@ -363,13 +382,13 @@ function Home() {
       }
 
       if (workingResult?.summary && !workingResult?.formula && questionNeedsFormulaSupport(doubtQuestion)) {
-        const formulaPayload = await requestFormula(authHeaders, workingResult.summary, workingResult.historyId)
+        const formulaPayload = await requestFormula(workingResult.summary, workingResult.historyId)
         workingResult = { ...workingResult, formula: formulaPayload.formula }
         dispatch(setHomeFields({ result: workingResult, activeFormulaSectionId: formulaPayload.formula?.sections?.[0]?.id || '' }))
         updateHistoryResult(workingResult)
       }
 
-      const payload = await requestDoubtAnswer(authHeaders, {
+      const payload = await requestDoubtAnswer({
         summary: workingResult.summary,
         formula: workingResult.formula || null,
         teaching: workingResult.teaching || null,
@@ -405,13 +424,18 @@ function Home() {
   }
 
   async function handleGenerateQuiz(forceRegenerate = false, workingResult = result) {
+    if (!isAuthenticated) {
+      dispatch(setHomeField({ field: 'quizError', value: 'Please login to generate quiz.' }))
+      return
+    }
+
     if (!workingResult?.summary) return
     dispatch(setHomeFields({ activeView: 'quiz', quizError: '' }))
     if (workingResult.quiz && !forceRegenerate) return
 
     dispatch(setHomeFields({ selectedAnswers: {}, quizSubmitted: false, quizLoading: true }))
     try {
-      const payload = await requestQuiz(authHeaders, workingResult.summary, workingResult.historyId, { forceRegenerate })
+      const payload = await requestQuiz(workingResult.summary, workingResult.historyId, { forceRegenerate })
       const nextResult = { ...workingResult, quiz: payload.quiz }
       dispatch(setHomeField({ field: 'result', value: nextResult }))
       updateHistoryResult(nextResult)
@@ -426,6 +450,11 @@ function Home() {
   }
 
   async function handleGenerateTeaching(forceRegenerate = false, workingResult = result) {
+    if (!isAuthenticated) {
+      dispatch(setHomeField({ field: 'teachingError', value: 'Please login to generate teaching path.' }))
+      return
+    }
+
     if (!workingResult?.summary) return
     dispatch(setHomeFields({ activeView: 'teaching', teachingError: '' }))
     if (workingResult.teaching?.topics?.length && !forceRegenerate) {
@@ -435,7 +464,7 @@ function Home() {
 
     dispatch(setHomeField({ field: 'teachingLoading', value: true }))
     try {
-      const payload = await requestTeaching(authHeaders, workingResult.summary, workingResult.historyId, { forceRegenerate })
+      const payload = await requestTeaching(workingResult.summary, workingResult.historyId, { forceRegenerate })
       const nextResult = { ...workingResult, teaching: payload.teaching }
       dispatch(setHomeFields({ result: nextResult, activeTopicId: payload.teaching?.topics?.[0]?.id || '' }))
       updateHistoryResult(nextResult)
@@ -450,6 +479,11 @@ function Home() {
   }
 
   async function handleGenerateFormula(forceRegenerate = false, workingResult = result) {
+    if (!isAuthenticated) {
+      dispatch(setHomeField({ field: 'formulaError', value: 'Please login to generate formula guide.' }))
+      return
+    }
+
     if (!workingResult?.summary) return
     dispatch(setHomeFields({ activeView: 'formula', formulaError: '' }))
     if (workingResult.formula?.sections?.length && !forceRegenerate) {
@@ -459,7 +493,7 @@ function Home() {
 
     dispatch(setHomeField({ field: 'formulaLoading', value: true }))
     try {
-      const payload = await requestFormula(authHeaders, workingResult.summary, workingResult.historyId, { forceRegenerate })
+      const payload = await requestFormula(workingResult.summary, workingResult.historyId, { forceRegenerate })
       const nextResult = { ...workingResult, formula: payload.formula }
       dispatch(setHomeFields({ result: nextResult, activeFormulaSectionId: payload.formula?.sections?.[0]?.id || '', activeFormulaPanel: 'explanation' }))
       updateHistoryResult(nextResult)
@@ -500,12 +534,12 @@ function Home() {
     const correctCount = quiz?.questions?.reduce((count, question) => count + (selectedAnswers[question.id] === question.answerIndex ? 1 : 0), 0) || 0
     const scorePercent = totalQuestions ? Math.round((correctCount / totalQuestions) * 100) : 0
 
-    if (result?.historyId && authToken) {
+    if (result?.historyId && isAuthenticated) {
       const nextWrongQuestions = quiz.questions
         .filter((question) => selectedAnswers[question.id] !== question.answerIndex)
         .map((question) => question.question)
 
-      saveQuizProgress(authHeaders, result.historyId, {
+      saveQuizProgress(result.historyId, {
         correctCount,
         totalQuestions,
         scorePercent,

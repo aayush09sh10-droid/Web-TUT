@@ -1,13 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
 const DEFAULT_GEMINI_UI_ERROR = 'WebTutor AI is unavailable right now. Please try again in a moment.'
-
-async function parseJsonResponse(res) {
-  try {
-    return await res.json()
-  } catch {
-    return {}
-  }
-}
+import { handleProtectedResponse, parseJsonResponse } from '../../../shared/auth/authSession'
 
 function throwAiRequestError(payload, fallbackMessage) {
   const errorType = payload?.errorType
@@ -27,12 +20,13 @@ function throwAiRequestError(payload, fallbackMessage) {
   throw error
 }
 
-export async function fetchHomeHistory(headers, signal) {
+export async function fetchHomeHistory(signal) {
   const res = await fetch(`${API_BASE}/api/history`, {
-    headers,
+    credentials: 'include',
     signal,
   })
 
+  handleProtectedResponse(res)
   const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to load history.')
@@ -41,10 +35,11 @@ export async function fetchHomeHistory(headers, signal) {
   return Array.isArray(payload.history) ? payload.history : []
 }
 
-export async function requestVideoSummary(headers, url, options = {}) {
+export async function requestVideoSummary(url, options = {}) {
   const res = await fetch(`${API_BASE}/api/summarize`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       url,
       studyPrompt: options.studyPrompt,
@@ -53,6 +48,7 @@ export async function requestVideoSummary(headers, url, options = {}) {
     }),
   })
 
+  handleProtectedResponse(res)
   const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throwAiRequestError(payload, DEFAULT_GEMINI_UI_ERROR)
@@ -61,10 +57,11 @@ export async function requestVideoSummary(headers, url, options = {}) {
   return payload
 }
 
-export async function requestStudySummary(headers, studyPayload, options = {}) {
+export async function requestStudySummary(studyPayload, options = {}) {
   const res = await fetch(`${API_BASE}/api/summarize-notes`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       ...studyPayload,
       studyPrompt: options.studyPrompt,
@@ -73,6 +70,7 @@ export async function requestStudySummary(headers, studyPayload, options = {}) {
     }),
   })
 
+  handleProtectedResponse(res)
   const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throwAiRequestError(payload, DEFAULT_GEMINI_UI_ERROR)
@@ -81,10 +79,11 @@ export async function requestStudySummary(headers, studyPayload, options = {}) {
   return payload
 }
 
-export async function requestAskAnything(headers, question, options = {}) {
+export async function requestAskAnything(question, options = {}) {
   const res = await fetch(`${API_BASE}/api/ask-anything`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       question,
       studyPrompt: options.studyPrompt,
@@ -93,6 +92,7 @@ export async function requestAskAnything(headers, question, options = {}) {
     }),
   })
 
+  handleProtectedResponse(res)
   const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throwAiRequestError(payload, DEFAULT_GEMINI_UI_ERROR)
@@ -101,10 +101,11 @@ export async function requestAskAnything(headers, question, options = {}) {
   return payload
 }
 
-export async function requestQuiz(headers, summary, historyId, options = {}) {
+export async function requestQuiz(summary, historyId, options = {}) {
   const res = await fetch(`${API_BASE}/api/quiz`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       summary,
       historyId,
@@ -112,6 +113,7 @@ export async function requestQuiz(headers, summary, historyId, options = {}) {
     }),
   })
 
+  handleProtectedResponse(res)
   const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throwAiRequestError(payload, DEFAULT_GEMINI_UI_ERROR)
@@ -120,10 +122,11 @@ export async function requestQuiz(headers, summary, historyId, options = {}) {
   return payload
 }
 
-export async function requestTeaching(headers, summary, historyId, options = {}) {
+export async function requestTeaching(summary, historyId, options = {}) {
   const res = await fetch(`${API_BASE}/api/teaching`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       summary,
       historyId,
@@ -131,6 +134,7 @@ export async function requestTeaching(headers, summary, historyId, options = {})
     }),
   })
 
+  handleProtectedResponse(res)
   const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throwAiRequestError(payload, DEFAULT_GEMINI_UI_ERROR)
@@ -139,10 +143,11 @@ export async function requestTeaching(headers, summary, historyId, options = {})
   return payload
 }
 
-export async function requestFormula(headers, summary, historyId, options = {}) {
+export async function requestFormula(summary, historyId, options = {}) {
   const res = await fetch(`${API_BASE}/api/formula`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       summary,
       historyId,
@@ -150,6 +155,7 @@ export async function requestFormula(headers, summary, historyId, options = {}) 
     }),
   })
 
+  handleProtectedResponse(res)
   const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throwAiRequestError(payload, DEFAULT_GEMINI_UI_ERROR)
@@ -158,16 +164,18 @@ export async function requestFormula(headers, summary, historyId, options = {}) 
   return payload
 }
 
-export async function requestDoubtAnswer(headers, doubtPayload, options = {}) {
+export async function requestDoubtAnswer(doubtPayload, options = {}) {
   const res = await fetch(`${API_BASE}/api/doubt`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       ...doubtPayload,
       forceRegenerate: Boolean(options.forceRegenerate),
     }),
   })
 
+  handleProtectedResponse(res)
   const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throwAiRequestError(payload, DEFAULT_GEMINI_UI_ERROR)
@@ -176,13 +184,15 @@ export async function requestDoubtAnswer(headers, doubtPayload, options = {}) {
   return payload
 }
 
-export async function saveQuizProgress(headers, historyId, progress) {
+export async function saveQuizProgress(historyId, progress) {
   const res = await fetch(`${API_BASE}/api/history/${historyId}/quiz-progress`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(progress),
   })
 
+  handleProtectedResponse(res)
   const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to save quiz progress.')

@@ -33,7 +33,7 @@ async function summarizeVideo(req, res) {
 
     const sourceFingerprint = getVideoSourceFingerprint(url)
 
-    if (!forceRegenerate && !historyId) {
+    if (req.user && !forceRegenerate && !historyId) {
       const existingEntry = await findExistingHistoryEntryByFingerprint(
         req.user._id,
         'youtube-video',
@@ -92,10 +92,12 @@ async function summarizeVideo(req, res) {
 
     const summary = forceRegenerate
       ? await buildSummary()
-      : await getCachedVideoSummary(req.user._id, summaryCachePayload, buildSummary)
+      : req.user
+        ? await getCachedVideoSummary(req.user._id, summaryCachePayload, buildSummary)
+        : await buildSummary()
 
     const historyEntry =
-      historyId
+      req.user && historyId
         ? await updateHistoryEntry({
             historyId,
             userId: req.user._id,
@@ -115,13 +117,15 @@ async function summarizeVideo(req, res) {
 
     const resolvedHistoryEntry =
       historyEntry ||
-      (await createHistoryEntry({
-        userId: req.user._id,
-        sourceType: 'youtube-video',
-        sourceLabel: url,
-        sourceFingerprint,
-        summary,
-      }))
+      (req.user
+        ? await createHistoryEntry({
+            userId: req.user._id,
+            sourceType: 'youtube-video',
+            sourceLabel: url,
+            sourceFingerprint,
+            summary,
+          })
+        : null)
 
     emitProgress('Summary ready')
 
@@ -129,7 +133,7 @@ async function summarizeVideo(req, res) {
       success: true,
       sourceType: 'youtube-video',
       sourceLabel: url,
-      historyId: resolvedHistoryEntry.id,
+      historyId: resolvedHistoryEntry?.id || null,
       videoUrl: url,
       summary,
     })

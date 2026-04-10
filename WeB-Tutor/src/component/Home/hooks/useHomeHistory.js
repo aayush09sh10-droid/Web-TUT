@@ -5,18 +5,12 @@ import { useAppDispatch } from '../../../store/hooks'
 import { fetchHomeHistory } from '../api/homeApi'
 import { setHomeHistory } from '../store/homeSlice'
 
-export function useHomeHistory(authToken) {
+export function useHomeHistory(isAuthenticated) {
   const dispatch = useAppDispatch()
   const query = useQuery({
-    queryKey: queryKeys.history(authToken),
-    enabled: Boolean(authToken),
-    queryFn: ({ signal }) =>
-      fetchHomeHistory(
-        {
-          Authorization: `Bearer ${authToken}`,
-        },
-        signal
-      ),
+    queryKey: queryKeys.history('authenticated'),
+    enabled: Boolean(isAuthenticated),
+    queryFn: ({ signal }) => fetchHomeHistory(signal),
   })
 
   useEffect(() => {

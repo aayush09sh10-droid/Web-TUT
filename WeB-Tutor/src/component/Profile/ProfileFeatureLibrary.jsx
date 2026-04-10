@@ -14,15 +14,17 @@ export default function ProfileFeatureLibrary() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.auth.theme)
-  const authToken = useAppSelector((state) => state.auth.auth?.token)
+  const isAuthenticated = Boolean(useAppSelector((state) => state.auth.auth?.user))
+  const authCacheKey = isAuthenticated ? 'authenticated' : 'guest'
   const isDark = theme === 'dark'
   const panelStyle = useMemo(() => getProfilePanelStyle(isDark), [isDark])
   const config = getProfileFeatureConfig(feature)
 
   const historyQuery = useQuery({
-    queryKey: queryKeys.history(authToken),
-    enabled: Boolean(authToken),
-    queryFn: ({ signal }) => fetchHistory(authToken, signal),
+    queryKey: queryKeys.history(authCacheKey),
+    enabled: isAuthenticated,
+    queryFn: ({ signal }) => fetchHistory(authCacheKey, signal),
+    staleTime: 5 * 60 * 1000, // 5 minutes - prevent duplicate calls
   })
 
   const filteredItems = useMemo(() => {

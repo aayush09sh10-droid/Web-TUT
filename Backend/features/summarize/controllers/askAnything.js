@@ -23,7 +23,7 @@ async function askAnything(req, res) {
 
     const sourceFingerprint = getAskSourceFingerprint(question)
 
-    if (!forceRegenerate && !historyId) {
+    if (req.user && !forceRegenerate && !historyId) {
       const existingEntry = await findExistingHistoryEntryByFingerprint(
         req.user._id,
         'ask-ai',
@@ -57,15 +57,19 @@ async function askAnything(req, res) {
     })
     const result = forceRegenerate
       ? await buildSummary()
-      : await getCachedAskSummary(req.user._id, askPayload, buildSummary)
+      : req.user
+        ? await getCachedAskSummary(req.user._id, askPayload, buildSummary)
+        : await buildSummary()
 
     const buildTeaching = async () => generateTeachingFromSummary(result.summary)
     const teaching = forceRegenerate
       ? await buildTeaching()
-      : await getCachedTeaching(req.user._id, result.summary, buildTeaching)
+      : req.user
+        ? await getCachedTeaching(req.user._id, result.summary, buildTeaching)
+        : await buildTeaching()
 
     const historyEntry =
-      historyId
+      req.user && historyId
         ? await updateHistoryEntry({
             historyId,
             userId: req.user._id,
@@ -85,15 +89,17 @@ async function askAnything(req, res) {
 
     const resolvedHistoryEntry =
       historyEntry ||
-      (await createHistoryEntry({
-        userId: req.user._id,
-        sourceType: 'ask-ai',
-        sourceLabel: result.sourceLabel,
-        sourceFingerprint,
-        summary: result.summary,
-      }))
+      (req.user
+        ? await createHistoryEntry({
+            userId: req.user._id,
+            sourceType: 'ask-ai',
+            sourceLabel: result.sourceLabel,
+            sourceFingerprint,
+            summary: result.summary,
+          })
+        : null)
 
-    if (!historyEntry) {
+    if (req.user && !historyEntry) {
       await updateHistoryEntry({
         historyId: resolvedHistoryEntry.id,
         userId: req.user._id,
@@ -107,7 +113,7 @@ async function askAnything(req, res) {
       success: true,
       sourceType: 'ask-ai',
       sourceLabel: result.sourceLabel,
-      historyId: resolvedHistoryEntry.id,
+      historyId: resolvedHistoryEntry?.id || null,
       summary: result.summary,
       teaching,
     })

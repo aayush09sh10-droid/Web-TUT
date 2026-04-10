@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs')
+const crypto = require('crypto')
 
 const User = require('../../models/User')
 const { AuthServiceError } = require('./errors')
@@ -27,8 +28,13 @@ async function loginUser({ identifier, password }) {
     throw new AuthServiceError('Invalid login credentials.', 401)
   }
 
+  const sessionId = crypto.randomUUID()
+  user.authSessionId = sessionId
+  user.authUsesRemaining = 0
+  await user.save()
+
   return {
-    token: signAuthToken(user),
+    token: signAuthToken(user, sessionId),
     user: serialiseUser(user),
   }
 }

@@ -9,9 +9,9 @@ const { parseAllowedOrigins, createCorsOriginValidator } = require('./config/sec
 const { createRateLimiter } = require('./middleware/rateLimit')
 const { applySecurityHeaders } = require('./middleware/securityHeaders')
 
-const authRouter = require('./routes/auth')
-const historyRouter = require('./routes/history')
-const summarizeRouter = require('./routes/summarize')
+const authRouter = require('./Routes/auth')
+const historyRouter = require('./Routes/history')
+const summarizeRouter = require('./Routes/summarize')
 
 const app = express()
 const allowedOrigins = parseAllowedOrigins()
@@ -19,6 +19,7 @@ const corsOptions = {
   origin: createCorsOriginValidator(allowedOrigins),
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }
 const authRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
