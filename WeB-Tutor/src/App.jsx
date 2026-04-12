@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import Auth from './component/Auth/Auth'
-import { AUTH_STORAGE_KEY, THEME_STORAGE_KEY } from './component/Auth/store/authSlice'
+import { THEME_STORAGE_KEY } from './component/Auth/store/authSlice'
 import Footer from './component/Footer/Footer'
 import Header from './component/Header/Header'
 import History from './component/History/History'
@@ -13,6 +13,7 @@ import ProfileSubjectDetails from './component/Profile/ProfileSubjectDetails'
 import ProfileSubjects from './component/Profile/ProfileSubjects'
 import { setAuth, setSessionCheckComplete } from './component/Auth/store/authSlice'
 import { fetchQueryRequest } from './shared/network/queryRequestOptions'
+import { logger } from './shared/utils/logger'
 import { useAppDispatch, useAppSelector } from './store/hooks'
 
 function App() {
@@ -73,7 +74,7 @@ function App() {
         }
       } catch (error) {
         if (error.name !== 'AbortError') {
-          console.error('Auth restore error:', error)
+          logger.error('Auth restore error:', error)
         }
         if (isMounted) {
           dispatch(setSessionCheckComplete(false))
@@ -90,7 +91,7 @@ function App() {
       isMounted = false
       controller.abort()
     }
-  }, [])
+  }, [API_BASE, auth?.user, dispatch, isCheckingSession])
 
   // Show loading while checking session
   if (isCheckingSession) {

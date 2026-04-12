@@ -2,6 +2,7 @@ const { answerDoubtFromSummary } = require('../services/gemini')
 const { getCachedDoubtAnswer } = require('../cache')
 const { updateHistoryEntry } = require('../../history/services/history')
 const { sendSummarizeError, sendValidationError } = require('./errorResponse')
+const { logger, serialiseError } = require('../../../utils/logger')
 
 async function answerDoubt(req, res) {
   try {
@@ -47,7 +48,7 @@ async function answerDoubt(req, res) {
       answer,
     })
   } catch (error) {
-    console.error('Answer doubt error:', error)
+    logger.error('Answer doubt error.', serialiseError(error))
 
     return sendSummarizeError(
       res,

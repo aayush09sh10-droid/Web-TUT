@@ -12,6 +12,8 @@ const {
   findExistingHistoryEntryByFingerprint,
 } = require('../../history/services/history')
 const { sendSummarizeError, sendValidationError } = require('./errorResponse')
+const { logger, serialiseError } = require('../../../utils/logger')
+const { getSessionRoom, getUserRoom } = require('../../../services/socketRooms')
 
 async function summarizeVideo(req, res) {
   let downloadedAudioPath = null
@@ -20,10 +22,19 @@ async function summarizeVideo(req, res) {
   try {
     const { url, historyId, forceRegenerate, studyPrompt = '' } = req.body
     const io = req.app.get('io')
+    const userId = req.user?._id ? String(req.user._id) : ''
+    const sessionId = String(req.user?.authSessionId || '').trim()
 
     const emitProgress = (step) => {
       if (io) {
-        io.emit('summary-progress', { step })
+        if (sessionId) {
+          io.to(getSessionRoom(sessionId)).emit('summary-progress', { step })
+          return
+        }
+
+        if (userId) {
+          io.to(getUserRoom(userId)).emit('summary-progress', { step })
+        }
       }
     }
 
@@ -138,7 +149,7 @@ async function summarizeVideo(req, res) {
       summary,
     })
   } catch (error) {
-    console.error('Summarize error:', error)
+    logger.error('Summarize video error.', serialiseError(error))
 
     return sendSummarizeError(
       res,

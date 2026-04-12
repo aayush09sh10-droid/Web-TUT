@@ -4,12 +4,27 @@ function createRateLimiter({
   message = 'Too many requests. Please try again later.',
 } = {}) {
   const hits = new Map()
+  let nextCleanupAt = Date.now() + windowMs
+
+  function cleanupExpiredEntries(now) {
+    if (now < nextCleanupAt) {
+      return
+    }
+
+    hits.forEach((entry, key) => {
+      if (!entry || entry.expiresAt <= now) {
+        hits.delete(key)
+      }
+    })
+
+    nextCleanupAt = now + windowMs
+  }
 
   return (req, res, next) => {
     const now = Date.now()
+    cleanupExpiredEntries(now)
     const key = String(req.headers['x-forwarded-for'] || req.ip || 'unknown').split(',')[0].trim()
     const currentEntry = hits.get(key)
-    const windowExpiry = currentEntry ? currentEntry.expiresAt : now + windowMs
 
     if (!currentEntry || currentEntry.expiresAt <= now) {
       hits.set(key, { count: 1, expiresAt: now + windowMs })

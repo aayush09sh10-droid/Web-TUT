@@ -2,6 +2,7 @@ const { generateQuizFromSummary } = require('../services/gemini')
 const { getCachedQuiz } = require('../cache')
 const { updateHistoryEntry } = require('../../history/services/history')
 const { sendSummarizeError, sendValidationError } = require('./errorResponse')
+const { logger, serialiseError } = require('../../../utils/logger')
 
 async function generateQuiz(req, res) {
   try {
@@ -28,7 +29,7 @@ async function generateQuiz(req, res) {
       quiz,
     })
   } catch (error) {
-    console.error('Generate quiz error:', error)
+    logger.error('Generate quiz error.', serialiseError(error))
 
     return sendSummarizeError(
       res,

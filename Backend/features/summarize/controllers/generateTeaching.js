@@ -2,6 +2,7 @@ const { generateTeachingFromSummary } = require('../services/gemini')
 const { getCachedTeaching } = require('../cache')
 const { updateHistoryEntry } = require('../../history/services/history')
 const { sendSummarizeError, sendValidationError } = require('./errorResponse')
+const { logger, serialiseError } = require('../../../utils/logger')
 
 async function generateTeaching(req, res) {
   try {
@@ -28,7 +29,7 @@ async function generateTeaching(req, res) {
       teaching,
     })
   } catch (error) {
-    console.error('Generate teaching error:', error)
+    logger.error('Generate teaching error.', serialiseError(error))
 
     return sendSummarizeError(
       res,

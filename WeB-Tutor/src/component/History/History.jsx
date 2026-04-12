@@ -17,6 +17,7 @@ import {
   getSummaryParagraphs,
   normalizeSummaryPayload,
 } from './utils/historyUtils'
+import { logger } from '../../shared/utils/logger'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 
 export default function History() {
@@ -67,7 +68,7 @@ export default function History() {
 
   useEffect(() => {
     if (historyQuery.error && historyQuery.error.name !== 'AbortError') {
-      console.error('History load error:', historyQuery.error)
+      logger.error('History load error:', historyQuery.error)
       dispatch(setHistoryError(historyQuery.error.message || 'Failed to load history.'))
     }
   }, [dispatch, historyQuery.error])

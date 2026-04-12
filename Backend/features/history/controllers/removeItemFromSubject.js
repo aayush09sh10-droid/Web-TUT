@@ -1,4 +1,5 @@
 const { removeHistoryItemFromSubject } = require('../services/history')
+const { logger, serialiseError } = require('../../../utils/logger')
 
 async function removeItemFromSubject(req, res) {
   try {
@@ -10,7 +11,7 @@ async function removeItemFromSubject(req, res) {
 
     return res.status(200).json({ success: true, subject })
   } catch (error) {
-    console.error('Remove item from subject error:', error)
+    logger.error('Remove item from subject error.', serialiseError(error))
     return res.status(error.statusCode || 500).json({
       success: false,
       error: error.message || 'Failed to remove this lesson from the subject.',

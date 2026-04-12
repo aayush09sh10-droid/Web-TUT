@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { clearAuth, toggleTheme } from '../Auth/store/authSlice'
 import { closeHeaderMenu, setHeaderVisible, toggleHeaderMenu } from './store/headerSlice'
 import { queryClient } from '../../cache'
+import { logger } from '../../shared/utils/logger'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 
 function Header() {
@@ -72,7 +73,7 @@ function Header() {
         credentials: 'include',
       })
     } catch (error) {
-      console.error('Logout error:', error)
+      logger.error('Logout error:', error)
     } finally {
       queryClient.clear()
       dispatch(closeHeaderMenu())

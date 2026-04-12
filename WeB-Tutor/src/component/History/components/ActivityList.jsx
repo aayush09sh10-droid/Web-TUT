@@ -8,8 +8,7 @@ export default function ActivityList({ onDelete }) {
   const history = useAppSelector((state) => state.history.items)
   const recentHistory = [...history].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
 
-  function handleSelectItem(event, itemId) {
-    event.stopPropagation()
+  function handleSelectItem(itemId) {
     dispatch(selectHistoryItem(itemId))
   }
 
@@ -34,7 +33,11 @@ export default function ActivityList({ onDelete }) {
           className="flex flex-col gap-3 rounded-[1.4rem] border border-(--border) bg-(--card) p-4 shadow-(--shadow) backdrop-blur-xl"
         >
           <div className="min-w-0">
-            <button type="button" onClick={() => dispatch(selectHistoryItem(item.id))} className="min-w-0 w-full text-left">
+            <button
+              type="button"
+              onClick={() => handleSelectItem(item.id)}
+              className="min-w-0 w-full text-left"
+            >
               <div className="text-sm font-semibold text-(--text)">
                 {item.result?.summary?.title || item.url}
               </div>
@@ -43,11 +46,11 @@ export default function ActivityList({ onDelete }) {
                 {item.sourceLabel || item.url}
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                {item.result?.summary && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Summary</button>}
-                {item.result?.quiz && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Quiz</button>}
-                {item.result?.teaching && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Teaching</button>}
-                {item.result?.formula && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Formula</button>}
-                {item.result?.doubt && <button type="button" onClick={(event) => handleSelectItem(event, item.id)} className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Doubt</button>}
+                {item.result?.summary && <span className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Summary</span>}
+                {item.result?.quiz && <span className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Quiz</span>}
+                {item.result?.teaching && <span className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Teaching</span>}
+                {item.result?.formula && <span className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Formula</span>}
+                {item.result?.doubt && <span className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Doubt</span>}
               </div>
             </button>
           </div>

@@ -1,4 +1,5 @@
 const { reorderSubjectItems } = require('../services/history')
+const { logger, serialiseError } = require('../../../utils/logger')
 
 async function reorderSubjectItemsController(req, res) {
   try {
@@ -10,7 +11,7 @@ async function reorderSubjectItemsController(req, res) {
 
     return res.status(200).json({ success: true, subject })
   } catch (error) {
-    console.error('Reorder subject items error:', error)
+    logger.error('Reorder subject items error.', serialiseError(error))
     return res.status(error.statusCode || 500).json({
       success: false,
       error: error.message || 'Failed to reorder lessons inside the subject.',

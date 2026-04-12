@@ -23,6 +23,7 @@ import { normalizeSummaryPayload, questionNeedsFormulaSupport } from './homeUtil
 import { MAX_PHOTO_UPLOADS, buildStudyUploads } from './utils/studyUploadUtils'
 import { setHistoryCache } from '../../cache'
 import { hasUsedGuestSummary, markGuestSummaryUsed } from '../../shared/auth/guestAccess'
+import { logger } from '../../shared/utils/logger'
 import {
   addHistoryItem,
   resetHomeForNewSummary,
@@ -545,7 +546,7 @@ function Home() {
         scorePercent,
         selectedAnswers,
         wrongQuestions: nextWrongQuestions,
-      })
+        })
         .then((payload) => {
           const nextResult = {
             ...result,
@@ -560,7 +561,7 @@ function Home() {
           dispatch(setHomeField({ field: 'result', value: nextResult }))
           updateHistoryResult(nextResult)
         })
-        .catch((err) => console.error('Quiz progress save error:', err))
+        .catch((err) => logger.error('Quiz progress save error:', err))
     }
   }
 

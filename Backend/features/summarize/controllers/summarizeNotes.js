@@ -7,6 +7,7 @@ const {
   findExistingHistoryEntryByFingerprint,
 } = require('../../history/services/history')
 const { sendSummarizeError, sendValidationError } = require('./errorResponse')
+const { logger, serialiseError } = require('../../../utils/logger')
 
 async function summarizeNotes(req, res) {
   try {
@@ -121,7 +122,7 @@ async function summarizeNotes(req, res) {
       summary: result.summary,
     })
   } catch (error) {
-    console.error('Summarize notes error:', error)
+    logger.error('Summarize notes error.', serialiseError(error))
 
     return sendSummarizeError(
       res,

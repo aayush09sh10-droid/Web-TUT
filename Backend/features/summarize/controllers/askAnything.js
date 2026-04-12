@@ -7,6 +7,7 @@ const {
   findExistingHistoryEntryByFingerprint,
 } = require('../../history/services/history')
 const { sendSummarizeError, sendValidationError } = require('./errorResponse')
+const { logger, serialiseError } = require('../../../utils/logger')
 
 async function askAnything(req, res) {
   try {
@@ -118,7 +119,7 @@ async function askAnything(req, res) {
       teaching,
     })
   } catch (error) {
-    console.error('Ask anything error:', error)
+    logger.error('Ask anything error.', serialiseError(error))
 
     return sendSummarizeError(
       res,

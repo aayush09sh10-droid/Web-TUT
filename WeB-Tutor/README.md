@@ -19,6 +19,69 @@ From those inputs, Web Tutor creates:
 - doubt answers
 - saved study history
 
+## 0. What We Implemented Recently
+
+This project was recently improved in four main areas:
+
+1. Redis-backed backend caching
+2. frontend request stability and performance
+3. backend security and production readiness
+4. documentation and environment setup cleanup
+
+### What was done
+
+- moved backend cache flow to a shared Redis-first cache layer
+- kept one cache abstraction for summarize, history, profile, and learning snapshot data
+- added Redis hosted connection support through `REDIS_URL`
+- added `REDIS_REQUIRED=true` support so backend can fail fast instead of silently falling back
+- improved backend startup checks for MongoDB and Redis readiness
+- added optional HTTPS server configuration for production use
+- added stronger security headers and cleaner backend logging
+- reduced noisy console output by using shared logger utilities
+- fixed duplicate/cancelled development fetch behavior around history/profile requests
+- fixed invalid nested `<button>` markup in History activity cards
+- added `.env.example` files for backend and frontend
+
+### Main approach used
+
+The main engineering approach for these changes was:
+
+`stable shared abstractions -> safe startup checks -> cache-first reads -> explicit invalidation -> production-safe configuration`
+
+That means:
+
+- one shared backend cache service handles Redis access
+- feature modules only ask for cached data through helper functions
+- backend verifies required infrastructure before serving traffic
+- frontend uses React Query for client-side server-state caching
+- history and profile data are invalidated explicitly when writes happen
+
+### Main method used
+
+For backend caching:
+
+1. build a deterministic cache key
+2. hash complex payloads when needed
+3. check Redis first
+4. if cache miss, compute data from AI or MongoDB
+5. store JSON in Redis with TTL
+6. invalidate related keys after update/delete actions
+
+For frontend performance:
+
+1. use React Query for server-state cache
+2. reuse in-flight GET requests in development
+3. avoid unnecessary refetches with `staleTime`
+4. manually update query cache after local mutations when possible
+
+For production readiness:
+
+1. store infrastructure config in `.env`
+2. use hosted Redis via `REDIS_URL`
+3. optionally enable HTTPS with cert/key paths
+4. restrict CORS and apply security headers
+5. start backend only after dependency checks pass
+
 ## 1. Problem Statement
 
 Students usually study from multiple sources:
@@ -201,11 +264,13 @@ What is cached:
 - doubt answers
 - history list
 - history details
+- learning snapshot
 - profile
 
 Main files:
 
 - `Backend/services/cache/index.js`
+- `Backend/services/cache/redisClient.js`
 - `Backend/features/summarize/cache/*`
 - `Backend/features/history/cache/historyCache.js`
 - `Backend/features/auth/cache/profileCache.js`
@@ -983,10 +1048,13 @@ Security measures added:
 - password hashing with `bcryptjs`
 - session-based auth storage on frontend
 - security headers
+- optional HTTPS backend server support
 - body size limits
 - disabled `x-powered-by`
 - rate limiting
 - safe AI error shielding
+- production-aware logging
+- Redis readiness checks at startup when required
 
 Why these were added:
 
@@ -1040,6 +1108,8 @@ Web-Tutor version 1/
 ### Backend `.env`
 
 ```env
+NODE_ENV=development
+HOST=0.0.0.0
 PORT=5001
 MONGODB_URI=your_mongodb_connection_string
 DB_NAME=your_database_name
@@ -1053,7 +1123,17 @@ ACCESS_TOKEN_SECRET=your_jwt_secret
 ACCESS_TOKEN_ENTRY=7d
 
 CORS_ALLOWED_ORIGINS=http://localhost:5173
-REDIS_URL=redis://localhost:6379
+
+REDIS_REQUIRED=true
+REDIS_URL=redis://username:password@your-redis-host:6379
+REDIS_CACHE_PREFIX=web-tutor
+REDIS_CONNECT_TIMEOUT_MS=15000
+
+LOG_LEVEL=debug
+
+HTTPS_ENABLED=false
+HTTPS_KEY_PATH=
+HTTPS_CERT_PATH=
 ```
 
 ### Frontend `.env`
@@ -1071,12 +1151,35 @@ cd Backend
 npm run dev
 ```
 
+If PowerShell blocks `npm`, use:
+
+```bash
+npm.cmd run dev
+```
+
 ### Frontend
 
 ```bash
 cd WeB-Tutor
 npm run dev
 ```
+
+If PowerShell blocks `npm`, use:
+
+```bash
+npm.cmd run dev
+```
+
+### Production frontend build
+
+```bash
+cd WeB-Tutor
+npm run build
+```
+
+Build output:
+
+- `WeB-Tutor/dist`
 
 ## 17. Current Notes
 
@@ -1086,6 +1189,8 @@ npm run dev
 - Redux is used for app/UI state
 - regenerate bypasses cache intentionally
 - if PowerShell blocks `npm`, use `npm.cmd`
+- when `REDIS_REQUIRED=true`, backend will not start unless Redis is reachable
+- hosted Redis can be inspected with tools like `redis-cli` or Redis Insight
 
 ## 18. Future Features
 

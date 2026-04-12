@@ -1,6 +1,7 @@
 const crypto = require('crypto')
 
-const { getRedisClient } = require('./redisClient')
+const { getRedisClient, isRedisRequired } = require('./redisClient')
+const { logger } = require('../../utils/logger')
 
 const CACHE_PREFIX = String(process.env.REDIS_CACHE_PREFIX || 'web-tutor').trim()
 const memoryCache = new Map()
@@ -47,9 +48,13 @@ function makePatternRegExp(pattern) {
 }
 
 function logMemoryFallback() {
+  if (isRedisRequired()) {
+    throw new Error('In-memory cache fallback is disabled because REDIS_REQUIRED is enabled.')
+  }
+
   if (!hasLoggedMemoryFallback) {
     hasLoggedMemoryFallback = true
-    console.info('Redis unavailable: using in-memory cache fallback.')
+    logger.info('Redis unavailable: using in-memory cache fallback.')
   }
 }
 
@@ -102,7 +107,7 @@ async function getJson(key) {
     const rawValue = await client.get(key)
     return rawValue ? JSON.parse(rawValue) : null
   } catch (error) {
-    console.warn(`Cache read skipped for ${key}:`, error.message)
+    logger.warn(`Cache read skipped for ${key}.`, { message: error.message })
     return getMemoryEntry(key)
   }
 }
@@ -120,7 +125,7 @@ async function setJson(key, value, ttlSeconds = 300) {
       EX: ttlSeconds,
     })
   } catch (error) {
-    console.warn(`Cache write skipped for ${key}:`, error.message)
+    logger.warn(`Cache write skipped for ${key}.`, { message: error.message })
     return setMemoryEntry(key, value, ttlSeconds)
   }
 
@@ -151,7 +156,7 @@ async function deleteKey(key) {
   try {
     await client.del(key)
   } catch (error) {
-    console.warn(`Cache delete skipped for ${key}:`, error.message)
+    logger.warn(`Cache delete skipped for ${key}.`, { message: error.message })
     deleteMemoryEntry(key)
   }
 }
@@ -174,7 +179,7 @@ async function deleteMany(keys = []) {
   try {
     await client.del(uniqueKeys)
   } catch (error) {
-    console.warn('Cache batch delete skipped:', error.message)
+    logger.warn('Cache batch delete skipped.', { message: error.message })
     deleteMemoryEntries(uniqueKeys)
   }
 }
@@ -202,7 +207,7 @@ async function deleteByPattern(pattern) {
       await client.del(matchedKeys)
     }
   } catch (error) {
-    console.warn(`Cache pattern delete skipped for ${pattern}:`, error.message)
+    logger.warn(`Cache pattern delete skipped for ${pattern}.`, { message: error.message })
     deleteMemoryByPattern(pattern)
   }
 }

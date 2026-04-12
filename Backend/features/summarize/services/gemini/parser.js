@@ -3,6 +3,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai')
 const { GEMINI_MODEL, GEMINI_FALLBACK_MODELS, MAX_TIMELINE_ITEMS } = require('./constants')
 const { GeminiServiceError } = require('./errors')
 const { cleanJsonFence, formatTimestamp, normaliseParagraph } = require('./text')
+const { logger } = require('../../../../utils/logger')
 const WEBTUTOR_BUSY_MESSAGE =
   'WebTutor AI is busy right now. Please try again in a moment.'
 const WEBTUTOR_PLAN_MESSAGE =
@@ -485,7 +486,7 @@ async function requestJsonFromGeminiParts(parts) {
         retryableModel: isRetryableModelError(error),
       }
 
-      console.error('WebTutor AI debug:', {
+      logger.debug('WebTutor AI debug.', {
         status: debugStatus,
         message: debugMessage,
         flags: debugFlags,

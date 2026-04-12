@@ -1,4 +1,5 @@
 let createClient = null
+const { logger } = require('../../utils/logger')
 
 try {
   ;({ createClient } = require('redis'))
@@ -10,11 +11,24 @@ let clientPromise = null
 let hasLoggedUnavailableDependency = false
 let hasLoggedConnectionFailure = false
 
+function isRedisRequired() {
+  return ['1', 'true', 'yes', 'on'].includes(
+    String(process.env.REDIS_REQUIRED || '').trim().toLowerCase()
+  )
+}
+
 function getRedisConfig() {
   const url = String(process.env.REDIS_URL || '').trim()
+  const connectTimeout = Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 15000)
 
   if (url) {
-    return { url }
+    return {
+      url,
+      socket: {
+        connectTimeout,
+        keepAlive: true,
+      },
+    }
   }
 
   const host = String(process.env.REDIS_HOST || '').trim()
@@ -30,6 +44,8 @@ function getRedisConfig() {
     socket: {
       host,
       port,
+      connectTimeout,
+      keepAlive: true,
     },
     password: password || undefined,
   }
@@ -39,13 +55,21 @@ async function getRedisClient() {
   const config = getRedisConfig()
 
   if (!config) {
+    if (isRedisRequired()) {
+      throw new Error('Redis is required but REDIS_URL or REDIS_HOST is not configured.')
+    }
+
     return null
   }
 
   if (!createClient) {
     if (!hasLoggedUnavailableDependency) {
       hasLoggedUnavailableDependency = true
-      console.warn('Redis caching disabled: install the `redis` package to enable cache support.')
+      logger.warn('Redis caching disabled: install the `redis` package to enable cache support.')
+    }
+
+    if (isRedisRequired()) {
+      throw new Error('Redis is required but the `redis` package is unavailable.')
     }
 
     return null
@@ -58,7 +82,7 @@ async function getRedisClient() {
       client.on('error', (error) => {
         if (!hasLoggedConnectionFailure) {
           hasLoggedConnectionFailure = true
-          console.warn('Redis client error:', error.message)
+          logger.warn('Redis client error.', { message: error.message })
         }
       })
 
@@ -67,11 +91,17 @@ async function getRedisClient() {
           await client.connect()
         }
 
+        await client.ping()
         return client
       } catch (error) {
         hasLoggedConnectionFailure = true
-        console.warn('Redis caching disabled:', error.message)
+        logger.warn('Redis caching disabled.', { message: error.message })
         clientPromise = null
+
+        if (isRedisRequired()) {
+          throw new Error(`Redis connection failed: ${error.message}`)
+        }
+
         return null
       }
     })()
@@ -80,6 +110,18 @@ async function getRedisClient() {
   return clientPromise
 }
 
+async function ensureRedisReady() {
+  const client = await getRedisClient()
+
+  if (isRedisRequired() && !client) {
+    throw new Error('Redis is required but no Redis client is available.')
+  }
+
+  return client
+}
+
 module.exports = {
+  ensureRedisReady,
   getRedisClient,
+  isRedisRequired,
 }

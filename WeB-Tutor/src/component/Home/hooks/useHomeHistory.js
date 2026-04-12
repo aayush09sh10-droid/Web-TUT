@@ -4,6 +4,7 @@ import { queryKeys } from '../../../cache'
 import { useAppDispatch } from '../../../store/hooks'
 import { fetchHomeHistory } from '../api/homeApi'
 import { setHomeHistory } from '../store/homeSlice'
+import { logger } from '../../../shared/utils/logger'
 
 export function useHomeHistory(isAuthenticated) {
   const dispatch = useAppDispatch()
@@ -21,7 +22,7 @@ export function useHomeHistory(isAuthenticated) {
 
   useEffect(() => {
     if (query.error && query.error.name !== 'AbortError') {
-      console.error('History load error:', query.error)
+      logger.error('History load error:', query.error)
     }
   }, [query.error])
 

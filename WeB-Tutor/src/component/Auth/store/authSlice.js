@@ -1,7 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit'
 
 const THEME_STORAGE_KEY = 'yt-summarizer-theme'
-const AUTH_STORAGE_KEY = 'yt-summarizer-auth'
 
 function getInitialTheme() {
   if (typeof window === 'undefined') return 'light'
@@ -44,4 +43,4 @@ const authSlice = createSlice({
 
 export const { setTheme, toggleTheme, setAuth, clearAuth, setSessionCheckComplete } = authSlice.actions
 export const authReducer = authSlice.reducer
-export { AUTH_STORAGE_KEY, THEME_STORAGE_KEY }
+export { THEME_STORAGE_KEY }

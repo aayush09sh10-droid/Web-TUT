@@ -2,6 +2,7 @@ const { generateFormulaGuideFromSummary } = require('../services/gemini')
 const { getCachedFormula } = require('../cache')
 const { updateHistoryEntry } = require('../../history/services/history')
 const { sendSummarizeError, sendValidationError } = require('./errorResponse')
+const { logger, serialiseError } = require('../../../utils/logger')
 
 async function generateFormula(req, res) {
   try {
@@ -28,7 +29,7 @@ async function generateFormula(req, res) {
       formula,
     })
   } catch (error) {
-    console.error('Generate formula error:', error)
+    logger.error('Generate formula error.', serialiseError(error))
 
     return sendSummarizeError(
       res,
