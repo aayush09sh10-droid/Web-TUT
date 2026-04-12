@@ -1,11 +1,15 @@
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
 import { handleProtectedResponse, parseJsonResponse } from '../../../shared/auth/authSession'
+import { fetchQueryRequest } from '../../../shared/network/queryRequestOptions'
 
 export async function fetchHistory(_authToken, signal) {
-  const res = await fetch(`${API_BASE}/api/history`, {
-    credentials: 'include',
-    signal,
-  })
+  const res = await fetchQueryRequest(
+    `${API_BASE}/api/history`,
+    {
+      credentials: 'include',
+    },
+    signal
+  )
 
   handleProtectedResponse(res)
   const payload = await parseJsonResponse(res)
@@ -43,10 +47,13 @@ export async function deleteHistoryItem(_authToken, itemId) {
 }
 
 export async function fetchSubjects(_authToken, signal) {
-  const res = await fetch(`${API_BASE}/api/history/subjects`, {
-    credentials: 'include',
-    signal,
-  })
+  const res = await fetchQueryRequest(
+    `${API_BASE}/api/history/subjects`,
+    {
+      credentials: 'include',
+    },
+    signal
+  )
 
   handleProtectedResponse(res)
   const payload = await parseJsonResponse(res)

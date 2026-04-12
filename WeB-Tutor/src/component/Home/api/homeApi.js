@@ -1,6 +1,7 @@
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
 const DEFAULT_GEMINI_UI_ERROR = 'WebTutor AI is unavailable right now. Please try again in a moment.'
 import { handleProtectedResponse, parseJsonResponse } from '../../../shared/auth/authSession'
+import { fetchQueryRequest } from '../../../shared/network/queryRequestOptions'
 
 function throwAiRequestError(payload, fallbackMessage) {
   const errorType = payload?.errorType
@@ -21,10 +22,13 @@ function throwAiRequestError(payload, fallbackMessage) {
 }
 
 export async function fetchHomeHistory(signal) {
-  const res = await fetch(`${API_BASE}/api/history`, {
-    credentials: 'include',
-    signal,
-  })
+  const res = await fetchQueryRequest(
+    `${API_BASE}/api/history`,
+    {
+      credentials: 'include',
+    },
+    signal
+  )
 
   handleProtectedResponse(res)
   const payload = await parseJsonResponse(res)

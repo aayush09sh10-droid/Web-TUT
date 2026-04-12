@@ -12,6 +12,7 @@ import Profile from './component/Profile/Profile'
 import ProfileSubjectDetails from './component/Profile/ProfileSubjectDetails'
 import ProfileSubjects from './component/Profile/ProfileSubjects'
 import { setAuth, setSessionCheckComplete } from './component/Auth/store/authSlice'
+import { fetchQueryRequest } from './shared/network/queryRequestOptions'
 import { useAppDispatch, useAppSelector } from './store/hooks'
 
 function App() {
@@ -46,10 +47,13 @@ function App() {
       }
 
       try {
-        const res = await fetch(`${API_BASE}/api/auth/me`, {
-          credentials: 'include',
-          signal: controller.signal,
-        })
+        const res = await fetchQueryRequest(
+          `${API_BASE}/api/auth/me`,
+          {
+            credentials: 'include',
+          },
+          controller.signal
+        )
 
         if (!res.ok) {
           // User is not authenticated
