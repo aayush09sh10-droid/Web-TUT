@@ -16,6 +16,7 @@ const { getAuthCookieName } = require('./features/auth/services/auth')
 const { verifyAuthToken } = require('./features/auth/services/auth/jwt')
 
 const authRouter = require('./Routes/auth')
+const healthRouter = require('./Routes/health')
 const historyRouter = require('./Routes/history')
 const summarizeRouter = require('./Routes/summarize')
 
@@ -44,6 +45,7 @@ app.use(cors(corsOptions))
 app.use(express.json({ limit: '35mb' }))
 app.use(express.urlencoded({ extended: true, limit: '35mb' }))
 
+app.use('/', healthRouter)
 app.use('/api/auth', authRateLimiter, authRouter)
 app.use('/api/history', apiRateLimiter, historyRouter)
 app.use('/api', apiRateLimiter, summarizeRouter)

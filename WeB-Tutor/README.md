@@ -1121,6 +1121,10 @@ GEMINI_AUDIO_CHUNK_SECONDS=300
 
 ACCESS_TOKEN_SECRET=your_jwt_secret
 ACCESS_TOKEN_ENTRY=7d
+AUTH_COOKIE_DAYS=30
+AUTH_COOKIE_SAME_SITE=lax
+AUTH_COOKIE_SECURE=false
+AUTH_COOKIE_DOMAIN=
 
 CORS_ALLOWED_ORIGINS=http://localhost:5173
 
@@ -1135,6 +1139,20 @@ HTTPS_ENABLED=false
 HTTPS_KEY_PATH=
 HTTPS_CERT_PATH=
 ```
+
+Cookie deployment guide:
+
+- same-site local development:
+  - `AUTH_COOKIE_SAME_SITE=lax`
+  - `AUTH_COOKIE_SECURE=false`
+- production frontend/backend on same main site or subdomains:
+  - `AUTH_COOKIE_SAME_SITE=lax`
+  - `AUTH_COOKIE_SECURE=true`
+  - `AUTH_COOKIE_DOMAIN=.yourdomain.com` only if you need shared subdomain cookies
+- production frontend/backend on different sites:
+  - `AUTH_COOKIE_SAME_SITE=none`
+  - `AUTH_COOKIE_SECURE=true`
+  - `AUTH_COOKIE_DOMAIN=` usually left empty
 
 ### Frontend `.env`
 
