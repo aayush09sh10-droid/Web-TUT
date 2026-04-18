@@ -1,6 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
 const DEFAULT_GEMINI_UI_ERROR = 'WebTutor AI is unavailable right now. Please try again in a moment.'
 import { handleProtectedResponse, parseJsonResponse } from '../../../shared/auth/authSession'
+import { buildApiUrl } from '../../../shared/config/apiBase'
 import { fetchQueryRequest } from '../../../shared/network/queryRequestOptions'
 
 function throwAiRequestError(payload, fallbackMessage) {
@@ -23,7 +23,7 @@ function throwAiRequestError(payload, fallbackMessage) {
 
 export async function fetchHomeHistory(signal) {
   const res = await fetchQueryRequest(
-    `${API_BASE}/api/history`,
+    buildApiUrl('/api/history'),
     {
       credentials: 'include',
     },
@@ -40,7 +40,7 @@ export async function fetchHomeHistory(signal) {
 }
 
 export async function requestVideoSummary(url, options = {}) {
-  const res = await fetch(`${API_BASE}/api/summarize`, {
+  const res = await fetch(buildApiUrl('/api/summarize'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -62,7 +62,7 @@ export async function requestVideoSummary(url, options = {}) {
 }
 
 export async function requestStudySummary(studyPayload, options = {}) {
-  const res = await fetch(`${API_BASE}/api/summarize-notes`, {
+  const res = await fetch(buildApiUrl('/api/summarize-notes'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -84,7 +84,7 @@ export async function requestStudySummary(studyPayload, options = {}) {
 }
 
 export async function requestAskAnything(question, options = {}) {
-  const res = await fetch(`${API_BASE}/api/ask-anything`, {
+  const res = await fetch(buildApiUrl('/api/ask-anything'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -106,7 +106,7 @@ export async function requestAskAnything(question, options = {}) {
 }
 
 export async function requestQuiz(summary, historyId, options = {}) {
-  const res = await fetch(`${API_BASE}/api/quiz`, {
+  const res = await fetch(buildApiUrl('/api/quiz'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -127,7 +127,7 @@ export async function requestQuiz(summary, historyId, options = {}) {
 }
 
 export async function requestTeaching(summary, historyId, options = {}) {
-  const res = await fetch(`${API_BASE}/api/teaching`, {
+  const res = await fetch(buildApiUrl('/api/teaching'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -148,7 +148,7 @@ export async function requestTeaching(summary, historyId, options = {}) {
 }
 
 export async function requestFormula(summary, historyId, options = {}) {
-  const res = await fetch(`${API_BASE}/api/formula`, {
+  const res = await fetch(buildApiUrl('/api/formula'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -169,7 +169,7 @@ export async function requestFormula(summary, historyId, options = {}) {
 }
 
 export async function requestDoubtAnswer(doubtPayload, options = {}) {
-  const res = await fetch(`${API_BASE}/api/doubt`, {
+  const res = await fetch(buildApiUrl('/api/doubt'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -189,7 +189,7 @@ export async function requestDoubtAnswer(doubtPayload, options = {}) {
 }
 
 export async function saveQuizProgress(historyId, progress) {
-  const res = await fetch(`${API_BASE}/api/history/${historyId}/quiz-progress`, {
+  const res = await fetch(buildApiUrl(`/api/history/${historyId}/quiz-progress`), {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },

@@ -12,12 +12,12 @@ import Profile from './component/Profile/Profile'
 import ProfileSubjectDetails from './component/Profile/ProfileSubjectDetails'
 import ProfileSubjects from './component/Profile/ProfileSubjects'
 import { setAuth, setSessionCheckComplete } from './component/Auth/store/authSlice'
+import { API_BASE } from './shared/config/apiBase'
 import { fetchQueryRequest } from './shared/network/queryRequestOptions'
 import { logger } from './shared/utils/logger'
 import { useAppDispatch, useAppSelector } from './store/hooks'
 
 function App() {
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.auth.theme)
   const auth = useAppSelector((state) => state.auth.auth)

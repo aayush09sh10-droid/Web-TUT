@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { clearAuth, toggleTheme } from '../Auth/store/authSlice'
 import { closeHeaderMenu, setHeaderVisible, toggleHeaderMenu } from './store/headerSlice'
 import { queryClient } from '../../cache'
+import { buildApiUrl } from '../../shared/config/apiBase'
 import { logger } from '../../shared/utils/logger'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 
@@ -68,7 +69,7 @@ function Header() {
 
   async function handleLogout() {
     try {
-      await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:5001'}/api/auth/logout`, {
+      await fetch(buildApiUrl('/api/auth/logout'), {
         method: 'POST',
         credentials: 'include',
       })

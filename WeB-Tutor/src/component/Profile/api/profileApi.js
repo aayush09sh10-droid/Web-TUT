@@ -1,5 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
 import { handleProtectedResponse, parseJsonResponse } from '../../../shared/auth/authSession'
+import { buildApiUrl } from '../../../shared/config/apiBase'
 import { fetchQueryRequest } from '../../../shared/network/queryRequestOptions'
 
 export async function fetchProfile(authUser, signal) {
@@ -9,7 +9,7 @@ export async function fetchProfile(authUser, signal) {
   }
   
   const res = await fetchQueryRequest(
-    `${API_BASE}/api/auth/me`,
+    buildApiUrl('/api/auth/me'),
     {
       credentials: 'include',
     },
@@ -26,7 +26,7 @@ export async function fetchProfile(authUser, signal) {
 }
 
 export async function changePassword(_authToken, passwordForm) {
-  const res = await fetch(`${API_BASE}/api/auth/change-password`, {
+  const res = await fetch(buildApiUrl('/api/auth/change-password'), {
     method: 'POST',
     credentials: 'include',
     headers: {

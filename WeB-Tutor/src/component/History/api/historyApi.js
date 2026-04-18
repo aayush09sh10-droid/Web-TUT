@@ -1,10 +1,10 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
 import { handleProtectedResponse, parseJsonResponse } from '../../../shared/auth/authSession'
+import { buildApiUrl } from '../../../shared/config/apiBase'
 import { fetchQueryRequest } from '../../../shared/network/queryRequestOptions'
 
 export async function fetchHistory(_authToken, signal) {
   const res = await fetchQueryRequest(
-    `${API_BASE}/api/history`,
+    buildApiUrl('/api/history'),
     {
       credentials: 'include',
     },
@@ -21,7 +21,7 @@ export async function fetchHistory(_authToken, signal) {
 }
 
 export async function clearHistory() {
-  const res = await fetch(`${API_BASE}/api/history`, {
+  const res = await fetch(buildApiUrl('/api/history'), {
     method: 'DELETE',
     credentials: 'include',
   })
@@ -34,7 +34,7 @@ export async function clearHistory() {
 }
 
 export async function deleteHistoryItem(_authToken, itemId) {
-  const res = await fetch(`${API_BASE}/api/history/${itemId}`, {
+  const res = await fetch(buildApiUrl(`/api/history/${itemId}`), {
     method: 'DELETE',
     credentials: 'include',
   })
@@ -48,7 +48,7 @@ export async function deleteHistoryItem(_authToken, itemId) {
 
 export async function fetchSubjects(_authToken, signal) {
   const res = await fetchQueryRequest(
-    `${API_BASE}/api/history/subjects`,
+    buildApiUrl('/api/history/subjects'),
     {
       credentials: 'include',
     },
@@ -65,7 +65,7 @@ export async function fetchSubjects(_authToken, signal) {
 }
 
 export async function createSubject(_authToken, name) {
-  const res = await fetch(`${API_BASE}/api/history/subjects`, {
+  const res = await fetch(buildApiUrl('/api/history/subjects'), {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -84,7 +84,7 @@ export async function createSubject(_authToken, name) {
 }
 
 export async function saveHistoryItemToSubject(_authToken, subjectId, historyId) {
-  const res = await fetch(`${API_BASE}/api/history/subjects/${subjectId}/items`, {
+  const res = await fetch(buildApiUrl(`/api/history/subjects/${subjectId}/items`), {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -103,7 +103,7 @@ export async function saveHistoryItemToSubject(_authToken, subjectId, historyId)
 }
 
 export async function reorderSubjectLessons(_authToken, subjectId, itemIds) {
-  const res = await fetch(`${API_BASE}/api/history/subjects/${subjectId}/items/reorder`, {
+  const res = await fetch(buildApiUrl(`/api/history/subjects/${subjectId}/items/reorder`), {
     method: 'PATCH',
     credentials: 'include',
     headers: {
@@ -122,7 +122,7 @@ export async function reorderSubjectLessons(_authToken, subjectId, itemIds) {
 }
 
 export async function removeHistoryItemFromSubject(_authToken, subjectId, historyId) {
-  const res = await fetch(`${API_BASE}/api/history/subjects/${subjectId}/items/${historyId}`, {
+  const res = await fetch(buildApiUrl(`/api/history/subjects/${subjectId}/items/${historyId}`), {
     method: 'DELETE',
     credentials: 'include',
   })

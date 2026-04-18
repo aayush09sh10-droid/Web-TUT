@@ -1,10 +1,10 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
 import { handleProtectedResponse, parseJsonResponse } from '../../../shared/auth/authSession'
+import { buildApiUrl } from '../../../shared/config/apiBase'
 import { fetchQueryRequest } from '../../../shared/network/queryRequestOptions'
 
 export async function fetchLearningDetails(_authToken, id, signal) {
   const res = await fetchQueryRequest(
-    `${API_BASE}/api/history/${id}`,
+    buildApiUrl(`/api/history/${id}`),
     {
       credentials: 'include',
     },

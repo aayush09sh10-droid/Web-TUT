@@ -6,6 +6,22 @@ function isProduction() {
   return String(process.env.NODE_ENV || '').toLowerCase() === 'production'
 }
 
+function hasCrossSiteFrontendOrigin() {
+  const configuredOrigins = String(
+    process.env.CORS_ALLOWED_ORIGINS || process.env.FRONTEND_ORIGIN || ''
+  )
+    .split(',')
+    .map((origin) => origin.trim().toLowerCase())
+    .filter(Boolean)
+
+  return configuredOrigins.some(
+    (origin) =>
+      (origin.startsWith('https://') || origin.startsWith('http://')) &&
+      !origin.includes('localhost') &&
+      !origin.includes('127.0.0.1')
+  )
+}
+
 function getCookieSameSite() {
   const configuredSameSite = String(process.env.AUTH_COOKIE_SAME_SITE || '').trim().toLowerCase()
 
@@ -13,7 +29,11 @@ function getCookieSameSite() {
     return configuredSameSite
   }
 
-  return isProduction() ? 'lax' : 'lax'
+  if (isProduction() && hasCrossSiteFrontendOrigin()) {
+    return 'none'
+  }
+
+  return 'lax'
 }
 
 function getCookieSecureValue(sameSite) {
