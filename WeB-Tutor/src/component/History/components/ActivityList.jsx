@@ -51,6 +51,7 @@ export default function ActivityList({ onDelete }) {
                 {item.result?.teaching && <span className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Teaching</span>}
                 {item.result?.formula && <span className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Formula</span>}
                 {item.result?.doubt && <span className="rounded-full border border-(--border) bg-(--card-strong) px-2.5 py-1 text-[11px] text-(--muted)">Doubt</span>}
+                {item.result?.previousTopics?.length > 0 && <span className="rounded-full border border-(--border) bg-[var(--accent-soft)] px-2.5 py-1 text-[11px] text-[var(--accent)]">Regenerated</span>}
               </div>
             </button>
           </div>

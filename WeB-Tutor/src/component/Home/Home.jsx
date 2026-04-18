@@ -178,10 +178,46 @@ function Home() {
     )
   }
 
-  function applySummaryPayload(payload, nextView = 'summary') {
+  function getPreviousTopicLabel(currentResult = result) {
+    return (
+      currentResult?.summary?.title ||
+      currentResult?.sourceLabel ||
+      askPrompt.trim() ||
+      url.trim() ||
+      studyUploads[0]?.fileName ||
+      ''
+    )
+  }
+
+  function mergePreviousTopics(payload, previousTopicLabel, currentResult = result) {
+    const existingTopics = Array.isArray(currentResult?.previousTopics) ? [...currentResult.previousTopics] : []
+    if (previousTopicLabel && !existingTopics.includes(previousTopicLabel)) {
+      existingTopics.push(previousTopicLabel)
+    }
+
+    return existingTopics.length ? { ...payload, previousTopics: existingTopics } : payload
+  }
+
+  async function ensureSummaryForFeature(nextView, forceRegenerate = false, workingResult = result) {
+    if (workingResult?.summary) {
+      return workingResult
+    }
+
+    const payload = await requestSummaryForCurrentInput({
+      historyId: workingResult?.historyId,
+      forceRegenerate,
+    })
+
+    applySummaryPayload(payload, nextView)
+    return payload
+  }
+
+  function applySummaryPayload(payload, nextView = 'summary', options = {}) {
+    const nextPayload = mergePreviousTopics(payload, options.previousTopicLabel, options.currentResult || result)
+
     dispatch(
       setHomeFields({
-        result: payload,
+        result: nextPayload,
         error: '',
         quizError: '',
         teachingError: '',
@@ -190,32 +226,32 @@ function Home() {
         activeView: nextView,
         selectedAnswers: {},
         quizSubmitted: false,
-        activeTopicId: payload.teaching?.topics?.[0]?.id || '',
+        activeTopicId: nextPayload.teaching?.topics?.[0]?.id || '',
         activeFormulaSectionId: '',
         activeFormulaPanel: 'explanation',
         showComposer: false,
       })
     )
 
-    if (result?.historyId && payload?.historyId && result.historyId === payload.historyId) {
-      updateHistoryResult(payload)
+    if (result?.historyId && nextPayload?.historyId && result.historyId === nextPayload.historyId) {
+      updateHistoryResult(nextPayload)
       return
     }
 
     dispatch(
       addHistoryItem({
-        url: payload.sourceLabel || url.trim() || askPrompt.trim() || studyUploads[0]?.fileName || '',
-        result: payload,
+        url: nextPayload.sourceLabel || url.trim() || askPrompt.trim() || studyUploads[0]?.fileName || '',
+        result: nextPayload,
         timestamp: Date.now(),
       })
     )
 
     const nextHistory = [
       {
-        id: payload.historyId,
-        url: payload.sourceLabel || url.trim() || askPrompt.trim() || studyUploads[0]?.fileName || '',
-        sourceLabel: payload.sourceLabel,
-        sourceType: payload.sourceType,
+        id: nextPayload.historyId,
+        url: nextPayload.sourceLabel || url.trim() || askPrompt.trim() || studyUploads[0]?.fileName || '',
+        sourceLabel: nextPayload.sourceLabel,
+        sourceType: nextPayload.sourceType,
         timestamp: Date.now(),
         result: payload,
       },
@@ -266,7 +302,9 @@ function Home() {
         historyId: result?.historyId,
         forceRegenerate: true,
       })
-      applySummaryPayload(payload, activeView || 'summary')
+      applySummaryPayload(payload, activeView || 'summary', {
+        previousTopicLabel: getPreviousTopicLabel(result),
+      })
     } catch (err) {
       const nextError = getVisibleErrorMessage(err)
       if (nextError) {
@@ -430,14 +468,16 @@ function Home() {
       return
     }
 
-    if (!workingResult?.summary) return
+    const currentResult = await ensureSummaryForFeature('quiz', forceRegenerate, workingResult)
+    if (!currentResult?.summary) return
+
     dispatch(setHomeFields({ activeView: 'quiz', quizError: '' }))
-    if (workingResult.quiz && !forceRegenerate) return
+    if (currentResult.quiz && !forceRegenerate) return
 
     dispatch(setHomeFields({ selectedAnswers: {}, quizSubmitted: false, quizLoading: true }))
     try {
-      const payload = await requestQuiz(workingResult.summary, workingResult.historyId, { forceRegenerate })
-      const nextResult = { ...workingResult, quiz: payload.quiz }
+      const payload = await requestQuiz(currentResult.summary, currentResult.historyId, { forceRegenerate })
+      const nextResult = { ...currentResult, quiz: payload.quiz }
       dispatch(setHomeField({ field: 'result', value: nextResult }))
       updateHistoryResult(nextResult)
     } catch (err) {
@@ -456,17 +496,19 @@ function Home() {
       return
     }
 
-    if (!workingResult?.summary) return
+    const currentResult = await ensureSummaryForFeature('teaching', forceRegenerate, workingResult)
+    if (!currentResult?.summary) return
+
     dispatch(setHomeFields({ activeView: 'teaching', teachingError: '' }))
-    if (workingResult.teaching?.topics?.length && !forceRegenerate) {
-      if (!activeTopicId) dispatch(setHomeField({ field: 'activeTopicId', value: workingResult.teaching.topics[0].id }))
+    if (currentResult.teaching?.topics?.length && !forceRegenerate) {
+      if (!activeTopicId) dispatch(setHomeField({ field: 'activeTopicId', value: currentResult.teaching.topics[0].id }))
       return
     }
 
     dispatch(setHomeField({ field: 'teachingLoading', value: true }))
     try {
-      const payload = await requestTeaching(workingResult.summary, workingResult.historyId, { forceRegenerate })
-      const nextResult = { ...workingResult, teaching: payload.teaching }
+      const payload = await requestTeaching(currentResult.summary, currentResult.historyId, { forceRegenerate })
+      const nextResult = { ...currentResult, teaching: payload.teaching }
       dispatch(setHomeFields({ result: nextResult, activeTopicId: payload.teaching?.topics?.[0]?.id || '' }))
       updateHistoryResult(nextResult)
     } catch (err) {
@@ -485,17 +527,19 @@ function Home() {
       return
     }
 
-    if (!workingResult?.summary) return
+    const currentResult = await ensureSummaryForFeature('formula', forceRegenerate, workingResult)
+    if (!currentResult?.summary) return
+
     dispatch(setHomeFields({ activeView: 'formula', formulaError: '' }))
-    if (workingResult.formula?.sections?.length && !forceRegenerate) {
-      if (!activeFormulaSectionId) dispatch(setHomeField({ field: 'activeFormulaSectionId', value: workingResult.formula.sections[0].id }))
+    if (currentResult.formula?.sections?.length && !forceRegenerate) {
+      if (!activeFormulaSectionId) dispatch(setHomeField({ field: 'activeFormulaSectionId', value: currentResult.formula.sections[0].id }))
       return
     }
 
     dispatch(setHomeField({ field: 'formulaLoading', value: true }))
     try {
-      const payload = await requestFormula(workingResult.summary, workingResult.historyId, { forceRegenerate })
-      const nextResult = { ...workingResult, formula: payload.formula }
+      const payload = await requestFormula(currentResult.summary, currentResult.historyId, { forceRegenerate })
+      const nextResult = { ...currentResult, formula: payload.formula }
       dispatch(setHomeFields({ result: nextResult, activeFormulaSectionId: payload.formula?.sections?.[0]?.id || '', activeFormulaPanel: 'explanation' }))
       updateHistoryResult(nextResult)
     } catch (err) {

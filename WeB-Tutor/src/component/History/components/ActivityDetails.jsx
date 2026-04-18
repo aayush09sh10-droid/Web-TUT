@@ -43,6 +43,20 @@ export default function ActivityDetails({
         </button>
       </div>
 
+      {selectedResult.previousTopics?.length > 0 && (
+        <div className="mt-4 rounded-[1.2rem] border border-(--border) bg-(--card-strong) p-4">
+          <h4 className="text-base font-semibold text-(--text)">Previous topic{selectedResult.previousTopics.length > 1 ? 's' : ''}</h4>
+          <p className="mt-2 text-sm text-(--muted)">This session was regenerated from the earlier topic{selectedResult.previousTopics.length > 1 ? 's' : ''} below.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {selectedResult.previousTopics.map((topic, index) => (
+              <span key={`${topic}-${index}`} className="rounded-full border border-(--border) bg-(--card) px-3 py-2 text-sm text-(--text)">
+                {topic}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {selectedTopicTitles.length > 0 && (
         <div className="mt-4 rounded-[1.2rem] border border-(--border) bg-(--card-strong) p-4">
           <h4 className="text-base font-semibold text-(--text)">What you have learnt</h4>
