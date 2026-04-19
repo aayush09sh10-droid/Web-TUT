@@ -1,3 +1,4 @@
+import { parseJsonResponse } from '../../../shared/auth/authSession'
 import { buildApiUrl } from '../../../shared/config/apiBase'
 
 export async function fetchHistory(authToken, signal) {
@@ -8,7 +9,7 @@ export async function fetchHistory(authToken, signal) {
     signal,
   })
 
-  const payload = await res.json()
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to load history.')
   }
@@ -24,7 +25,7 @@ export async function clearHistory(authToken) {
     },
   })
 
-  const payload = await res.json()
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to clear history.')
   }
@@ -38,7 +39,7 @@ export async function deleteHistoryItem(authToken, itemId) {
     },
   })
 
-  const payload = await res.json()
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to delete history item.')
   }
@@ -52,7 +53,7 @@ export async function fetchSubjects(authToken, signal) {
     signal,
   })
 
-  const payload = await res.json()
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to load subjects.')
   }
@@ -70,7 +71,7 @@ export async function createSubject(authToken, name) {
     body: JSON.stringify({ name }),
   })
 
-  const payload = await res.json()
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to create subject.')
   }
@@ -88,7 +89,7 @@ export async function saveHistoryItemToSubject(authToken, subjectId, historyId) 
     body: JSON.stringify({ historyId }),
   })
 
-  const payload = await res.json()
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to save lesson into subject.')
   }
@@ -106,7 +107,7 @@ export async function reorderSubjectLessons(authToken, subjectId, itemIds) {
     body: JSON.stringify({ itemIds }),
   })
 
-  const payload = await res.json()
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to rearrange subject lessons.')
   }
@@ -122,7 +123,7 @@ export async function removeHistoryItemFromSubject(authToken, subjectId, history
     },
   })
 
-  const payload = await res.json()
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to remove lesson from subject.')
   }

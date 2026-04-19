@@ -13,7 +13,20 @@ export function handleProtectedResponse(res) {
 
 export async function parseJsonResponse(res) {
   try {
-    return await res.json()
+    const rawText = await res.text()
+
+    if (!rawText) {
+      return {}
+    }
+
+    try {
+      return JSON.parse(rawText)
+    } catch {
+      return {
+        error: rawText,
+        rawText,
+      }
+    }
   } catch {
     return {}
   }

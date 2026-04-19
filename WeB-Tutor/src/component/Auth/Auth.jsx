@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { setAuth } from './store/authSlice'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { parseJsonResponse } from '../../shared/auth/authSession'
 import { buildApiUrl } from '../../shared/config/apiBase'
 
 function Auth() {
@@ -64,7 +65,7 @@ function Auth() {
         body,
       })
 
-      const payload = await res.json()
+      const payload = await parseJsonResponse(res)
       if (!res.ok) {
         throw new Error(payload?.error || 'Failed to register.')
       }
@@ -92,7 +93,7 @@ function Auth() {
         }),
       })
 
-      const payload = await res.json()
+      const payload = await parseJsonResponse(res)
       if (!res.ok) {
         throw new Error(payload?.error || 'Failed to login.')
       }

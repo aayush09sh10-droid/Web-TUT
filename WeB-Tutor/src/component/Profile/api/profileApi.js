@@ -1,3 +1,4 @@
+import { parseJsonResponse } from '../../../shared/auth/authSession'
 import { buildApiUrl } from '../../../shared/config/apiBase'
 
 export async function fetchProfile(authToken, signal) {
@@ -8,7 +9,7 @@ export async function fetchProfile(authToken, signal) {
     signal,
   })
 
-  const payload = await res.json()
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to load profile.')
   }
@@ -29,7 +30,7 @@ export async function changePassword(authToken, passwordForm) {
     }),
   })
 
-  const payload = await res.json()
+  const payload = await parseJsonResponse(res)
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to change password.')
   }
