@@ -2,3 +2,5 @@ WeB-Tutor/
 *.pdf
 desktop.ini
 Backend/.env
+node_modules/
+Backend/node_modules/

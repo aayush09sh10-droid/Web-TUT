@@ -1,0 +1,11 @@
+{
+  "name": "web-tutor-root",
+  "private": true,
+  "scripts": {
+    "postinstall": "npm --prefix Backend install --omit=dev",
+    "start": "npm --prefix Backend start"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
