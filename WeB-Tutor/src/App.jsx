@@ -17,6 +17,7 @@ import { fetchQueryRequest } from './shared/network/queryRequestOptions'
 import { logger } from './shared/utils/logger'
 import { useAppDispatch, useAppSelector } from './store/hooks'
 
+
 function App() {
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.auth.theme)
@@ -97,6 +98,8 @@ function App() {
   if (isCheckingSession) {
     return <div className="min-h-screen bg-(--bg)" />
   }
+
+  
 
   return (
     <div className="flex min-h-screen flex-col text-(--text)">
