@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '../../../cache'
+import { getAuthCacheKey } from '../../../cache/queryKeys'
 import {
   createSubject,
   fetchSubjects,
@@ -11,6 +12,7 @@ import { useAppSelector } from '../../../store/hooks'
 export default function SubjectOrganizerCard({ selectedItem }) {
   const authUser = useAppSelector((state) => state.auth.auth?.user)
   const authToken = useAppSelector((state) => state.auth.auth?.token)
+  const authCacheKey = getAuthCacheKey(authUser)
   const queryClient = useQueryClient()
   const [selectedSubjectId, setSelectedSubjectId] = useState('')
   const [newSubjectName, setNewSubjectName] = useState('')
@@ -18,7 +20,7 @@ export default function SubjectOrganizerCard({ selectedItem }) {
   const [error, setError] = useState('')
 
   const subjectsQuery = useQuery({
-    queryKey: queryKeys.subjects(authToken),
+    queryKey: queryKeys.subjects(authCacheKey),
     enabled: Boolean(authUser),
     queryFn: ({ signal }) => fetchSubjects(authToken, signal),
   })
@@ -30,7 +32,7 @@ export default function SubjectOrganizerCard({ selectedItem }) {
       setError('')
       setNewSubjectName('')
       setSelectedSubjectId(subject.id)
-      await queryClient.invalidateQueries({ queryKey: queryKeys.subjects(authToken) })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.subjects(authCacheKey) })
     },
     onError: (mutationError) => {
       setError(mutationError.message || 'Failed to create subject.')
@@ -43,7 +45,7 @@ export default function SubjectOrganizerCard({ selectedItem }) {
     onSuccess: async (subject) => {
       setMessage(`Saved this lesson in "${subject.name}".`)
       setError('')
-      await queryClient.invalidateQueries({ queryKey: queryKeys.subjects(authToken) })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.subjects(authCacheKey) })
     },
     onError: (mutationError) => {
       setError(mutationError.message || 'Failed to save lesson into subject.')

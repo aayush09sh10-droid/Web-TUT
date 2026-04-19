@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { queryKeys, setHistoryCache } from '../../cache'
+import { getAuthCacheKey } from '../../cache/queryKeys'
 import ActivityDetails from './components/ActivityDetails'
 import ActivityList from './components/ActivityList'
 import { clearHistory, deleteHistoryItem, fetchHistory } from './api/historyApi'
@@ -23,6 +24,7 @@ export default function History() {
   const dispatch = useAppDispatch()
   const authUser = useAppSelector((state) => state.auth.auth?.user)
   const authToken = useAppSelector((state) => state.auth.auth?.token)
+  const authCacheKey = getAuthCacheKey(authUser)
   const history = useAppSelector((state) => state.history.items)
   const selectedId = useAppSelector((state) => state.history.selectedId)
   const selected = useMemo(
@@ -31,7 +33,7 @@ export default function History() {
   )
 
   const historyQuery = useQuery({
-    queryKey: queryKeys.history(authToken),
+    queryKey: queryKeys.history(authCacheKey),
     enabled: Boolean(authUser),
     queryFn: ({ signal }) => fetchHistory(authToken, signal),
   })
@@ -39,7 +41,7 @@ export default function History() {
   const clearHistoryMutation = useMutation({
     mutationFn: () => clearHistory(authToken),
     onSuccess: () => {
-      setHistoryCache(authToken, [])
+      setHistoryCache(authCacheKey, [])
       dispatch(clearAllHistoryItems())
     },
   })
@@ -48,7 +50,7 @@ export default function History() {
     mutationFn: (itemId) => deleteHistoryItem(authToken, itemId),
     onSuccess: (_, itemId) => {
       const nextItems = history.filter((item) => item.id !== itemId)
-      setHistoryCache(authToken, nextItems)
+      setHistoryCache(authCacheKey, nextItems)
       dispatch(removeHistoryItemFromState(itemId))
     },
   })

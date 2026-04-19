@@ -34,6 +34,14 @@ const historySlice = createSlice({
         state.selectedId = null
       }
     },
+    resetHistoryState() {
+      return {
+        items: [],
+        selectedId: null,
+        loading: false,
+        error: '',
+      }
+    },
   },
 })
 
@@ -45,5 +53,6 @@ export const {
   clearSelectedHistoryItem,
   clearAllHistoryItems,
   removeHistoryItemFromState,
+  resetHistoryState,
 } = historySlice.actions
 export const historyReducer = historySlice.reducer

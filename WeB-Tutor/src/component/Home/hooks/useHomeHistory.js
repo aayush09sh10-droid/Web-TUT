@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '../../../cache'
+import { getAuthCacheKey } from '../../../cache/queryKeys'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { fetchHomeHistory } from '../api/homeApi'
 import { setHomeHistory } from '../store/homeSlice'
@@ -8,8 +9,9 @@ import { setHomeHistory } from '../store/homeSlice'
 export function useHomeHistory(authToken) {
   const dispatch = useAppDispatch()
   const authUser = useAppSelector((state) => state.auth.auth?.user)
+  const authCacheKey = getAuthCacheKey(authUser)
   const query = useQuery({
-    queryKey: queryKeys.history(authToken),
+    queryKey: queryKeys.history(authCacheKey),
     enabled: Boolean(authUser),
     queryFn: ({ signal }) =>
       fetchHomeHistory(

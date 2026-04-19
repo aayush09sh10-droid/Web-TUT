@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { queryKeys } from '../../cache'
+import { getAuthCacheKey } from '../../cache/queryKeys'
 import {
   fetchSubjects,
   removeHistoryItemFromSubject,
@@ -24,8 +25,9 @@ export default function ProfileSubjectDetails() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const isAuthenticated = Boolean(useAppSelector((state) => state.auth.auth?.user))
-  const authCacheKey = isAuthenticated ? 'authenticated' : 'guest'
+  const auth = useAppSelector((state) => state.auth.auth)
+  const isAuthenticated = Boolean(auth?.user)
+  const authCacheKey = getAuthCacheKey(auth)
   const theme = useAppSelector((state) => state.auth.theme)
   const isDark = theme === 'dark'
   const panelStyle = useMemo(() => getProfilePanelStyle(isDark), [isDark])
@@ -35,12 +37,12 @@ export default function ProfileSubjectDetails() {
   const subjectsQuery = useQuery({
     queryKey: queryKeys.subjects(authCacheKey),
     enabled: isAuthenticated,
-    queryFn: ({ signal }) => fetchSubjects(authCacheKey, signal),
+    queryFn: ({ signal }) => fetchSubjects(auth?.token, signal),
     staleTime: 5 * 60 * 1000, // 5 minutes - prevent duplicate calls
   })
 
   const reorderMutation = useMutation({
-    mutationFn: ({ itemIds }) => reorderSubjectLessons(authCacheKey, subjectId, itemIds),
+    mutationFn: ({ itemIds }) => reorderSubjectLessons(auth?.token, subjectId, itemIds),
     onSuccess: async () => {
       setError('')
       await queryClient.invalidateQueries({ queryKey: queryKeys.subjects(authCacheKey) })
@@ -51,7 +53,7 @@ export default function ProfileSubjectDetails() {
   })
 
   const removeMutation = useMutation({
-    mutationFn: (historyId) => removeHistoryItemFromSubject(authCacheKey, subjectId, historyId),
+    mutationFn: (historyId) => removeHistoryItemFromSubject(auth?.token, subjectId, historyId),
     onSuccess: async () => {
       setError('')
       await queryClient.invalidateQueries({ queryKey: queryKeys.subjects(authCacheKey) })

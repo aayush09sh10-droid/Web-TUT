@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { queryKeys, setProfileCache } from '../../cache'
+import { getAuthCacheKey } from '../../cache/queryKeys'
 import { changePassword, fetchProfile } from './api/profileApi'
 import PasswordSettingsCard from './components/PasswordSettingsCard'
 import ProfileSummaryCard from './components/ProfileSummaryCard'
@@ -23,6 +24,7 @@ function Profile() {
   const theme = useAppSelector((state) => state.auth.theme)
   const authUser = useAppSelector((state) => state.auth.auth?.user)
   const authToken = useAppSelector((state) => state.auth.auth?.token)
+  const authCacheKey = getAuthCacheKey(authUser)
   const {
     error,
     passwordForm,
@@ -31,7 +33,7 @@ function Profile() {
   const panelStyle = useMemo(() => getProfilePanelStyle(isDark), [isDark])
 
   const profileQuery = useQuery({
-    queryKey: queryKeys.profile(authToken),
+    queryKey: queryKeys.profile(authCacheKey),
     enabled: Boolean(authUser),
     queryFn: ({ signal }) => fetchProfile(authToken, signal),
   })
@@ -48,7 +50,7 @@ function Profile() {
     if (profileQuery.data) {
       dispatch(setProfileError(''))
       dispatch(setProfileData(profileQuery.data))
-      setProfileCache(authToken, profileQuery.data)
+      setProfileCache(authCacheKey, profileQuery.data)
     }
   }, [authToken, dispatch, profileQuery.data])
 

@@ -6,21 +6,23 @@ const initialPasswordForm = {
   confirmPassword: '',
 }
 
+const initialState = {
+  profile: null,
+  loading: true,
+  error: '',
+  showPasswordForm: false,
+  passwordForm: initialPasswordForm,
+  passwordLoading: false,
+  passwordMessage: '',
+  passwordError: '',
+  learningItem: null,
+  learningLoading: true,
+  learningError: '',
+}
+
 const profileSlice = createSlice({
   name: 'profile',
-  initialState: {
-    profile: null,
-    loading: true,
-    error: '',
-    showPasswordForm: false,
-    passwordForm: initialPasswordForm,
-    passwordLoading: false,
-    passwordMessage: '',
-    passwordError: '',
-    learningItem: null,
-    learningLoading: true,
-    learningError: '',
-  },
+  initialState,
   reducers: {
     setProfileLoading(state, action) {
       state.loading = action.payload
@@ -61,6 +63,9 @@ const profileSlice = createSlice({
     setLearningItem(state, action) {
       state.learningItem = action.payload
     },
+    resetProfileState() {
+      return initialState
+    },
   },
 })
 
@@ -77,5 +82,6 @@ export const {
   setLearningLoading,
   setLearningError,
   setLearningItem,
+  resetProfileState,
 } = profileSlice.actions
 export const profileReducer = profileSlice.reducer

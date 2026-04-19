@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { queryKeys } from '../../cache'
+import { getAuthCacheKey } from '../../cache/queryKeys'
 import { fetchHistory } from '../History/api/historyApi'
 import { hydrateHomeState } from '../Home/store/homeSlice'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
@@ -16,12 +17,13 @@ export default function ProfileFeatureLibrary() {
   const theme = useAppSelector((state) => state.auth.theme)
   const authUser = useAppSelector((state) => state.auth.auth?.user)
   const authToken = useAppSelector((state) => state.auth.auth?.token)
+  const authCacheKey = getAuthCacheKey(authUser)
   const isDark = theme === 'dark'
   const panelStyle = useMemo(() => getProfilePanelStyle(isDark), [isDark])
   const config = getProfileFeatureConfig(feature)
 
   const historyQuery = useQuery({
-    queryKey: queryKeys.history(authToken),
+    queryKey: queryKeys.history(authCacheKey),
     enabled: Boolean(authUser),
     queryFn: ({ signal }) => fetchHistory(authToken, signal),
   })

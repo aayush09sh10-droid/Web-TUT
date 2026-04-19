@@ -1,14 +1,14 @@
 import { queryClient } from './queryClient'
 import { queryKeys } from './queryKeys'
 
-export function setHistoryCache(authToken, historyItems) {
-  queryClient.setQueryData(queryKeys.history(authToken), historyItems)
+export function setHistoryCache(authKey, historyItems) {
+  queryClient.setQueryData(queryKeys.history(authKey), historyItems)
 }
 
-export function invalidateHistoryCache(authToken) {
-  return queryClient.invalidateQueries({ queryKey: queryKeys.history(authToken) })
+export function invalidateHistoryCache(authKey) {
+  return queryClient.invalidateQueries({ queryKey: queryKeys.history(authKey) })
 }
 
-export function setProfileCache(authToken, profile) {
-  queryClient.setQueryData(queryKeys.profile(authToken), profile)
+export function setProfileCache(authKey, profile) {
+  queryClient.setQueryData(queryKeys.profile(authKey), profile)
 }

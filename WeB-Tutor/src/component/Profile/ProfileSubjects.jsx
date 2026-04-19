@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { queryKeys } from '../../cache'
+import { getAuthCacheKey } from '../../cache/queryKeys'
 import {
   createSubject,
   fetchSubjects,
@@ -26,6 +27,7 @@ export default function ProfileSubjects() {
   const queryClient = useQueryClient()
   const authUser = useAppSelector((state) => state.auth.auth?.user)
   const authToken = useAppSelector((state) => state.auth.auth?.token)
+  const authCacheKey = getAuthCacheKey(authUser)
   const theme = useAppSelector((state) => state.auth.theme)
   const isDark = theme === 'dark'
   const panelStyle = useMemo(() => getProfilePanelStyle(isDark), [isDark])
@@ -33,7 +35,7 @@ export default function ProfileSubjects() {
   const [error, setError] = useState('')
 
   const subjectsQuery = useQuery({
-    queryKey: queryKeys.subjects(authToken),
+    queryKey: queryKeys.subjects(authCacheKey),
     enabled: Boolean(authUser),
     queryFn: ({ signal }) => fetchSubjects(authToken, signal),
   })
@@ -43,7 +45,7 @@ export default function ProfileSubjects() {
     onSuccess: async () => {
       setNewSubjectName('')
       setError('')
-      await queryClient.invalidateQueries({ queryKey: queryKeys.subjects(authToken) })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.subjects(authCacheKey) })
     },
     onError: (mutationError) => {
       setError(mutationError.message || 'Failed to create subject.')
@@ -53,7 +55,7 @@ export default function ProfileSubjects() {
   const reorderMutation = useMutation({
     mutationFn: ({ subjectId, itemIds }) => reorderSubjectLessons(authToken, subjectId, itemIds),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.subjects(authToken) })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.subjects(authCacheKey) })
     },
     onError: (mutationError) => {
       setError(mutationError.message || 'Failed to rearrange lessons.')
@@ -63,7 +65,7 @@ export default function ProfileSubjects() {
   const removeMutation = useMutation({
     mutationFn: ({ subjectId, historyId }) => removeHistoryItemFromSubject(authToken, subjectId, historyId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.subjects(authToken) })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.subjects(authCacheKey) })
     },
     onError: (mutationError) => {
       setError(mutationError.message || 'Failed to remove lesson from subject.')

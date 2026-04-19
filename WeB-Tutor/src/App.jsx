@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+import { queryClient } from './cache/queryClient'
 import Auth from './component/Auth/Auth'
 import { AUTH_STORAGE_KEY, THEME_STORAGE_KEY } from './component/Auth/store/authSlice'
 import Footer from './component/Footer/Footer'
@@ -10,11 +11,18 @@ import ProfileFeatureLibrary from './component/Profile/ProfileFeatureLibrary'
 import LearningDetails from './component/Profile/LearningDetails'
 import Profile from './component/Profile/Profile'
 import ProfileSubjects from './component/Profile/ProfileSubjects'
-import { useAppSelector } from './store/hooks'
+import { resetHistoryState } from './component/History/store/historySlice'
+import { resetHomeState } from './component/Home/store/homeSlice'
+import { resetProfileState } from './component/Profile/store/profileSlice'
+import { clearPersistedHomeState } from './shared/storage/homeSession'
+import { useAppDispatch, useAppSelector } from './store/hooks'
 
 function App() {
+  const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.auth.theme)
   const auth = useAppSelector((state) => state.auth.auth)
+  const currentOwnerKey = String(auth?.user?.id || auth?.user?._id || auth?.user?.email || auth?.user?.username || '').trim()
+  const previousOwnerKeyRef = useRef(currentOwnerKey)
 
   useEffect(() => {
     const root = document.documentElement
@@ -35,6 +43,20 @@ function App() {
       window.localStorage.removeItem(AUTH_STORAGE_KEY)
     }
   }, [auth])
+
+  useEffect(() => {
+    const previousOwnerKey = previousOwnerKeyRef.current
+
+    if (previousOwnerKey !== currentOwnerKey) {
+      queryClient.clear()
+      clearPersistedHomeState()
+      dispatch(resetHomeState())
+      dispatch(resetHistoryState())
+      dispatch(resetProfileState())
+    }
+
+    previousOwnerKeyRef.current = currentOwnerKey
+  }, [currentOwnerKey, dispatch])
 
   return (
     <div className="flex min-h-screen flex-col text-(--text)">

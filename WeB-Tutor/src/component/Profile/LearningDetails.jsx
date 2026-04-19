@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { queryKeys } from '../../cache'
+import { getAuthCacheKey } from '../../cache/queryKeys'
 import { fetchLearningDetails } from './api/learningDetailsApi'
 import LearningDoubtCard from './components/LearningDoubtCard'
 import { hydrateHomeState } from '../Home/store/homeSlice'
@@ -25,12 +26,13 @@ export default function LearningDetails() {
   const theme = useAppSelector((state) => state.auth.theme)
   const authUser = useAppSelector((state) => state.auth.auth?.user)
   const authToken = useAppSelector((state) => state.auth.auth?.token)
+  const authCacheKey = getAuthCacheKey(authUser)
   const { learningItem: item, learningLoading: loading, learningError: error } = useAppSelector((state) => state.profile)
   const isDark = theme === 'dark'
   const panelStyle = useMemo(() => getProfilePanelStyle(isDark), [isDark])
 
   const learningDetailsQuery = useQuery({
-    queryKey: queryKeys.learningDetails(authToken, id),
+    queryKey: queryKeys.learningDetails(authCacheKey, id),
     enabled: Boolean(authUser && id),
     queryFn: ({ signal }) => fetchLearningDetails(authToken, id, signal),
   })

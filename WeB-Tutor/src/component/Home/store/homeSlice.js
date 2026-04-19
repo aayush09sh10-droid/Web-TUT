@@ -85,6 +85,9 @@ const homeSlice = createSlice({
       state.selectedAnswers = {}
       state.quizSubmitted = false
     },
+    resetHomeState() {
+      return initialState
+    },
   },
 })
 
@@ -98,5 +101,6 @@ export const {
   resetHomeForNewSummary,
   setSelectedAnswer,
   resetQuizSelections,
+  resetHomeState,
 } = homeSlice.actions
 export const homeReducer = homeSlice.reducer

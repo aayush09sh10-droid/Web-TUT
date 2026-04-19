@@ -30,11 +30,13 @@ import {
   setHomeHistory,
 } from './store/homeSlice'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { getAuthCacheKey } from '../../cache/queryKeys'
 
 function Home() {
   const dispatch = useAppDispatch()
   const auth = useAppSelector((state) => state.auth.auth)
   const authToken = auth?.token
+  const authCacheKey = getAuthCacheKey(auth)
   const home = useAppSelector((state) => state.home)
   const {
     inputMode,
@@ -143,7 +145,7 @@ function Home() {
     )
 
     dispatch(setHomeHistory(updatedHistory))
-    setHistoryCache(authToken, updatedHistory)
+    setHistoryCache(authCacheKey, updatedHistory)
   }
 
   async function requestSummaryForCurrentInput(options = {}) {
@@ -221,7 +223,7 @@ function Home() {
       ...history.filter((item) => item.id !== payload.historyId && item.url !== (payload.sourceLabel || url.trim() || askPrompt.trim() || studyUploads[0]?.fileName || '')),
     ].slice(0, 12)
 
-    setHistoryCache(authToken, nextHistory)
+    setHistoryCache(authCacheKey, nextHistory)
   }
 
   async function continueAfterSummary(payload) {
