@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Web-Tutor logo</title>
+  <desc id="desc">Rounded book and play-button inspired logo for Web-Tutor.</desc>
+  <defs>
+    <linearGradient id="bg" x1="16" y1="12" x2="112" y2="116" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffcf76"/>
+      <stop offset="0.55" stop-color="#ff9f5a"/>
+      <stop offset="1" stop-color="#5d8bff"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="30" y1="24" x2="96" y2="92" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fffaf1"/>
+      <stop offset="1" stop-color="#eef4ff"/>
+    </linearGradient>
+  </defs>
+  <rect x="12" y="12" width="104" height="104" rx="30" fill="url(#bg)"/>
+  <path d="M33 34.5c0-4.142 3.358-7.5 7.5-7.5H69c8.521 0 15.786 2.548 22 8v44.5c-6.214-5.452-13.479-8-22-8H40.5c-4.142 0-7.5 3.358-7.5 7.5v-44.5Z" fill="url(#panel)" opacity=".98"/>
+  <path d="M91 35c0-4.142-3.358-7.5-7.5-7.5H55c-8.521 0-15.786 2.548-22 8V80c6.214-5.452 13.479-8 22-8h28.5c4.142 0 7.5 3.358 7.5 7.5V35Z" fill="#ffffff" opacity=".24"/>
+  <path d="M61 44.5 80 56 61 67.5Z" fill="#5d8bff"/>
+  <rect x="43" y="79" width="42" height="6" rx="3" fill="#2e3d66" opacity=".22"/>
+  <circle cx="44" cy="46" r="4" fill="#ffffff" opacity=".72"/>
+</svg>

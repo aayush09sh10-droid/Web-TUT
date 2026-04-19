@@ -81,10 +81,19 @@ function Header() {
           }}
         >
           <div className="min-w-0">
-            <h1 className="text-base font-extrabold tracking-[0.02em] sm:text-lg">WeB-Tutor</h1>
-            <p className="text-xs text-(--muted)">
-              Learn, quiz, and revise from any video in a more playful way.
-            </p>
+            <div className="flex items-center gap-3">
+              <img
+                src="/web-tutor-mark.svg"
+                alt="Web-Tutor logo"
+                className="h-11 w-11 rounded-2xl border border-white/25 bg-white/70 p-1.5 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
+              />
+              <div className="min-w-0">
+                <h1 className="text-base font-extrabold tracking-[0.02em] sm:text-lg">WeB-Tutor</h1>
+                <p className="text-xs text-(--muted)">
+                  Learn, quiz, and revise from any video in a more playful way.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
