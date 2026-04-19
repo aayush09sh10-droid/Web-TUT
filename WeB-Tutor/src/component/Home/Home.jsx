@@ -537,7 +537,7 @@ function Home() {
   return (
     <main className="min-h-140 text-(--text)">
       <section className="flex flex-1 flex-col overflow-hidden">
-        <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-3 pb-10 pt-6 sm:px-4 sm:pb-12 sm:pt-8">
+        <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-3 pb-8 pt-4 sm:px-4 sm:pb-12 sm:pt-6 lg:pt-8">
           <HeaderFeature
             title="Learn from video, files, or Ask AI"
             description="Paste a YouTube link, upload study photos or files, or ask AI anything you want to learn, research, explain, compare, or generate with WebTutor."
@@ -552,18 +552,20 @@ function Home() {
             />
           )}
 
-          <div className="mt-5 flex flex-1 flex-col gap-4 sm:mt-6">
+          <div className="mt-4 flex flex-1 flex-col gap-4 sm:mt-5 lg:mt-6">
             <div className="flex flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-(--border) bg-(--card) shadow-(--shadow) backdrop-blur-xl">
-              <div className="flex flex-1 flex-col gap-4 overflow-auto p-4 pb-16 sm:p-6 sm:pb-24">
+              <div className="flex flex-1 flex-col gap-4 overflow-auto p-3.5 pb-14 sm:p-5 sm:pb-20 lg:p-6 lg:pb-24">
                 {showResult ? (
                   <div className="space-y-4">
-                    <div className="grid gap-3 sm:flex sm:flex-wrap">
-                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'summary' }))} className={`w-full rounded-full border px-4 py-2 text-sm font-semibold transition sm:w-auto ${activeView === 'summary' ? 'border-[var(--text)] bg-[var(--text)] text-[var(--bg)]' : 'border-(--border) bg-(--card) text-(--text)'}`}>{isAskResult ? 'Response' : 'Summary'}</button>
-                      <button type="button" onClick={handleOpenQuizView} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_8px_24px_rgba(255,153,0,0.22)] transition hover:-translate-y-0.5 sm:w-auto" style={{ background: activeView === 'quiz' ? 'linear-gradient(135deg, oklch(75% 0.204 54), oklch(80% 0.186 80))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(72% 0.217 24)', color: '#4a2313' }}>{quizLoading ? 'Quiz' : 'Quiz'}</button>
-                      <button type="button" onClick={handleOpenTeachingView} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(96,112,255,0.18)] transition hover:-translate-y-0.5 sm:w-auto" style={{ background: activeView === 'teaching' ? 'linear-gradient(135deg, oklch(72% 0.167 244), oklch(84% 0.118 214))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(65% 0.19 278)', color: '#1d2957' }}>{teachingLoading ? 'Teaching' : 'Teaching'}</button>
-                      <button type="button" onClick={handleOpenFormulaView} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(58,168,118,0.18)] transition hover:-translate-y-0.5 sm:w-auto" style={{ background: activeView === 'formula' ? 'linear-gradient(135deg, oklch(74% 0.18 145), oklch(87% 0.11 120))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(63% 0.16 155)', color: '#183d2e' }}>{formulaLoading ? 'Formula Lab' : 'Formula Lab'}</button>
-                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'doubt' }))} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold shadow-[0_10px_26px_rgba(173,78,167,0.18)] transition hover:-translate-y-0.5 sm:w-auto" style={{ background: activeView === 'doubt' ? 'linear-gradient(135deg, oklch(70% 0.16 330), oklch(86% 0.09 320))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(62% 0.18 320)', color: '#4f1d4a' }}>Ask Doubt</button>
-                      <NewSummaryFeature onClick={handleOpenNewSummaryComposer} />
+                    <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 sm:flex sm:flex-wrap sm:overflow-visible">
+                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'summary' }))} className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${activeView === 'summary' ? 'border-[var(--text)] bg-[var(--text)] text-[var(--bg)]' : 'border-(--border) bg-(--card) text-(--text)'}`}>{isAskResult ? 'Response' : 'Summary'}</button>
+                      <button type="button" onClick={handleOpenQuizView} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-[0_8px_24px_rgba(255,153,0,0.22)] transition hover:-translate-y-0.5" style={{ background: activeView === 'quiz' ? 'linear-gradient(135deg, oklch(75% 0.204 54), oklch(80% 0.186 80))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(72% 0.217 24)', color: '#4a2313' }}>{quizLoading ? 'Quiz' : 'Quiz'}</button>
+                      <button type="button" onClick={handleOpenTeachingView} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-[0_10px_26px_rgba(96,112,255,0.18)] transition hover:-translate-y-0.5" style={{ background: activeView === 'teaching' ? 'linear-gradient(135deg, oklch(72% 0.167 244), oklch(84% 0.118 214))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(65% 0.19 278)', color: '#1d2957' }}>{teachingLoading ? 'Teaching' : 'Teaching'}</button>
+                      <button type="button" onClick={handleOpenFormulaView} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-[0_10px_26px_rgba(58,168,118,0.18)] transition hover:-translate-y-0.5" style={{ background: activeView === 'formula' ? 'linear-gradient(135deg, oklch(74% 0.18 145), oklch(87% 0.11 120))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(63% 0.16 155)', color: '#183d2e' }}>{formulaLoading ? 'Formula Lab' : 'Formula Lab'}</button>
+                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'doubt' }))} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-[0_10px_26px_rgba(173,78,167,0.18)] transition hover:-translate-y-0.5" style={{ background: activeView === 'doubt' ? 'linear-gradient(135deg, oklch(70% 0.16 330), oklch(86% 0.09 320))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(62% 0.18 320)', color: '#4f1d4a' }}>Ask Doubt</button>
+                      <div className="shrink-0">
+                        <NewSummaryFeature onClick={handleOpenNewSummaryComposer} />
+                      </div>
                     </div>
 
                     <div className="rounded-[1.25rem] border border-(--border) bg-(--card-strong) p-4 shadow-sm">
