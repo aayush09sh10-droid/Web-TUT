@@ -24,6 +24,7 @@ export default function ProfileSubjects() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const authUser = useAppSelector((state) => state.auth.auth?.user)
   const authToken = useAppSelector((state) => state.auth.auth?.token)
   const theme = useAppSelector((state) => state.auth.theme)
   const isDark = theme === 'dark'
@@ -33,7 +34,7 @@ export default function ProfileSubjects() {
 
   const subjectsQuery = useQuery({
     queryKey: queryKeys.subjects(authToken),
-    enabled: Boolean(authToken),
+    enabled: Boolean(authUser),
     queryFn: ({ signal }) => fetchSubjects(authToken, signal),
   })
 

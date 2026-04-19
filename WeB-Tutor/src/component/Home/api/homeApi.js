@@ -29,6 +29,7 @@ function throwAiRequestError(payload, fallbackMessage) {
 
 export async function fetchHomeHistory(headers, signal) {
   const res = await fetch(buildApiUrl('/api/history'), {
+    credentials: 'include',
     headers,
     signal,
   })
@@ -44,6 +45,7 @@ export async function fetchHomeHistory(headers, signal) {
 export async function requestVideoSummary(headers, url, options = {}) {
   const res = await fetch(buildApiUrl('/api/summarize'), {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify({
       url,
@@ -64,6 +66,7 @@ export async function requestVideoSummary(headers, url, options = {}) {
 export async function requestStudySummary(headers, studyPayload, options = {}) {
   const res = await fetch(buildApiUrl('/api/summarize-notes'), {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify({
       ...studyPayload,
@@ -84,6 +87,7 @@ export async function requestStudySummary(headers, studyPayload, options = {}) {
 export async function requestAskAnything(headers, question, options = {}) {
   const res = await fetch(buildApiUrl('/api/ask-anything'), {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify({
       question,
@@ -104,6 +108,7 @@ export async function requestAskAnything(headers, question, options = {}) {
 export async function requestQuiz(headers, summary, historyId, options = {}) {
   const res = await fetch(buildApiUrl('/api/quiz'), {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify({
       summary,
@@ -123,6 +128,7 @@ export async function requestQuiz(headers, summary, historyId, options = {}) {
 export async function requestTeaching(headers, summary, historyId, options = {}) {
   const res = await fetch(buildApiUrl('/api/teaching'), {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify({
       summary,
@@ -142,6 +148,7 @@ export async function requestTeaching(headers, summary, historyId, options = {})
 export async function requestFormula(headers, summary, historyId, options = {}) {
   const res = await fetch(buildApiUrl('/api/formula'), {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify({
       summary,
@@ -161,6 +168,7 @@ export async function requestFormula(headers, summary, historyId, options = {}) 
 export async function requestDoubtAnswer(headers, doubtPayload, options = {}) {
   const res = await fetch(buildApiUrl('/api/doubt'), {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify({
       ...doubtPayload,
@@ -179,6 +187,7 @@ export async function requestDoubtAnswer(headers, doubtPayload, options = {}) {
 export async function saveQuizProgress(headers, historyId, progress) {
   const res = await fetch(buildApiUrl(`/api/history/${historyId}/quiz-progress`), {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(progress),
   })

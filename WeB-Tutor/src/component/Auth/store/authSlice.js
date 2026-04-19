@@ -20,7 +20,7 @@ function getInitialAuth() {
 
   try {
     const parsed = JSON.parse(stored)
-    return parsed?.token && parsed?.user ? parsed : null
+    return parsed?.user ? parsed : null
   } catch {
     window.sessionStorage.removeItem(AUTH_STORAGE_KEY)
     return null

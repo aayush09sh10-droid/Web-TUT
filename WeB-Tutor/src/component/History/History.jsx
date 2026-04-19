@@ -21,6 +21,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 
 export default function History() {
   const dispatch = useAppDispatch()
+  const authUser = useAppSelector((state) => state.auth.auth?.user)
   const authToken = useAppSelector((state) => state.auth.auth?.token)
   const history = useAppSelector((state) => state.history.items)
   const selectedId = useAppSelector((state) => state.history.selectedId)
@@ -31,7 +32,7 @@ export default function History() {
 
   const historyQuery = useQuery({
     queryKey: queryKeys.history(authToken),
-    enabled: Boolean(authToken),
+    enabled: Boolean(authUser),
     queryFn: ({ signal }) => fetchHistory(authToken, signal),
   })
 

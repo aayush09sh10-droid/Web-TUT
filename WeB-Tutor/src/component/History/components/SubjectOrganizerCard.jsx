@@ -9,6 +9,7 @@ import {
 import { useAppSelector } from '../../../store/hooks'
 
 export default function SubjectOrganizerCard({ selectedItem }) {
+  const authUser = useAppSelector((state) => state.auth.auth?.user)
   const authToken = useAppSelector((state) => state.auth.auth?.token)
   const queryClient = useQueryClient()
   const [selectedSubjectId, setSelectedSubjectId] = useState('')
@@ -18,7 +19,7 @@ export default function SubjectOrganizerCard({ selectedItem }) {
 
   const subjectsQuery = useQuery({
     queryKey: queryKeys.subjects(authToken),
-    enabled: Boolean(authToken),
+    enabled: Boolean(authUser),
     queryFn: ({ signal }) => fetchSubjects(authToken, signal),
   })
 

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { setAuth } from './store/authSlice'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { parseJsonResponse } from '../../shared/auth/authSession'
+import { buildAuthenticatedRequestOptions } from '../../shared/auth/requestOptions'
 import { buildApiUrl } from '../../shared/config/apiBase'
 
 function Auth() {
@@ -60,17 +61,20 @@ function Auth() {
         body.append('avatar', avatar)
       }
 
-      const res = await fetch(buildApiUrl('/api/auth/register'), {
-        method: 'POST',
-        body,
-      })
+      const res = await fetch(
+        buildApiUrl('/api/auth/register'),
+        buildAuthenticatedRequestOptions(null, {
+          method: 'POST',
+          body,
+        })
+      )
 
       const payload = await parseJsonResponse(res)
       if (!res.ok) {
         throw new Error(payload?.error || 'Failed to register.')
       }
 
-      dispatch(setAuth({ token: payload.token, user: payload.user }))
+      dispatch(setAuth({ token: payload.token || '', user: payload.user }))
     } catch (err) {
       setError(err.message || 'Unexpected error')
     } finally {
@@ -84,21 +88,24 @@ function Auth() {
     setLoading(true)
 
     try {
-      const res = await fetch(buildApiUrl('/api/auth/login'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          identifier: form.identifier.trim(),
-          password: form.password,
-        }),
-      })
+      const res = await fetch(
+        buildApiUrl('/api/auth/login'),
+        buildAuthenticatedRequestOptions(null, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            identifier: form.identifier.trim(),
+            password: form.password,
+          }),
+        })
+      )
 
       const payload = await parseJsonResponse(res)
       if (!res.ok) {
         throw new Error(payload?.error || 'Failed to login.')
       }
 
-      dispatch(setAuth({ token: payload.token, user: payload.user }))
+      dispatch(setAuth({ token: payload.token || '', user: payload.user }))
     } catch (err) {
       setError(err.message || 'Unexpected error')
     } finally {

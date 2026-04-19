@@ -27,7 +27,7 @@ function App() {
   }, [theme])
 
   useEffect(() => {
-    if (auth?.token && auth?.user) {
+    if (auth?.user) {
       window.sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth))
       window.localStorage.removeItem(AUTH_STORAGE_KEY)
     } else {
@@ -41,7 +41,7 @@ function App() {
       <Router>
         <Header />
         <div className="flex-1">
-          {auth?.token ? (
+          {auth?.user ? (
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/history" element={<History />} />

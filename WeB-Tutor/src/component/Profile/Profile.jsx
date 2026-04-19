@@ -21,6 +21,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 function Profile() {
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.auth.theme)
+  const authUser = useAppSelector((state) => state.auth.auth?.user)
   const authToken = useAppSelector((state) => state.auth.auth?.token)
   const {
     error,
@@ -31,7 +32,7 @@ function Profile() {
 
   const profileQuery = useQuery({
     queryKey: queryKeys.profile(authToken),
-    enabled: Boolean(authToken),
+    enabled: Boolean(authUser),
     queryFn: ({ signal }) => fetchProfile(authToken, signal),
   })
 

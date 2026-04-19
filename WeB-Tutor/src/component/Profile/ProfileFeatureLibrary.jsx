@@ -14,6 +14,7 @@ export default function ProfileFeatureLibrary() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.auth.theme)
+  const authUser = useAppSelector((state) => state.auth.auth?.user)
   const authToken = useAppSelector((state) => state.auth.auth?.token)
   const isDark = theme === 'dark'
   const panelStyle = useMemo(() => getProfilePanelStyle(isDark), [isDark])
@@ -21,7 +22,7 @@ export default function ProfileFeatureLibrary() {
 
   const historyQuery = useQuery({
     queryKey: queryKeys.history(authToken),
-    enabled: Boolean(authToken),
+    enabled: Boolean(authUser),
     queryFn: ({ signal }) => fetchHistory(authToken, signal),
   })
 

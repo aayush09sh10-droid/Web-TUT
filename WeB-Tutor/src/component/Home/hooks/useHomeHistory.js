@@ -1,20 +1,23 @@
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '../../../cache'
-import { useAppDispatch } from '../../../store/hooks'
+import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { fetchHomeHistory } from '../api/homeApi'
 import { setHomeHistory } from '../store/homeSlice'
 
 export function useHomeHistory(authToken) {
   const dispatch = useAppDispatch()
+  const authUser = useAppSelector((state) => state.auth.auth?.user)
   const query = useQuery({
     queryKey: queryKeys.history(authToken),
-    enabled: Boolean(authToken),
+    enabled: Boolean(authUser),
     queryFn: ({ signal }) =>
       fetchHomeHistory(
-        {
-          Authorization: `Bearer ${authToken}`,
-        },
+        authToken
+          ? {
+              Authorization: `Bearer ${authToken}`,
+            }
+          : {},
         signal
       ),
   })
