@@ -1,7 +1,7 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
+import { buildApiUrl } from '../../../shared/config/apiBase'
 
 export async function fetchLearningDetails(authToken, id, signal) {
-  const res = await fetch(`${API_BASE}/api/history/${id}`, {
+  const res = await fetch(buildApiUrl(`/api/history/${id}`), {
     headers: {
       Authorization: `Bearer ${authToken}`,
     },

@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { setAuth } from './store/authSlice'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
+import { buildApiUrl } from '../../shared/config/apiBase'
 
 function Auth() {
   const dispatch = useAppDispatch()
@@ -60,7 +59,7 @@ function Auth() {
         body.append('avatar', avatar)
       }
 
-      const res = await fetch(`${API_BASE}/api/auth/register`, {
+      const res = await fetch(buildApiUrl('/api/auth/register'), {
         method: 'POST',
         body,
       })
@@ -84,7 +83,7 @@ function Auth() {
     setLoading(true)
 
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await fetch(buildApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

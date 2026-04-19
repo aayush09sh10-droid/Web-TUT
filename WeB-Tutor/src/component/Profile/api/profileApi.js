@@ -1,7 +1,7 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001'
+import { buildApiUrl } from '../../../shared/config/apiBase'
 
 export async function fetchProfile(authToken, signal) {
-  const res = await fetch(`${API_BASE}/api/auth/me`, {
+  const res = await fetch(buildApiUrl('/api/auth/me'), {
     headers: {
       Authorization: `Bearer ${authToken}`,
     },
@@ -17,7 +17,7 @@ export async function fetchProfile(authToken, signal) {
 }
 
 export async function changePassword(authToken, passwordForm) {
-  const res = await fetch(`${API_BASE}/api/auth/change-password`, {
+  const res = await fetch(buildApiUrl('/api/auth/change-password'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
