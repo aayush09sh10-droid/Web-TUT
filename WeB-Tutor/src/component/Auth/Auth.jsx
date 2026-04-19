@@ -24,11 +24,9 @@ function Auth() {
 
   const cardStyle = useMemo(
     () => ({
-      borderColor: isDark ? 'rgba(135,154,255,0.18)' : 'rgba(255,186,120,0.35)',
-      background: isDark
-        ? 'linear-gradient(135deg, rgba(22,27,46,0.96), rgba(16,20,35,0.98))'
-        : 'linear-gradient(135deg, rgba(255,250,242,0.92), rgba(255,238,222,0.98), rgba(239,246,255,0.92))',
-      boxShadow: isDark ? '0 24px 60px rgba(0,0,0,0.4)' : '0 20px 56px rgba(242,139,64,0.16)',
+      borderColor: isDark ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.22)',
+      background: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.94)',
+      boxShadow: isDark ? '0 16px 36px rgba(2,6,23,0.28)' : '0 12px 28px rgba(15,23,42,0.08)',
     }),
     [isDark]
   )
@@ -126,7 +124,7 @@ function Auth() {
               Create one personal account to keep your summaries, quiz flow, and guided learning in one place. You can register with email and username, then log in using your username or email plus password.
             </p>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {['Register with name, username, and email', 'Login using username or email'].map((item) => (
                 <div
                   key={item}
@@ -138,7 +136,7 @@ function Auth() {
             </div>
           </div>
 
-          <div className="rounded-2rem border p-5 backdrop-blur-xl sm:p-6" style={cardStyle}>
+          <div className="rounded-[2rem] border p-5 backdrop-blur-xl sm:p-6" style={cardStyle}>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -187,7 +185,7 @@ function Auth() {
                   <input type="file" accept="image/*" onChange={(e) => setAvatar(e.target.files?.[0] || null)} className="mt-2 block w-full text-xs file:mr-3 file:rounded-full file:border-0 file:bg-[var(--text)] file:px-3 file:py-2 file:font-semibold file:text-[var(--bg)]" />
                 </label>
 
-                <button type="submit" disabled={loading} className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--bg)] transition disabled:opacity-60" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))' }}>
+                <button type="submit" disabled={loading} className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60" style={{ background: 'var(--accent)' }}>
                   {loading ? 'Creating account...' : 'Create account'}
                 </button>
                 
@@ -197,7 +195,7 @@ function Auth() {
                 <input value={form.identifier} onChange={(e) => updateField('identifier', e.target.value)} placeholder="Username or email" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
                 <input value={form.password} onChange={(e) => updateField('password', e.target.value)} type="password" placeholder="Password" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
 
-                <button type="submit" disabled={loading} className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--bg)] transition disabled:opacity-60" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))' }}>
+                <button type="submit" disabled={loading} className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60" style={{ background: 'var(--accent)' }}>
                   {loading ? 'Signing in...' : 'Login'}
                 </button>
               </form>

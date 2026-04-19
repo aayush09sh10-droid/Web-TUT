@@ -2,47 +2,43 @@
 
 :root {
   color-scheme: light;
-  --bg: #fff7ed;
-  --card: rgba(255, 255, 255, 0.72);
-  --card-strong: rgba(255, 248, 236, 0.92);
-  --text: #2f1f1a;
-  --muted: #7a5b51;
-  --border: rgba(116, 70, 49, 0.14);
-  --shadow: 0 18px 48px rgba(242, 139, 64, 0.12);
-  --accent: oklch(72% 0.18 45);
-  --accent-soft: oklch(92% 0.07 72);
-  --accent-2: oklch(74% 0.16 240);
+  --bg: #f4f7fb;
+  --card: rgba(255, 255, 255, 0.82);
+  --card-strong: rgba(255, 255, 255, 0.96);
+  --text: #1f2a37;
+  --muted: #5f6b7a;
+  --border: rgba(148, 163, 184, 0.24);
+  --shadow: 0 16px 36px rgba(37, 99, 235, 0.08);
+  --accent: #2563eb;
+  --accent-soft: #dbeafe;
+  --accent-2: #60a5fa;
 }
 
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(255, 198, 132, 0.38), transparent 28%),
-    radial-gradient(circle at top right, rgba(147, 197, 253, 0.24), transparent 26%),
-    linear-gradient(180deg, #fff7ed 0%, #fff1f2 42%, #f7f9ff 100%);
+    linear-gradient(180deg, #f8fbff 0%, #eef4fb 52%, #e9f0f8 100%);
   color: var(--text);
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
 }
 
 .dark {
   color-scheme: dark;
-  --bg: #0d0d0d;
-  --card: rgba(17, 17, 17, 0.84);
-  --card-strong: rgba(22, 22, 22, 0.94);
-  --text: #f3f2f1;
-  --muted: #c4c4c4;
-  --border: rgba(255, 255, 255, 0.12);
-  --shadow: 0 22px 52px rgba(0, 0, 0, 0.32);
-  --accent: oklch(76% 0.16 70);
-  --accent-soft: rgba(255, 222, 168, 0.14);
-  --accent-2: oklch(72% 0.14 250);
+  --bg: #0f172a;
+  --card: rgba(15, 23, 42, 0.84);
+  --card-strong: rgba(18, 28, 50, 0.94);
+  --text: #e5edf8;
+  --muted: #9fb0c5;
+  --border: rgba(148, 163, 184, 0.2);
+  --shadow: 0 22px 52px rgba(2, 6, 23, 0.34);
+  --accent: #60a5fa;
+  --accent-soft: rgba(96, 165, 250, 0.12);
+  --accent-2: #93c5fd;
 }
 
 .dark body {
   background:
-    radial-gradient(circle at top left, rgba(255, 164, 72, 0.12), transparent 28%),
-    radial-gradient(circle at top right, rgba(105, 140, 255, 0.1), transparent 32%),
-    linear-gradient(180deg, #0d0d0d 0%, #111111 44%, #151515 100%);
+    linear-gradient(180deg, #0f172a 0%, #111c32 52%, #15243a 100%);
 }
 
 #root {

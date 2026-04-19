@@ -21,8 +21,8 @@ function Header() {
   ]
 
   const mobileActionButtonStyle = {
-    borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
-    background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.68)',
+    borderColor: isDark ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.22)',
+    background: isDark ? 'rgba(30,41,59,0.8)' : 'rgba(255,255,255,0.92)',
     color: isDark ? '#f5f7ff' : 'var(--text)',
   }
 
@@ -79,11 +79,9 @@ function Header() {
         <div
           className="mx-auto flex max-w-5xl flex-col gap-3 rounded-[1.35rem] border px-3 py-3 backdrop-blur-xl sm:px-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:rounded-[1.5rem] lg:px-5 lg:py-4"
           style={{
-            borderColor: isDark ? 'rgba(135,154,255,0.18)' : 'rgba(255,186,120,0.35)',
-            background: isDark
-              ? 'linear-gradient(135deg, rgba(22,27,46,0.92), rgba(16,20,35,0.96))'
-              : 'linear-gradient(135deg, rgba(255,250,242,0.88), rgba(255,238,222,0.96), rgba(239,246,255,0.88))',
-            boxShadow: isDark ? '0 20px 46px rgba(0,0,0,0.38)' : '0 16px 42px rgba(242,139,64,0.16)',
+            borderColor: isDark ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.22)',
+            background: isDark ? 'rgba(15, 23, 42, 0.88)' : 'rgba(255, 255, 255, 0.92)',
+            boxShadow: isDark ? '0 14px 30px rgba(2,6,23,0.28)' : '0 10px 24px rgba(15,23,42,0.08)',
           }}
         >
           <div className="min-w-0">
@@ -118,13 +116,13 @@ function Header() {
                       location.pathname === item.to
                         ? {
                             background: isDark
-                              ? 'linear-gradient(135deg, rgba(108,129,255,0.72), rgba(255,179,107,0.34))'
-                              : 'linear-gradient(135deg, rgba(255,213,138,0.95), rgba(200,221,255,0.95))',
+                              ? 'rgba(59,130,246,0.28)'
+                              : 'rgba(37,99,235,0.12)',
                             color: isDark ? '#f5f7ff' : 'var(--text)',
                           }
                         : {
-                            borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
-                            background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.68)',
+                            borderColor: isDark ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.22)',
+                            background: isDark ? 'rgba(30,41,59,0.8)' : 'rgba(255,255,255,0.92)',
                             color: isDark ? '#dbe5ff' : 'var(--text)',
                           }
                     }
@@ -140,8 +138,8 @@ function Header() {
               onClick={() => dispatch(toggleTheme())}
               className="rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5"
               style={{
-                borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
-                background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.68)',
+                borderColor: isDark ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.22)',
+                background: isDark ? 'rgba(30,41,59,0.8)' : 'rgba(255,255,255,0.92)',
                 color: isDark ? '#f5f7ff' : 'var(--text)',
               }}
             >
@@ -155,8 +153,8 @@ function Header() {
                   onClick={() => dispatch(toggleHeaderMenu())}
                   className="flex items-center justify-center gap-3 rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5"
                   style={{
-                    borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
-                    background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.68)',
+                    borderColor: isDark ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.22)',
+                    background: isDark ? 'rgba(30,41,59,0.8)' : 'rgba(255,255,255,0.92)',
                     color: isDark ? '#f5f7ff' : 'var(--text)',
                   }}
                 >
@@ -175,8 +173,8 @@ function Header() {
                   <div
                     className="absolute right-0 mt-3 w-56 rounded-[1.2rem] border p-2 shadow-[0_18px_40px_rgba(0,0,0,0.14)]"
                     style={{
-                      borderColor: isDark ? 'rgba(160,176,255,0.16)' : 'rgba(122,91,81,0.12)',
-                      background: isDark ? 'rgba(18,22,36,0.96)' : 'rgba(255,250,244,0.98)',
+                      borderColor: isDark ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.22)',
+                      background: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.98)',
                     }}
                   >
                     <Link
@@ -223,8 +221,8 @@ function Header() {
                       location.pathname === item.to
                         ? {
                             background: isDark
-                              ? 'linear-gradient(135deg, rgba(108,129,255,0.72), rgba(255,179,107,0.34))'
-                              : 'linear-gradient(135deg, rgba(255,213,138,0.95), rgba(200,221,255,0.95))',
+                              ? 'rgba(59,130,246,0.28)'
+                              : 'rgba(37,99,235,0.12)',
                             color: isDark ? '#f5f7ff' : 'var(--text)',
                           }
                         : mobileActionButtonStyle
@@ -235,22 +233,13 @@ function Header() {
                 ))}
 
               {authUser && (
-                <>
-                  <Link
-                    to="/profile"
-                    className="shrink-0 rounded-full border px-3 py-2 text-xs font-semibold"
-                    style={mobileActionButtonStyle}
-                  >
-                    Profile
-                  </Link>
-                  <Link
-                    to="/profile/subjects"
-                    className="shrink-0 rounded-full border px-3 py-2 text-xs font-semibold"
-                    style={mobileActionButtonStyle}
-                  >
-                    Subjects
-                  </Link>
-                </>
+                <Link
+                  to="/profile"
+                  className="shrink-0 rounded-full border px-3 py-2 text-xs font-semibold"
+                  style={mobileActionButtonStyle}
+                >
+                  Profile
+                </Link>
               )}
 
               <button
@@ -264,6 +253,19 @@ function Header() {
 
               {authUser && (
                 <>
+                  <span
+                    className="shrink-0 rounded-full border border-dashed px-3 py-2 text-[11px] font-medium text-(--muted)"
+                    style={mobileActionButtonStyle}
+                  >
+                    Swipe to see more
+                  </span>
+                  <Link
+                    to="/profile/subjects"
+                    className="shrink-0 rounded-full border px-3 py-2 text-xs font-semibold"
+                    style={mobileActionButtonStyle}
+                  >
+                    Subjects
+                  </Link>
                   <div
                     className="flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold"
                     style={mobileActionButtonStyle}
@@ -271,11 +273,11 @@ function Header() {
                     <span className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-(--border) bg-(--card-strong) text-[10px] font-bold">
                       {authUser.avatarUrl ? (
                         <img src={authUser.avatarUrl} alt={authUser.name} className="h-full w-full object-cover" />
-                      ) : (
-                        String(authUser.name || authUser.username || 'U').charAt(0).toUpperCase()
-                      )}
-                    </span>
-                    <span className="max-w-[110px] truncate">@{authUser.username}</span>
+                    ) : (
+                      String(authUser.name || authUser.username || 'U').charAt(0).toUpperCase()
+                    )}
+                  </span>
+                  <span className="max-w-[110px] truncate">@{authUser.username}</span>
                   </div>
                   <button
                     type="button"

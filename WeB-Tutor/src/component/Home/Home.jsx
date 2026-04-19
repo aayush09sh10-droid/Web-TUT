@@ -535,6 +535,12 @@ function Home() {
   const normalizedSummary = normalizeSummaryPayload(result)
   const showResult = Boolean(result)
   const isAskResult = result?.sourceType === 'ask-ai'
+  const simpleTabStyle = (isActive) => ({
+    background: isActive ? 'var(--accent)' : 'var(--card-strong)',
+    borderColor: isActive ? 'var(--accent)' : 'var(--border)',
+    color: isActive ? '#ffffff' : 'var(--text)',
+    boxShadow: 'none',
+  })
 
   return (
     <main className="min-h-140 text-(--text)">
@@ -560,11 +566,11 @@ function Home() {
                 {showResult ? (
                   <div className="space-y-4">
                     <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 sm:flex sm:flex-wrap sm:overflow-visible">
-                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'summary' }))} className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${activeView === 'summary' ? 'border-[var(--text)] bg-[var(--text)] text-[var(--bg)]' : 'border-(--border) bg-(--card) text-(--text)'}`}>{isAskResult ? 'Response' : 'Summary'}</button>
-                      <button type="button" onClick={handleOpenQuizView} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-[0_8px_24px_rgba(255,153,0,0.22)] transition hover:-translate-y-0.5" style={{ background: activeView === 'quiz' ? 'linear-gradient(135deg, oklch(75% 0.204 54), oklch(80% 0.186 80))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(72% 0.217 24)', color: '#4a2313' }}>{quizLoading ? 'Quiz' : 'Quiz'}</button>
-                      <button type="button" onClick={handleOpenTeachingView} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-[0_10px_26px_rgba(96,112,255,0.18)] transition hover:-translate-y-0.5" style={{ background: activeView === 'teaching' ? 'linear-gradient(135deg, oklch(72% 0.167 244), oklch(84% 0.118 214))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(65% 0.19 278)', color: '#1d2957' }}>{teachingLoading ? 'Teaching' : 'Teaching'}</button>
-                      <button type="button" onClick={handleOpenFormulaView} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-[0_10px_26px_rgba(58,168,118,0.18)] transition hover:-translate-y-0.5" style={{ background: activeView === 'formula' ? 'linear-gradient(135deg, oklch(74% 0.18 145), oklch(87% 0.11 120))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(63% 0.16 155)', color: '#183d2e' }}>{formulaLoading ? 'Formula Lab' : 'Formula Lab'}</button>
-                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'doubt' }))} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-[0_10px_26px_rgba(173,78,167,0.18)] transition hover:-translate-y-0.5" style={{ background: activeView === 'doubt' ? 'linear-gradient(135deg, oklch(70% 0.16 330), oklch(86% 0.09 320))' : 'rgba(255,255,255,0.72)', borderColor: 'oklch(62% 0.18 320)', color: '#4f1d4a' }}>Ask Doubt</button>
+                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'summary' }))} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5" style={simpleTabStyle(activeView === 'summary')}>{isAskResult ? 'Response' : 'Summary'}</button>
+                      <button type="button" onClick={handleOpenQuizView} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5" style={simpleTabStyle(activeView === 'quiz')}>{quizLoading ? 'Quiz' : 'Quiz'}</button>
+                      <button type="button" onClick={handleOpenTeachingView} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5" style={simpleTabStyle(activeView === 'teaching')}>{teachingLoading ? 'Teaching' : 'Teaching'}</button>
+                      <button type="button" onClick={handleOpenFormulaView} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5" style={simpleTabStyle(activeView === 'formula')}>{formulaLoading ? 'Formula Lab' : 'Formula Lab'}</button>
+                      <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'doubt' }))} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5" style={simpleTabStyle(activeView === 'doubt')}>Ask Doubt</button>
                       <div className="shrink-0">
                         <NewSummaryFeature onClick={handleOpenNewSummaryComposer} />
                       </div>
