@@ -1,4 +1,4 @@
-require('dotenv').config()
+require('dotenv').config({ path: require('path').join(__dirname, '.env') })
 
 const express = require('express')
 const cors = require('cors')
@@ -163,4 +163,3 @@ connectDB()
   .catch((error) => {
     logger.error('Failed to connect to MongoDB.', serialiseError(error))
   })
-
