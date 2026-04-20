@@ -82,6 +82,7 @@ function Auth() {
 
   async function handleLogin(e) {
     e.preventDefault()
+    if (loading) return
     setError('')
     setLoading(true)
 
