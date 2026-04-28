@@ -127,7 +127,7 @@ async function updateHistoryEntry({ historyId, userId, updates }) {
       $set: updates,
     },
     {
-      new: true,
+      returnDocument: 'after',
     }
   )
 
@@ -305,7 +305,7 @@ async function removeHistoryItemFromSubject(userId, subjectId, historyId) {
   const collection = await SubjectCollection.findOneAndUpdate(
     { _id: subjectId, user: userId },
     { $pull: { itemIds: new mongoose.Types.ObjectId(historyId) } },
-    { new: true }
+    { returnDocument: 'after' }
   )
 
   if (!collection) {
