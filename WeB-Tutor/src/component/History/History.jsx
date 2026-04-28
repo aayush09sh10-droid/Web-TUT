@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { queryKeys, setHistoryCache } from '../../cache'
@@ -27,10 +27,36 @@ export default function History() {
   const authCacheKey = getAuthCacheKey(authUser)
   const history = useAppSelector((state) => state.history.items)
   const selectedId = useAppSelector((state) => state.history.selectedId)
+  const [searchQuery, setSearchQuery] = useState('')
   const selected = useMemo(
     () => history.find((item) => item.id === selectedId) || null,
     [history, selectedId]
   )
+  const filteredHistory = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+
+    if (!query) {
+      return history
+    }
+
+    return history.filter((item) => {
+      const summary = item.result?.summary
+      const topics = Array.isArray(summary?.topics)
+        ? summary.topics.map((topic) => topic?.title || topic?.label || '').join(' ')
+        : ''
+      const fields = [
+        summary?.title,
+        item.sourceLabel,
+        item.url,
+        item.sourceType,
+        topics,
+        item.result?.doubt?.question,
+        item.timestamp ? new Date(item.timestamp).toLocaleString() : '',
+      ]
+
+      return fields.some((field) => String(field || '').toLowerCase().includes(query))
+    })
+  }, [history, searchQuery])
 
   const historyQuery = useQuery({
     queryKey: queryKeys.history(authCacheKey),
@@ -109,9 +135,23 @@ export default function History() {
           </div>
         </div>
 
+        <div className="mt-5 rounded-[1.4rem] border border-(--border) bg-(--card) p-3 shadow-(--shadow) backdrop-blur-xl">
+          <input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search activity by title, source, topic, date..."
+            className="w-full rounded-[1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) outline-none transition focus:border-[var(--accent-2)] focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]"
+          />
+          {searchQuery.trim() ? (
+            <p className="mt-2 px-1 text-xs text-(--muted)">
+              Showing {filteredHistory.length} of {history.length} saved activities.
+            </p>
+          ) : null}
+        </div>
+
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <div className="space-y-3">
-            <ActivityList onDelete={handleRemoveItem} />
+            <ActivityList items={filteredHistory} searchQuery={searchQuery} onDelete={handleRemoveItem} />
           </div>
 
           <div className="lg:col-span-2">

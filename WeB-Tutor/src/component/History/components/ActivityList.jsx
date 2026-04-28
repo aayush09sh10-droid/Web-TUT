@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom'
 import { selectHistoryItem } from '../store/historySlice'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
-export default function ActivityList({ onDelete }) {
+export default function ActivityList({ items, onDelete, searchQuery }) {
   const dispatch = useAppDispatch()
-  const history = useAppSelector((state) => state.history.items)
+  const storedHistory = useAppSelector((state) => state.history.items)
+  const history = items || storedHistory
 
   function handleSelectItem(event, itemId) {
     event.stopPropagation()
@@ -15,7 +16,7 @@ export default function ActivityList({ onDelete }) {
   if (history.length === 0) {
     return (
       <div className="rounded-[1.5rem] border border-(--border) bg-(--card) p-6 text-sm text-(--text) shadow-(--shadow) backdrop-blur-xl">
-        No activity yet. Summarize a video to populate this log.
+        {searchQuery ? 'No matching activity found.' : 'No activity yet. Summarize a video to populate this log.'}
       </div>
     )
   }
