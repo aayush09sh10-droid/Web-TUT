@@ -1,21 +1,23 @@
 import { createSlice } from '@reduxjs/toolkit'
+import { readStorageItem, removeStorageItem } from '../../../shared/storage/browserStorage'
 
 const THEME_STORAGE_KEY = 'yt-summarizer-theme'
 const AUTH_STORAGE_KEY = 'yt-summarizer-auth'
 
 function getInitialTheme() {
   if (typeof window === 'undefined') return 'light'
-  const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
+  const stored = readStorageItem('localStorage', THEME_STORAGE_KEY)
   return stored === 'dark' || stored === 'light' ? stored : 'light'
 }
 
 function getInitialAuth() {
   if (typeof window === 'undefined') return null
   const stored =
-    window.localStorage.getItem(AUTH_STORAGE_KEY) || window.sessionStorage.getItem(AUTH_STORAGE_KEY)
+    readStorageItem('localStorage', AUTH_STORAGE_KEY) ||
+    readStorageItem('sessionStorage', AUTH_STORAGE_KEY)
 
   if (!stored) {
-    window.sessionStorage.removeItem(AUTH_STORAGE_KEY)
+    removeStorageItem('sessionStorage', AUTH_STORAGE_KEY)
     return null
   }
 
@@ -23,8 +25,8 @@ function getInitialAuth() {
     const parsed = JSON.parse(stored)
     return parsed?.user && parsed?.token ? parsed : null
   } catch {
-    window.localStorage.removeItem(AUTH_STORAGE_KEY)
-    window.sessionStorage.removeItem(AUTH_STORAGE_KEY)
+    removeStorageItem('localStorage', AUTH_STORAGE_KEY)
+    removeStorageItem('sessionStorage', AUTH_STORAGE_KEY)
     return null
   }
 }

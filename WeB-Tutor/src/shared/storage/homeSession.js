@@ -1,9 +1,6 @@
 export const HOME_STATE_STORAGE_KEY = 'yt-summarizer-home-state'
 const HOME_STATE_MAX_AGE_MS = 1000 * 60 * 60 * 12
-
-function isBrowser() {
-  return typeof window !== 'undefined'
-}
+import { readStorageItem, removeStorageItem, writeStorageItem } from './browserStorage'
 
 function hasMeaningfulHomeState(state) {
   return Boolean(
@@ -16,9 +13,7 @@ function hasMeaningfulHomeState(state) {
 }
 
 export function readPersistedHomeState(ownerId) {
-  if (!isBrowser()) return null
-
-  const stored = window.localStorage.getItem(HOME_STATE_STORAGE_KEY)
+  const stored = readStorageItem('localStorage', HOME_STATE_STORAGE_KEY)
   if (!stored) return null
 
   try {
@@ -27,7 +22,7 @@ export function readPersistedHomeState(ownerId) {
     const isExpired = !savedAt || Date.now() - savedAt > HOME_STATE_MAX_AGE_MS
 
     if (isExpired) {
-      window.localStorage.removeItem(HOME_STATE_STORAGE_KEY)
+      removeStorageItem('localStorage', HOME_STATE_STORAGE_KEY)
       return null
     }
 
@@ -37,20 +32,19 @@ export function readPersistedHomeState(ownerId) {
 
     return parsed?.state || null
   } catch {
-    window.localStorage.removeItem(HOME_STATE_STORAGE_KEY)
+    removeStorageItem('localStorage', HOME_STATE_STORAGE_KEY)
     return null
   }
 }
 
 export function writePersistedHomeState(state, ownerId) {
-  if (!isBrowser()) return
-
   if (!hasMeaningfulHomeState(state)) {
-    window.localStorage.removeItem(HOME_STATE_STORAGE_KEY)
+    removeStorageItem('localStorage', HOME_STATE_STORAGE_KEY)
     return
   }
 
-  window.localStorage.setItem(
+  writeStorageItem(
+    'localStorage',
     HOME_STATE_STORAGE_KEY,
     JSON.stringify({
       ownerId: ownerId || null,
@@ -61,6 +55,5 @@ export function writePersistedHomeState(state, ownerId) {
 }
 
 export function clearPersistedHomeState() {
-  if (!isBrowser()) return
-  window.localStorage.removeItem(HOME_STATE_STORAGE_KEY)
+  removeStorageItem('localStorage', HOME_STATE_STORAGE_KEY)
 }

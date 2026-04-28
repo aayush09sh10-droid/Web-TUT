@@ -17,6 +17,7 @@ import { resetProfileState } from './component/Profile/store/profileSlice'
 import { parseJsonResponse } from './shared/auth/authSession'
 import { buildAuthenticatedRequestOptions } from './shared/auth/requestOptions'
 import { buildApiUrl } from './shared/config/apiBase'
+import { removeStorageItem, writeStorageItem } from './shared/storage/browserStorage'
 import { clearPersistedHomeState } from './shared/storage/homeSession'
 import { useAppDispatch, useAppSelector } from './store/hooks'
 
@@ -35,16 +36,16 @@ function App() {
     } else {
       root.classList.remove('dark')
     }
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+    writeStorageItem('localStorage', THEME_STORAGE_KEY, theme)
   }, [theme])
 
   useEffect(() => {
     if (auth?.user) {
-      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth))
-      window.sessionStorage.removeItem(AUTH_STORAGE_KEY)
+      writeStorageItem('localStorage', AUTH_STORAGE_KEY, JSON.stringify(auth))
+      removeStorageItem('sessionStorage', AUTH_STORAGE_KEY)
     } else {
-      window.localStorage.removeItem(AUTH_STORAGE_KEY)
-      window.sessionStorage.removeItem(AUTH_STORAGE_KEY)
+      removeStorageItem('localStorage', AUTH_STORAGE_KEY)
+      removeStorageItem('sessionStorage', AUTH_STORAGE_KEY)
     }
   }, [auth])
 

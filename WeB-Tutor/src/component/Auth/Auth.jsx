@@ -1,15 +1,23 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { setAuth } from './store/authSlice'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { parseJsonResponse } from '../../shared/auth/authSession'
 import { buildAuthenticatedRequestOptions } from '../../shared/auth/requestOptions'
 import { buildApiUrl } from '../../shared/config/apiBase'
 
+function getAuthModeFromSearch(search) {
+  const params = new URLSearchParams(search)
+  const mode = String(params.get('auth') || '').trim().toLowerCase()
+  return mode === 'register' ? 'register' : 'login'
+}
+
 function Auth() {
+  const location = useLocation()
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.auth.theme)
   const isDark = theme === 'dark'
-  const [mode, setMode] = useState('login')
+  const [mode, setMode] = useState(() => getAuthModeFromSearch(location.search))
   const [form, setForm] = useState({
     name: '',
     username: '',
@@ -30,6 +38,10 @@ function Auth() {
     }),
     [isDark]
   )
+
+  useEffect(() => {
+    setMode(getAuthModeFromSearch(location.search))
+  }, [location.search])
 
   function updateField(field, value) {
     setForm((current) => ({
@@ -125,16 +137,6 @@ function Auth() {
               Create one personal account to keep your summaries, quiz flow, and guided learning in one place. You can register with email and username, then log in using your username or email plus password.
             </p>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {['Register with name, username, and email', 'Login using username or email'].map((item) => (
-                <div
-                  key={item}
-                  className="rounded-[1.3rem] border border-(--border) bg-(--card-strong) px-4 py-4 text-sm leading-relaxed"
-                >
-                  {item}
-                </div>
-              ))}
-            </div>
           </div>
 
           <div className="rounded-[2rem] border p-5 backdrop-blur-xl sm:p-6" style={cardStyle}>
@@ -171,15 +173,15 @@ function Auth() {
 
             {mode === 'register' ? (
               <form className="mt-5 space-y-3" onSubmit={handleRegister}>
-                <input value={form.name} onChange={(e) => updateField('name', e.target.value)} placeholder="Full name" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
-                <input value={form.username} onChange={(e) => updateField('username', e.target.value)} placeholder="Username" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
+                <input value={form.name} onChange={(e) => updateField('name', e.target.value)} autoComplete="name" placeholder="Full name" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
+                <input value={form.username} onChange={(e) => updateField('username', e.target.value)} autoCapitalize="none" autoCorrect="off" autoComplete="username" spellCheck={false} placeholder="Username" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
 
 
-                <input value={form.email} onChange={(e) => updateField('email', e.target.value)} type="email" placeholder="Email" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
+                <input value={form.email} onChange={(e) => updateField('email', e.target.value)} autoCapitalize="none" autoCorrect="off" autoComplete="email" inputMode="email" spellCheck={false} type="email" placeholder="Email" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
 
-                <input value={form.password} onChange={(e) => updateField('password', e.target.value)} type="password" placeholder="Password" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
+                <input value={form.password} onChange={(e) => updateField('password', e.target.value)} autoComplete="new-password" type="password" placeholder="Password" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
 
-                <input value={form.confirmPassword} onChange={(e) => updateField('confirmPassword', e.target.value)} type="password" placeholder="Confirm password" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
+                <input value={form.confirmPassword} onChange={(e) => updateField('confirmPassword', e.target.value)} autoComplete="new-password" type="password" placeholder="Confirm password" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
 
                 <label className="block rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm">
                   <span className="font-medium">Profile image</span>
@@ -193,8 +195,8 @@ function Auth() {
               </form>
             ) : (
               <form className="mt-5 space-y-3" onSubmit={handleLogin}>
-                <input value={form.identifier} onChange={(e) => updateField('identifier', e.target.value)} placeholder="Username or email" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
-                <input value={form.password} onChange={(e) => updateField('password', e.target.value)} type="password" placeholder="Password" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
+                <input value={form.identifier} onChange={(e) => updateField('identifier', e.target.value)} autoCapitalize="none" autoCorrect="off" autoComplete="username" inputMode="email" spellCheck={false} placeholder="Username or email" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
+                <input value={form.password} onChange={(e) => updateField('password', e.target.value)} autoComplete="current-password" type="password" placeholder="Password" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
 
                 <button type="submit" disabled={loading} className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60" style={{ background: 'var(--accent)' }}>
                   {loading ? 'Signing in...' : 'Login'}
