@@ -229,7 +229,7 @@ function Header() {
           </div>
 
           <div className="lg:hidden">
-            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1">
+            <div className="flex flex-wrap items-center gap-2 overflow-visible pb-1">
               {authUser &&
                 navItems.map((item) => (
                   <Link
