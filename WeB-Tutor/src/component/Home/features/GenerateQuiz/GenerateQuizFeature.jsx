@@ -3,7 +3,7 @@ import { DARK_QUIZ_THEME, LIGHT_QUIZ_THEME } from '../../homeTheme'
 import { resetQuizSelections, setSelectedAnswer } from '../../store/homeSlice'
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks'
 
-export default function GenerateQuizFeature({ handleSubmitQuiz, onRegenerate, onGenerate }) {
+export default function GenerateQuizFeature({ handleSubmitQuiz, onRegenerate }) {
   const dispatch = useAppDispatch()
   const isDarkMode = useAppSelector((state) => state.auth.theme === 'dark')
   const QUIZ_THEME = isDarkMode ? DARK_QUIZ_THEME : LIGHT_QUIZ_THEME
@@ -41,20 +41,13 @@ export default function GenerateQuizFeature({ handleSubmitQuiz, onRegenerate, on
           <p className="mt-2 text-sm leading-relaxed" style={{ color: isDarkMode ? QUIZ_THEME.muted : '#7a3b12' }}>Test your understanding with AI-generated questions based on the same video summary.</p>
         </div>
         {quiz ? (
-          <button type="button" onClick={onRegenerate} disabled={quizLoading} className="rounded-full border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60" style={{ backgroundColor: isDarkMode ? QUIZ_THEME.cardSoft : 'rgba(255,255,255,0.72)', borderColor: QUIZ_THEME.accent, color: QUIZ_THEME.text }}>
+          <button type="button" onClick={onRegenerate} disabled={quizLoading} className="pressable-control rounded-full border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm" style={{ backgroundColor: isDarkMode ? QUIZ_THEME.cardSoft : 'rgba(255,255,255,0.72)', borderColor: QUIZ_THEME.accent, color: QUIZ_THEME.text }}>
             {quizLoading ? 'Regenerating...' : 'Regenerate'}
           </button>
         ) : null}
       </div>
       {quizError && <p className="mt-4 rounded-xl border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700">{quizError}</p>}
-      {!quizLoading && !quiz && !quizError && (
-        <div className="mt-4">
-          <p className="text-sm leading-relaxed">Open the quiz tab any time, then generate questions only when you want them.</p>
-          <button type="button" onClick={onGenerate} className="mt-3 rounded-full border px-4 py-2 text-sm font-semibold transition" style={{ background: `linear-gradient(135deg, ${QUIZ_THEME.primary}, ${QUIZ_THEME.secondary})`, borderColor: QUIZ_THEME.accent, color: QUIZ_THEME.text }}>
-            Generate Quiz
-          </button>
-        </div>
-      )}
+      {!quizLoading && !quiz && !quizError && <div className="mt-4"><p className="text-sm leading-relaxed">Preparing quiz content from your current lesson. If it does not appear, open the tab again after the summary finishes loading.</p></div>}
       {quizLoading && <p className="mt-4 text-sm font-medium">Generating your quiz...</p>}
       {quiz?.questions?.length > 0 && (
         <div className="mt-5 space-y-4">
@@ -73,11 +66,11 @@ export default function GenerateQuizFeature({ handleSubmitQuiz, onRegenerate, on
           ))}
           <div className="flex flex-wrap gap-3 pt-2">
             {!quizSubmitted ? (
-              <button type="button" onClick={handleSubmitQuiz} disabled={answeredCount !== totalQuestions} className="rounded-full border px-5 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60" style={{ background: `linear-gradient(135deg, ${QUIZ_THEME.primary}, ${QUIZ_THEME.secondary})`, borderColor: QUIZ_THEME.accent, color: QUIZ_THEME.text }}>
+              <button type="button" onClick={handleSubmitQuiz} disabled={answeredCount !== totalQuestions} className="pressable-control rounded-full border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-5 sm:py-2.5 sm:text-sm" style={{ background: `linear-gradient(135deg, ${QUIZ_THEME.primary}, ${QUIZ_THEME.secondary})`, borderColor: QUIZ_THEME.accent, color: QUIZ_THEME.text }}>
                 {answeredCount === totalQuestions ? 'Submit Answers' : `Answer ${totalQuestions - answeredCount} More`}
               </button>
             ) : (
-              <button type="button" onClick={() => dispatch(resetQuizSelections())} className="rounded-full border px-5 py-2.5 text-sm font-semibold transition" style={{ backgroundColor: isDarkMode ? QUIZ_THEME.cardSoft : 'rgba(255,255,255,0.65)', borderColor: QUIZ_THEME.accent, color: QUIZ_THEME.text }}>
+              <button type="button" onClick={() => dispatch(resetQuizSelections())} className="pressable-control rounded-full border px-4 py-2 text-xs font-semibold transition sm:px-5 sm:py-2.5 sm:text-sm" style={{ backgroundColor: isDarkMode ? QUIZ_THEME.cardSoft : 'rgba(255,255,255,0.65)', borderColor: QUIZ_THEME.accent, color: QUIZ_THEME.text }}>
                 Try Again
               </button>
             )}

@@ -19,11 +19,11 @@ export default function AskDoubtFeature({ handleSubmitDoubt, hasLearningContext,
       <form className="mt-4 space-y-3" onSubmit={handleSubmitDoubt}>
         <textarea value={doubtQuestion} onChange={(e) => dispatch(setHomeField({ field: 'doubtQuestion', value: e.target.value }))} placeholder={hasLearningContext ? 'Ask your doubt here...' : 'Ask any concept, numerical, formula, or code doubt...'} rows={4} className="w-full rounded-[1.2rem] border px-4 py-3 text-sm outline-none" style={{ background: isDarkMode ? DOUBT_THEME.cardSoft : 'rgba(255,255,255,0.82)', borderColor: DOUBT_THEME.accent, color: DOUBT_THEME.text }} />
         <div className="flex flex-wrap gap-3">
-          <button type="submit" disabled={doubtLoading} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto" style={{ background: `linear-gradient(135deg, ${DOUBT_THEME.primary}, ${DOUBT_THEME.secondary})`, borderColor: DOUBT_THEME.accent, color: DOUBT_THEME.text }}>
+          <button type="submit" disabled={doubtLoading} className="pressable-control w-auto rounded-full border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-5 sm:py-2.5 sm:text-sm" style={{ background: `linear-gradient(135deg, ${DOUBT_THEME.primary}, ${DOUBT_THEME.secondary})`, borderColor: DOUBT_THEME.accent, color: DOUBT_THEME.text }}>
             {doubtLoading ? hasLearningContext ? 'Solving Doubt...' : 'Preparing Context And Solving...' : 'Solve My Doubt'}
           </button>
           {(doubt?.question || doubtQuestion.trim()) && (
-            <button type="button" onClick={onRegenerate} disabled={doubtLoading} className="w-full rounded-full border px-5 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto" style={{ background: isDarkMode ? DOUBT_THEME.cardSoft : 'rgba(255,255,255,0.72)', borderColor: DOUBT_THEME.accent, color: DOUBT_THEME.text }}>
+            <button type="button" onClick={onRegenerate} disabled={doubtLoading} className="pressable-control w-auto rounded-full border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-5 sm:py-2.5 sm:text-sm" style={{ background: isDarkMode ? DOUBT_THEME.cardSoft : 'rgba(255,255,255,0.72)', borderColor: DOUBT_THEME.accent, color: DOUBT_THEME.text }}>
               {doubtLoading ? 'Regenerating...' : 'Regenerate'}
             </button>
           )}

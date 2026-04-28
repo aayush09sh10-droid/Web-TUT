@@ -71,6 +71,11 @@ button:hover:not(:disabled),
   filter: brightness(0.94);
 }
 
+button[aria-pressed="true"],
+.pressable-control.is-selected {
+  filter: brightness(0.88);
+}
+
 button:active:not(:disabled),
 .pressable-control:active {
   filter: brightness(0.86);

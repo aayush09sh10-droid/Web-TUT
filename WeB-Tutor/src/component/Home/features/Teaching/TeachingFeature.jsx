@@ -111,7 +111,7 @@ function SectionHeading({ children, color }) {
   )
 }
 
-export default function TeachingFeature({ onRegenerate, onGenerate }) {
+export default function TeachingFeature({ onRegenerate }) {
   const dispatch = useAppDispatch()
   const isDarkMode = useAppSelector((state) => state.auth.theme === 'dark')
   const theme = isDarkMode ? DARK_TEACHING_THEME : LIGHT_TEACHING_THEME
@@ -146,7 +146,7 @@ export default function TeachingFeature({ onRegenerate, onGenerate }) {
             type="button"
             onClick={onRegenerate}
             disabled={teachingLoading}
-            className="rounded-full border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+            className="pressable-control rounded-full border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
             style={{
               background: isDarkMode ? theme.cardSoft : 'rgba(255,255,255,0.72)',
               borderColor: theme.accent,
@@ -167,20 +167,8 @@ export default function TeachingFeature({ onRegenerate, onGenerate }) {
       {!teachingLoading && !teaching && !teachingError ? (
         <div className="mt-4">
           <p className="text-sm leading-relaxed">
-            Open the teaching tab whenever you want, then generate the lesson flow only when you are ready.
+            Preparing the teaching path from your current lesson. If it does not appear, open the tab again after the summary finishes loading.
           </p>
-          <button
-            type="button"
-            onClick={onGenerate}
-            className="mt-3 rounded-full border px-4 py-2 text-sm font-semibold transition"
-            style={{
-              background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`,
-              borderColor: theme.accent,
-              color: theme.text,
-            }}
-          >
-            Generate Teaching
-          </button>
         </div>
       ) : null}
 
@@ -208,7 +196,8 @@ export default function TeachingFeature({ onRegenerate, onGenerate }) {
                 key={topic.id}
                 type="button"
                 onClick={() => dispatch(setHomeField({ field: 'activeTopicId', value: topic.id }))}
-                className="block w-full rounded-[1.15rem] border px-4 py-3 text-left text-sm font-semibold transition"
+                aria-pressed={activeTopic?.id === topic.id}
+                className={`pressable-control block w-full rounded-[1.15rem] border px-3 py-2.5 text-left text-xs font-semibold transition sm:px-4 sm:py-3 sm:text-sm ${activeTopic?.id === topic.id ? 'is-selected' : ''}`}
                 style={{
                   background:
                     activeTopic?.id === topic.id

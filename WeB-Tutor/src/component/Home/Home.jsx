@@ -477,10 +477,17 @@ function Home() {
 
   function handleOpenQuizView() {
     dispatch(setHomeFields({ activeView: 'quiz', quizError: '' }))
+    if (!result?.quiz && !quizLoading && result?.summary) {
+      handleGenerateQuiz(false)
+    }
   }
 
   function handleOpenTeachingView() {
     dispatch(setHomeFields({ activeView: 'teaching', teachingError: '' }))
+    if (!result?.teaching?.topics?.length && !teachingLoading && result?.summary) {
+      handleGenerateTeaching(false)
+      return
+    }
     if (result?.teaching?.topics?.length && !activeTopicId) {
       dispatch(setHomeField({ field: 'activeTopicId', value: result.teaching.topics[0].id }))
     }
@@ -488,6 +495,10 @@ function Home() {
 
   function handleOpenFormulaView() {
     dispatch(setHomeFields({ activeView: 'formula', formulaError: '' }))
+    if (!result?.formula?.sections?.length && !formulaLoading && result?.summary) {
+      handleGenerateFormula(false)
+      return
+    }
     if (result?.formula?.sections?.length && !activeFormulaSectionId) {
       dispatch(setHomeField({ field: 'activeFormulaSectionId', value: result.formula.sections[0].id }))
     }
@@ -567,11 +578,11 @@ function Home() {
                   {showResult ? (
                     <div className="space-y-4">
                       <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 sm:flex sm:flex-wrap sm:overflow-visible">
-                        <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'summary' }))} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5" style={simpleTabStyle(activeView === 'summary')}>{isAskResult ? 'Response' : 'Summary'}</button>
-                        <button type="button" onClick={handleOpenQuizView} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5" style={simpleTabStyle(activeView === 'quiz')}>{quizLoading ? 'Quiz' : 'Quiz'}</button>
-                        <button type="button" onClick={handleOpenTeachingView} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5" style={simpleTabStyle(activeView === 'teaching')}>{teachingLoading ? 'Teaching' : 'Teaching'}</button>
-                        <button type="button" onClick={handleOpenFormulaView} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5" style={simpleTabStyle(activeView === 'formula')}>{formulaLoading ? 'Formula Lab' : 'Formula Lab'}</button>
-                        <button type="button" onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'doubt' }))} className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5" style={simpleTabStyle(activeView === 'doubt')}>Ask Doubt</button>
+                        <button type="button" aria-pressed={activeView === 'summary'} onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'summary' }))} className={`pressable-control shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 sm:px-4 sm:py-2 sm:text-sm ${activeView === 'summary' ? 'is-selected' : ''}`} style={simpleTabStyle(activeView === 'summary')}>{isAskResult ? 'Response' : 'Summary'}</button>
+                        <button type="button" aria-pressed={activeView === 'quiz'} onClick={handleOpenQuizView} className={`pressable-control shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 sm:px-4 sm:py-2 sm:text-sm ${activeView === 'quiz' ? 'is-selected' : ''}`} style={simpleTabStyle(activeView === 'quiz')}>{quizLoading ? 'Quiz' : 'Quiz'}</button>
+                        <button type="button" aria-pressed={activeView === 'teaching'} onClick={handleOpenTeachingView} className={`pressable-control shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 sm:px-4 sm:py-2 sm:text-sm ${activeView === 'teaching' ? 'is-selected' : ''}`} style={simpleTabStyle(activeView === 'teaching')}>{teachingLoading ? 'Teaching' : 'Teaching'}</button>
+                        <button type="button" aria-pressed={activeView === 'formula'} onClick={handleOpenFormulaView} className={`pressable-control shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 sm:px-4 sm:py-2 sm:text-sm ${activeView === 'formula' ? 'is-selected' : ''}`} style={simpleTabStyle(activeView === 'formula')}>{formulaLoading ? 'Formula Lab' : 'Formula Lab'}</button>
+                        <button type="button" aria-pressed={activeView === 'doubt'} onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'doubt' }))} className={`pressable-control shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 sm:px-4 sm:py-2 sm:text-sm ${activeView === 'doubt' ? 'is-selected' : ''}`} style={simpleTabStyle(activeView === 'doubt')}>Ask Doubt</button>
                         <div className="shrink-0">
                           <NewSummaryFeature onClick={handleOpenNewSummaryComposer} />
                         </div>
@@ -582,9 +593,9 @@ function Home() {
                       </div>
 
                       {activeView === 'summary' && <SummaryFeature onRegenerate={handleRegenerateSummary} />}
-                      {activeView === 'quiz' && <GenerateQuizFeature handleSubmitQuiz={handleSubmitQuiz} onRegenerate={() => handleGenerateQuiz(true)} onGenerate={() => handleGenerateQuiz(false)} />}
-                      {activeView === 'teaching' && <TeachingFeature onRegenerate={() => handleGenerateTeaching(true)} onGenerate={() => handleGenerateTeaching(false)} />}
-                      {activeView === 'formula' && <FormulaLabFeature onRegenerate={() => handleGenerateFormula(true)} onGenerate={() => handleGenerateFormula(false)} />}
+                      {activeView === 'quiz' && <GenerateQuizFeature handleSubmitQuiz={handleSubmitQuiz} onRegenerate={() => handleGenerateQuiz(true)} />}
+                      {activeView === 'teaching' && <TeachingFeature onRegenerate={() => handleGenerateTeaching(true)} />}
+                      {activeView === 'formula' && <FormulaLabFeature onRegenerate={() => handleGenerateFormula(true)} />}
                       {activeView === 'doubt' && <AskDoubtFeature handleSubmitDoubt={handleSubmitDoubt} hasLearningContext={Boolean(result?.summary)} onRegenerate={handleRegenerateDoubt} />}
                     </div>
                   ) : (

@@ -54,17 +54,17 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
       style={{ background: isDarkMode ? 'rgba(17,17,17,0.82)' : 'rgba(255,255,255,0.52)' }}
       onSubmit={handleSubmit}
     >
-      <div className="mb-3 grid gap-2 sm:inline-flex sm:grid-cols-none">
-        <button type="button" onClick={() => switchInputMode('video')} className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${inputMode === 'video' ? activeModeClass : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
+      <div className="mb-3 flex flex-wrap gap-2">
+        <button type="button" aria-pressed={inputMode === 'video'} onClick={() => switchInputMode('video')} className={`pressable-control rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${inputMode === 'video' ? `${activeModeClass} is-selected` : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
           YouTube Link
         </button>
-        <button type="button" onClick={() => switchInputMode('photos')} className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${inputMode === 'photos' ? activeModeClass : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
+        <button type="button" aria-pressed={inputMode === 'photos'} onClick={() => switchInputMode('photos')} className={`pressable-control rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${inputMode === 'photos' ? `${activeModeClass} is-selected` : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
           Photos
         </button>
-        <button type="button" onClick={() => switchInputMode('files')} className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${inputMode === 'files' ? activeModeClass : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
+        <button type="button" aria-pressed={inputMode === 'files'} onClick={() => switchInputMode('files')} className={`pressable-control rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${inputMode === 'files' ? `${activeModeClass} is-selected` : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
           Files
         </button>
-        <button type="button" onClick={() => switchInputMode('ask')} className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${inputMode === 'ask' ? activeModeClass : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
+        <button type="button" aria-pressed={inputMode === 'ask'} onClick={() => switchInputMode('ask')} className={`pressable-control rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${inputMode === 'ask' ? `${activeModeClass} is-selected` : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
           Ask WebTutor
         </button>
       </div>
@@ -94,22 +94,22 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
           </label>
         )}
 
-        <button type="submit" disabled={loading} className={`inline-flex w-full items-center justify-center rounded-[1.1rem] border px-6 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${softActionButtonClass}`}>
-          {loading
-            ? inputMode === 'ask'
-              ? 'Thinking...'
-              : 'Summarizing...'
-            : inputMode === 'video'
-              ? 'Summarize Video'
-            : inputMode === 'ask'
-                ? 'Ask WebTutor'
-              : inputMode === 'photos'
-                ? 'Summarize Photos'
-                : 'Summarize Files'}
-        </button>
+        {inputMode !== 'video' ? (
+          <button type="submit" disabled={loading} className={`pressable-control inline-flex w-auto self-start items-center justify-center rounded-[1.1rem] border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-6 sm:py-3 sm:text-sm ${softActionButtonClass}`}>
+            {loading
+              ? inputMode === 'ask'
+                ? 'Thinking...'
+                : 'Summarizing...'
+              : inputMode === 'ask'
+                  ? 'Ask WebTutor'
+                : inputMode === 'photos'
+                  ? 'Summarize Photos'
+                  : 'Summarize Files'}
+          </button>
+        ) : null}
 
         {canClose ? (
-          <button type="button" onClick={handleClose} className="inline-flex h-[48px] w-full items-center justify-center rounded-[1.1rem] border border-(--border) bg-(--card-strong) px-4 text-base font-semibold text-(--text) shadow-sm transition hover:scale-105 sm:w-[48px]" aria-label="Close upload box">
+          <button type="button" onClick={handleClose} className="pressable-control inline-flex h-[40px] w-[40px] items-center justify-center rounded-[1.1rem] border border-(--border) bg-(--card-strong) px-3 text-sm font-semibold text-(--text) shadow-sm transition sm:h-[48px] sm:w-[48px] sm:text-base" aria-label="Close upload box">
             x
           </button>
         ) : null}
