@@ -150,7 +150,13 @@ const PORT = process.env.PORT || 5001
 const HOST = String(process.env.HOST || '0.0.0.0').trim()
 
 connectDB()
-  .then(() => ensureRedisReady())
+  .then(async () => {
+    try {
+      await ensureRedisReady()
+    } catch (error) {
+      logger.warn('Redis is unavailable; continuing without cache.', serialiseError(error))
+    }
+  })
   .then(() => {
     server
       .listen(PORT, HOST, () => {
