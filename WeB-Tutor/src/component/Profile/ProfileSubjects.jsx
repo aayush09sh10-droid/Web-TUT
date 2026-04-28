@@ -32,6 +32,8 @@ export default function ProfileSubjects() {
   const isDark = theme === 'dark'
   const panelStyle = useMemo(() => getProfilePanelStyle(isDark), [isDark])
   const [newSubjectName, setNewSubjectName] = useState('')
+  const [subjectSearchInput, setSubjectSearchInput] = useState('')
+  const [subjectSearchQuery, setSubjectSearchQuery] = useState('')
   const [error, setError] = useState('')
 
   const subjectsQuery = useQuery({
@@ -39,6 +41,32 @@ export default function ProfileSubjects() {
     enabled: Boolean(authUser),
     queryFn: ({ signal }) => fetchSubjects(authToken, signal),
   })
+  const subjects = subjectsQuery.data || []
+  const filteredSubjects = useMemo(() => {
+    const query = subjectSearchQuery.trim().toLowerCase()
+
+    if (!query) {
+      return subjects
+    }
+
+    return subjects.filter((subject) => {
+      const itemText = (subject.items || [])
+        .map((item) =>
+          [
+            item.result?.summary?.title,
+            item.sourceLabel,
+            item.sourceType,
+            item.url,
+          ]
+            .filter(Boolean)
+            .join(' ')
+        )
+        .join(' ')
+
+      return [subject.name, itemText]
+        .some((field) => String(field || '').toLowerCase().includes(query))
+    })
+  }, [subjects, subjectSearchQuery])
 
   const createSubjectMutation = useMutation({
     mutationFn: (name) => createSubject(authToken, name),
@@ -85,6 +113,11 @@ export default function ProfileSubjects() {
     }
 
     await createSubjectMutation.mutateAsync(newSubjectName.trim())
+  }
+
+  function handleSearchSubjects(e) {
+    e.preventDefault()
+    setSubjectSearchQuery(subjectSearchInput)
   }
 
   async function handleMove(subject, currentIndex, nextIndex) {
@@ -139,13 +172,35 @@ export default function ProfileSubjects() {
           {error ? <p className="mt-3 text-sm text-red-700">{error}</p> : null}
         </div>
 
+        <form className="mt-5 rounded-[1.4rem] border border-(--border) bg-(--card) p-3 shadow-(--shadow) backdrop-blur-xl" onSubmit={handleSearchSubjects}>
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <input
+              value={subjectSearchInput}
+              onChange={(e) => setSubjectSearchInput(e.target.value)}
+              placeholder="Search subjects by name or saved lesson..."
+              className="w-full rounded-[1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) outline-none transition focus:border-[var(--accent-2)] focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]"
+            />
+            <button
+              type="submit"
+              className="rounded-[1rem] border border-[rgba(99,102,241,0.18)] bg-[linear-gradient(135deg,rgba(99,102,241,0.12),rgba(56,189,248,0.1))] px-5 py-3 text-sm font-semibold text-(--text) shadow-[0_10px_24px_rgba(99,102,241,0.08)] transition hover:-translate-y-0.5"
+            >
+              Search
+            </button>
+          </div>
+          {subjectSearchQuery.trim() ? (
+            <p className="mt-2 px-1 text-xs text-(--muted)">
+              Showing {filteredSubjects.length} of {subjects.length} subjects.
+            </p>
+          ) : null}
+        </form>
+
         <div className="mt-6 space-y-5">
           {subjectsQuery.isLoading || subjectsQuery.isFetching ? (
             <div className="rounded-[1.5rem] border border-(--border) bg-(--card) p-5 shadow-(--shadow) backdrop-blur-xl">
               <p className="text-sm text-(--muted)">Loading your subjects...</p>
             </div>
-          ) : (subjectsQuery.data || []).length > 0 ? (
-            subjectsQuery.data.map((subject) => (
+          ) : filteredSubjects.length > 0 ? (
+            filteredSubjects.map((subject) => (
               <div key={subject.id} className="rounded-[1.5rem] border border-(--border) bg-(--card) p-5 shadow-(--shadow) backdrop-blur-xl">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -223,7 +278,9 @@ export default function ProfileSubjects() {
           ) : (
             <div className="rounded-[1.5rem] border border-(--border) bg-(--card) p-5 shadow-(--shadow) backdrop-blur-xl">
               <p className="text-sm text-(--muted)">
-                No subjects created yet. Create one above, then add lessons from Activity Log.
+                {subjectSearchQuery.trim()
+                  ? 'No matching subjects found.'
+                  : 'No subjects created yet. Create one above, then add lessons from Activity Log.'}
               </p>
             </div>
           )}

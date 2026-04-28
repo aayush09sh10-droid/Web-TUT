@@ -27,6 +27,7 @@ export default function History() {
   const authCacheKey = getAuthCacheKey(authUser)
   const history = useAppSelector((state) => state.history.items)
   const selectedId = useAppSelector((state) => state.history.selectedId)
+  const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const selected = useMemo(
     () => history.find((item) => item.id === selectedId) || null,
@@ -107,6 +108,11 @@ export default function History() {
     await deleteHistoryMutation.mutateAsync(item.id)
   }
 
+  function handleSearchActivity(event) {
+    event.preventDefault()
+    setSearchQuery(searchInput)
+  }
+
   const selectedResult = selected?.result
   const normalizedSummary = normalizeSummaryPayload(selectedResult)
   const summaryParagraphs = getSummaryParagraphs(normalizedSummary)
@@ -135,19 +141,27 @@ export default function History() {
           </div>
         </div>
 
-        <div className="mt-5 rounded-[1.4rem] border border-(--border) bg-(--card) p-3 shadow-(--shadow) backdrop-blur-xl">
-          <input
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search activity by title, source, topic, date..."
-            className="w-full rounded-[1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) outline-none transition focus:border-[var(--accent-2)] focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]"
-          />
+        <form className="mt-5 rounded-[1.4rem] border border-(--border) bg-(--card) p-3 shadow-(--shadow) backdrop-blur-xl" onSubmit={handleSearchActivity}>
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <input
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Search activity by title, source, topic, date..."
+              className="w-full rounded-[1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) outline-none transition focus:border-[var(--accent-2)] focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]"
+            />
+            <button
+              type="submit"
+              className="rounded-[1rem] border border-[rgba(99,102,241,0.18)] bg-[linear-gradient(135deg,rgba(99,102,241,0.12),rgba(56,189,248,0.1))] px-5 py-3 text-sm font-semibold text-(--text) shadow-[0_10px_24px_rgba(99,102,241,0.08)] transition hover:-translate-y-0.5"
+            >
+              Search
+            </button>
+          </div>
           {searchQuery.trim() ? (
             <p className="mt-2 px-1 text-xs text-(--muted)">
               Showing {filteredHistory.length} of {history.length} saved activities.
             </p>
           ) : null}
-        </div>
+        </form>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <div className="space-y-3">
