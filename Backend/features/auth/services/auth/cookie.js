@@ -74,14 +74,38 @@ function getAuthCookieOptions() {
 function clearAuthCookie(res) {
   const sameSite = getCookieSameSite()
   const secure = getCookieSecureValue(sameSite)
+  const domain = getCookieDomain()
 
-  res.clearCookie(getAuthCookieName(), {
+  const clearOptions = {
     httpOnly: true,
     sameSite,
     secure,
-    domain: getCookieDomain(),
+    domain,
     path: '/',
+  }
+
+  res.clearCookie(getAuthCookieName(), clearOptions)
+  res.cookie(getAuthCookieName(), '', {
+    ...clearOptions,
+    expires: new Date(0),
+    maxAge: 0,
   })
+
+  if (domain) {
+    const hostOnlyOptions = {
+      httpOnly: true,
+      sameSite,
+      secure,
+      path: '/',
+    }
+
+    res.clearCookie(getAuthCookieName(), hostOnlyOptions)
+    res.cookie(getAuthCookieName(), '', {
+      ...hostOnlyOptions,
+      expires: new Date(0),
+      maxAge: 0,
+    })
+  }
 }
 
 module.exports = {

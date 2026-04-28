@@ -10,6 +10,7 @@ async function register(req, res) {
 
     return res.status(201).json({
       success: true,
+      token: result.token,
       user: result.user,
     })
   } catch (error) {
