@@ -55,3 +55,30 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+button,
+.pressable-control {
+  transition:
+    filter 160ms ease,
+    transform 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+button:hover:not(:disabled),
+.pressable-control:hover {
+  filter: brightness(0.94);
+}
+
+button:active:not(:disabled),
+.pressable-control:active {
+  filter: brightness(0.86);
+  transform: translateY(1px);
+}
+
+button:disabled,
+.pressable-control:disabled {
+  filter: none;
+  transform: none;
+}

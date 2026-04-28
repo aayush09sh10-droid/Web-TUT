@@ -161,7 +161,7 @@ function Header() {
               <>
                 <Link
                   to="/?auth=login"
-                  className="rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5"
+                  className="pressable-control rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5"
                   style={{
                     borderColor: isDark ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.22)',
                     background: isDark ? 'rgba(30,41,59,0.8)' : 'rgba(255,255,255,0.92)',
@@ -172,7 +172,7 @@ function Header() {
                 </Link>
                 <Link
                   to="/?auth=register"
-                  className="rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5"
+                  className="pressable-control rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5"
                   style={{
                     borderColor: 'rgba(99,102,241,0.24)',
                     background: 'linear-gradient(135deg, rgba(99,102,241,0.16), rgba(56,189,248,0.14))',
@@ -187,7 +187,7 @@ function Header() {
             <button
               type="button"
               onClick={() => dispatch(toggleTheme())}
-              className="rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5"
+              className="pressable-control rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5"
               style={{
                 borderColor: isDark ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.22)',
                 background: isDark ? 'rgba(30,41,59,0.8)' : 'rgba(255,255,255,0.92)',
@@ -202,7 +202,7 @@ function Header() {
                 <button
                   type="button"
                   onClick={() => dispatch(toggleHeaderMenu())}
-                  className="flex items-center justify-center gap-3 rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5"
+                  className="pressable-control flex items-center justify-center gap-3 rounded-full border px-4 py-2 text-xs font-medium transition hover:-translate-y-0.5"
                   style={{
                     borderColor: isDark ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.22)',
                     background: isDark ? 'rgba(30,41,59,0.8)' : 'rgba(255,255,255,0.92)',
@@ -337,14 +337,14 @@ function Header() {
                 <>
                   <Link
                     to="/?auth=login"
-                    className="min-w-0 rounded-full border px-2 py-2 text-center text-[11px] font-semibold"
+                    className="pressable-control min-w-0 rounded-full border px-2 py-2 text-center text-[11px] font-semibold"
                     style={mobileActionButtonStyle}
                   >
                     Login
                   </Link>
                   <Link
                     to="/?auth=register"
-                    className="min-w-0 rounded-full border px-2 py-2 text-center text-[11px] font-semibold"
+                    className="pressable-control min-w-0 rounded-full border px-2 py-2 text-center text-[11px] font-semibold"
                     style={{
                       borderColor: 'rgba(99,102,241,0.24)',
                       background: 'linear-gradient(135deg, rgba(99,102,241,0.16), rgba(56,189,248,0.14))',
@@ -359,7 +359,7 @@ function Header() {
               <button
                 type="button"
                 onClick={() => dispatch(toggleTheme())}
-                className="min-w-0 rounded-full border px-2 py-2 text-[11px] font-semibold"
+                className="pressable-control min-w-0 rounded-full border px-2 py-2 text-[11px] font-semibold"
                 style={mobileActionButtonStyle}
               >
                 {theme === 'dark' ? 'Light' : 'Dark'}

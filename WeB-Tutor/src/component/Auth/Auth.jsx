@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { setAuth } from './store/authSlice'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
@@ -17,7 +17,7 @@ function Auth() {
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.auth.theme)
   const isDark = theme === 'dark'
-  const [mode, setMode] = useState(() => getAuthModeFromSearch(location.search))
+  const mode = getAuthModeFromSearch(location.search)
   const [form, setForm] = useState({
     name: '',
     username: '',
@@ -38,10 +38,6 @@ function Auth() {
     }),
     [isDark]
   )
-
-  useEffect(() => {
-    setMode(getAuthModeFromSearch(location.search))
-  }, [location.search])
 
   function updateField(field, value) {
     setForm((current) => ({
@@ -140,35 +136,8 @@ function Auth() {
           </div>
 
           <div className="rounded-[2rem] border p-5 backdrop-blur-xl sm:p-6" style={cardStyle}>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('login')
-                  setError('')
-                }}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  mode === 'login'
-                    ? 'bg-(--text) text-(--bg)'
-                    : 'border border-(--border) bg-(--card) text-(--text)'
-                }`}
-              >
-                Login
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('register')
-                  setError('')
-                }}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  mode === 'register'
-                    ? 'bg-(--text) text-(--bg)'
-                    : 'border border-(--border) bg-(--card) text-(--text)'
-                }`}
-              >
-                Register
-              </button>
+            <div className="rounded-[1.3rem] border border-(--border) bg-(--card-strong) px-4 py-3 text-sm font-semibold text-(--text)">
+              {mode === 'register' ? 'Create your account' : 'Login to your account'}
             </div>
 
             {mode === 'register' ? (
@@ -188,7 +157,7 @@ function Auth() {
                   <input type="file" accept="image/*" onChange={(e) => setAvatar(e.target.files?.[0] || null)} className="mt-2 block w-full text-xs file:mr-3 file:rounded-full file:border-0 file:bg-[var(--text)] file:px-3 file:py-2 file:font-semibold file:text-[var(--bg)]" />
                 </label>
 
-                <button type="submit" disabled={loading} className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60" style={{ background: 'var(--accent)' }}>
+                <button type="submit" disabled={loading} className="pressable-control w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60" style={{ background: 'var(--accent)' }}>
                   {loading ? 'Creating account...' : 'Create account'}
                 </button>
                 
@@ -198,7 +167,7 @@ function Auth() {
                 <input value={form.identifier} onChange={(e) => updateField('identifier', e.target.value)} autoCapitalize="none" autoCorrect="off" autoComplete="username" inputMode="email" spellCheck={false} placeholder="Username or email" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
                 <input value={form.password} onChange={(e) => updateField('password', e.target.value)} autoComplete="current-password" type="password" placeholder="Password" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
 
-                <button type="submit" disabled={loading} className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60" style={{ background: 'var(--accent)' }}>
+                <button type="submit" disabled={loading} className="pressable-control w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60" style={{ background: 'var(--accent)' }}>
                   {loading ? 'Signing in...' : 'Login'}
                 </button>
               </form>
