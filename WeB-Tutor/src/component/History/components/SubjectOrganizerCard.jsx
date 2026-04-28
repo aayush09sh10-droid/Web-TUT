@@ -110,7 +110,7 @@ export default function SubjectOrganizerCard({ selectedItem }) {
         <select
           value={selectedSubjectId}
           onChange={(e) => setSelectedSubjectId(e.target.value)}
-          className="rounded-[1rem] border border-(--border) bg-(--card) px-4 py-3 text-sm text-(--text) focus:border-[rgba(99,102,241,0.3)] focus:outline-none"
+          className="rounded-[1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) focus:border-[rgba(99,102,241,0.3)] focus:outline-none"
         >
           <option value="">Select subject</option>
           {(subjectsQuery.data || []).map((subject) => (
@@ -134,7 +134,7 @@ export default function SubjectOrganizerCard({ selectedItem }) {
           value={newSubjectName}
           onChange={(e) => setNewSubjectName(e.target.value)}
           placeholder="Create a subject like Physics, DSA, Chemistry..."
-          className="rounded-[1rem] border border-(--border) bg-(--card) px-4 py-3 text-sm text-(--text) focus:border-[rgba(99,102,241,0.3)] focus:outline-none"
+          className="rounded-[1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) focus:border-[rgba(99,102,241,0.3)] focus:outline-none"
         />
         <button
           type="submit"

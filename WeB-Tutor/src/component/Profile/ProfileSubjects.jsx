@@ -125,7 +125,7 @@ export default function ProfileSubjects() {
               value={newSubjectName}
               onChange={(e) => setNewSubjectName(e.target.value)}
               placeholder="Create a subject like Maths, History, Biology..."
-              className="rounded-[1rem] border border-(--border) bg-(--card) px-4 py-3 text-sm text-(--text) focus:border-[rgba(99,102,241,0.3)] focus:outline-none"
+              className="rounded-[1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) focus:border-[rgba(99,102,241,0.3)] focus:outline-none"
             />
             <button
               type="submit"

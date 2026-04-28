@@ -3,11 +3,14 @@ import { Link, useLocation } from 'react-router-dom'
 import { clearAuth, toggleTheme } from '../Auth/store/authSlice'
 import { closeHeaderMenu, setHeaderVisible, toggleHeaderMenu } from './store/headerSlice'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { buildAuthenticatedRequestOptions } from '../../shared/auth/requestOptions'
+import { buildApiUrl } from '../../shared/config/apiBase'
 
 function Header() {
   const location = useLocation()
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.auth.theme)
+  const authToken = useAppSelector((state) => state.auth.auth?.token)
   const authUser = useAppSelector((state) => state.auth.auth?.user)
   const { isVisible, isMenuOpen } = useAppSelector((state) => state.header)
   const isDark = theme === 'dark'
@@ -19,6 +22,23 @@ function Header() {
     { to: '/', label: 'Home' },
     { to: '/history', label: 'Activity Log' },
   ]
+
+  async function handleLogout() {
+    dispatch(closeHeaderMenu())
+
+    try {
+      await fetch(
+        buildApiUrl('/api/auth/logout'),
+        buildAuthenticatedRequestOptions(authToken, {
+          method: 'POST',
+        })
+      )
+    } catch {
+      // Local logout should still happen if the backend request is interrupted.
+    } finally {
+      dispatch(clearAuth())
+    }
+  }
 
   const mobileActionButtonStyle = {
     borderColor: isDark ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.22)',
@@ -193,11 +213,8 @@ function Header() {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => {
-                        dispatch(closeHeaderMenu())
-                        dispatch(clearAuth())
-                      }}
-                      className="mt-1 block w-full rounded-[0.95rem] px-4 py-3 text-left text-sm font-medium text-(--text) transition hover:bg-(--card)"
+                      onClick={handleLogout}
+                      className="mt-1 block w-full cursor-pointer rounded-[0.95rem] px-4 py-3 text-left text-sm font-medium text-(--text) transition hover:bg-(--card)"
                     >
                       Logout
                     </button>
@@ -281,8 +298,8 @@ function Header() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => dispatch(clearAuth())}
-                    className="shrink-0 rounded-full border px-3 py-2 text-xs font-semibold"
+                    onClick={handleLogout}
+                    className="shrink-0 cursor-pointer rounded-full border px-3 py-2 text-xs font-semibold"
                     style={mobileActionButtonStyle}
                   >
                     Logout

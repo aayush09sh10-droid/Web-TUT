@@ -171,17 +171,17 @@ function Auth() {
 
             {mode === 'register' ? (
               <form className="mt-5 space-y-3" onSubmit={handleRegister}>
-                <input value={form.name} onChange={(e) => updateField('name', e.target.value)} placeholder="Full name" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
-                <input value={form.username} onChange={(e) => updateField('username', e.target.value)} placeholder="Username" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
+                <input value={form.name} onChange={(e) => updateField('name', e.target.value)} placeholder="Full name" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
+                <input value={form.username} onChange={(e) => updateField('username', e.target.value)} placeholder="Username" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
 
 
-                <input value={form.email} onChange={(e) => updateField('email', e.target.value)} type="email" placeholder="Email" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
+                <input value={form.email} onChange={(e) => updateField('email', e.target.value)} type="email" placeholder="Email" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
 
-                <input value={form.password} onChange={(e) => updateField('password', e.target.value)} type="password" placeholder="Password" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
+                <input value={form.password} onChange={(e) => updateField('password', e.target.value)} type="password" placeholder="Password" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
 
-                <input value={form.confirmPassword} onChange={(e) => updateField('confirmPassword', e.target.value)} type="password" placeholder="Confirm password" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
+                <input value={form.confirmPassword} onChange={(e) => updateField('confirmPassword', e.target.value)} type="password" placeholder="Confirm password" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
 
-                <label className="block rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm">
+                <label className="block rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm">
                   <span className="font-medium">Profile image</span>
                   <input type="file" accept="image/*" onChange={(e) => setAvatar(e.target.files?.[0] || null)} className="mt-2 block w-full text-xs file:mr-3 file:rounded-full file:border-0 file:bg-[var(--text)] file:px-3 file:py-2 file:font-semibold file:text-[var(--bg)]" />
                 </label>
@@ -193,8 +193,8 @@ function Auth() {
               </form>
             ) : (
               <form className="mt-5 space-y-3" onSubmit={handleLogin}>
-                <input value={form.identifier} onChange={(e) => updateField('identifier', e.target.value)} placeholder="Username or email" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
-                <input value={form.password} onChange={(e) => updateField('password', e.target.value)} type="password" placeholder="Password" className="w-full rounded-2xl border border-(--border) bg-(--card-strong) px-4 py-3 text-sm outline-none" />
+                <input value={form.identifier} onChange={(e) => updateField('identifier', e.target.value)} placeholder="Username or email" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
+                <input value={form.password} onChange={(e) => updateField('password', e.target.value)} type="password" placeholder="Password" className="w-full rounded-2xl border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm outline-none" />
 
                 <button type="submit" disabled={loading} className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60" style={{ background: 'var(--accent)' }}>
                   {loading ? 'Signing in...' : 'Login'}

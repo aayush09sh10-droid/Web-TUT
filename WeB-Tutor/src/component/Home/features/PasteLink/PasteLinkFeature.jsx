@@ -71,17 +71,17 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
 
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
         {inputMode === 'video' ? (
-          <input value={url} onChange={(e) => dispatch(setHomeField({ field: 'url', value: e.target.value }))} placeholder="https://www.youtube.com/watch?v=..." className="flex-1 rounded-[1.1rem] border border-(--border) bg-(--card-strong) px-4 py-3 text-sm text-(--text) shadow-sm focus:border-[var(--accent-2)] focus:outline-none focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]" />
+          <input value={url} onChange={(e) => dispatch(setHomeField({ field: 'url', value: e.target.value }))} placeholder="https://www.youtube.com/watch?v=..." className="flex-1 rounded-[1.1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) shadow-sm focus:border-[var(--accent-2)] focus:outline-none focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]" />
         ) : inputMode === 'ask' ? (
           <textarea
             value={askPrompt}
             onChange={(e) => dispatch(setHomeField({ field: 'askPrompt', value: e.target.value }))}
             placeholder="Ask anything you want to learn. Example: Teach me recursion from beginner to advanced."
             rows={4}
-            className="flex-1 rounded-[1.1rem] border border-(--border) bg-(--card-strong) px-4 py-3 text-sm text-(--text) shadow-sm focus:border-[var(--accent-2)] focus:outline-none focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]"
+            className="flex-1 rounded-[1.1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) shadow-sm focus:border-[var(--accent-2)] focus:outline-none focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]"
           />
         ) : (
-          <label className="flex flex-1 cursor-pointer flex-col justify-center rounded-[1.1rem] border border-(--border) bg-(--card-strong) px-4 py-3 text-sm text-(--text) shadow-sm">
+          <label className="flex flex-1 cursor-pointer flex-col justify-center rounded-[1.1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) shadow-sm">
             <span className="font-medium">{inputMode === 'photos' ? 'Upload study photos' : 'Upload study files'}</span>
             <span className="mt-1 text-xs text-(--muted)">{uploadHint}</span>
             <input
@@ -134,7 +134,7 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
             onChange={(e) => dispatch(setHomeField({ field: 'summaryPrompt', value: e.target.value }))}
             placeholder="Example: Summarize this for exam revision, focus on formulas first, explain like a teacher, and if helpful add one visual or image-style part."
             rows={4}
-            className="mt-3 w-full rounded-[1.1rem] border border-(--border) bg-(--card) px-4 py-3 text-sm text-(--text) shadow-sm focus:border-[var(--accent-2)] focus:outline-none focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]"
+            className="mt-3 w-full rounded-[1.1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) shadow-sm focus:border-[var(--accent-2)] focus:outline-none focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]"
           />
 
           <div className="mt-3 flex flex-wrap gap-2 text-xs text-(--muted)">
