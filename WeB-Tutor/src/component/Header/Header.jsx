@@ -17,6 +17,7 @@ function Header() {
   const lastScrollYRef = useRef(0)
   const upwardTravelRef = useRef(0)
   const menuRef = useRef(null)
+  const mobileMenuRef = useRef(null)
 
   const navItems = [
     { to: '/', label: 'Home' },
@@ -80,7 +81,10 @@ function Header() {
     if (!isMenuOpen) return
 
     const handlePointerDown = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      const clickedDesktopMenu = menuRef.current && menuRef.current.contains(event.target)
+      const clickedMobileMenu = mobileMenuRef.current && mobileMenuRef.current.contains(event.target)
+
+      if (!clickedDesktopMenu && !clickedMobileMenu) {
         dispatch(closeHeaderMenu())
       }
     }
@@ -250,13 +254,56 @@ function Header() {
                 ))}
 
               {authUser && (
-                <Link
-                  to="/profile"
-                  className="shrink-0 rounded-full border px-3 py-2 text-xs font-semibold"
-                  style={mobileActionButtonStyle}
-                >
-                  Profile
-                </Link>
+                <div className="relative shrink-0" ref={mobileMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => dispatch(toggleHeaderMenu())}
+                    className="flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold"
+                    style={mobileActionButtonStyle}
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-(--border) bg-(--card-strong) text-[10px] font-bold">
+                      {authUser.avatarUrl ? (
+                        <img src={authUser.avatarUrl} alt={authUser.name} className="h-full w-full object-cover" />
+                      ) : (
+                        String(authUser.name || authUser.username || 'U').charAt(0).toUpperCase()
+                      )}
+                    </span>
+                    <span>Profile</span>
+                    <span aria-hidden="true">{isMenuOpen ? '^' : 'v'}</span>
+                  </button>
+
+                  {isMenuOpen && (
+                    <div
+                      className="absolute left-0 top-full z-50 mt-3 w-48 rounded-[1.1rem] border p-2 shadow-[0_18px_40px_rgba(0,0,0,0.14)]"
+                      style={{
+                        borderColor: isDark ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.22)',
+                        background: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.98)',
+                      }}
+                    >
+                      <Link
+                        to="/profile"
+                        onClick={() => dispatch(closeHeaderMenu())}
+                        className="block rounded-[0.9rem] px-3 py-2.5 text-sm font-medium text-(--text) transition hover:bg-(--card)"
+                      >
+                        Profile Page
+                      </Link>
+                      <Link
+                        to="/profile/subjects"
+                        onClick={() => dispatch(closeHeaderMenu())}
+                        className="mt-1 block rounded-[0.9rem] px-3 py-2.5 text-sm font-medium text-(--text) transition hover:bg-(--card)"
+                      >
+                        Subjects
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="mt-1 block w-full cursor-pointer rounded-[0.9rem] px-3 py-2.5 text-left text-sm font-medium text-(--text) transition hover:bg-(--card)"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
 
               <button
@@ -268,44 +315,6 @@ function Header() {
                 {theme === 'dark' ? 'Light' : 'Dark'}
               </button>
 
-              {authUser && (
-                <>
-                  <span
-                    className="shrink-0 rounded-full border border-dashed px-3 py-2 text-[11px] font-medium text-(--muted)"
-                    style={mobileActionButtonStyle}
-                  >
-                    Swipe to see more
-                  </span>
-                  <Link
-                    to="/profile/subjects"
-                    className="shrink-0 rounded-full border px-3 py-2 text-xs font-semibold"
-                    style={mobileActionButtonStyle}
-                  >
-                    Subjects
-                  </Link>
-                  <div
-                    className="flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold"
-                    style={mobileActionButtonStyle}
-                  >
-                    <span className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-(--border) bg-(--card-strong) text-[10px] font-bold">
-                      {authUser.avatarUrl ? (
-                        <img src={authUser.avatarUrl} alt={authUser.name} className="h-full w-full object-cover" />
-                    ) : (
-                      String(authUser.name || authUser.username || 'U').charAt(0).toUpperCase()
-                    )}
-                  </span>
-                  <span className="max-w-[110px] truncate">@{authUser.username}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="shrink-0 cursor-pointer rounded-full border px-3 py-2 text-xs font-semibold"
-                    style={mobileActionButtonStyle}
-                  >
-                    Logout
-                  </button>
-                </>
-              )}
             </div>
           </div>
         </div>
