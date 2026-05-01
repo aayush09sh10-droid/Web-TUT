@@ -9,10 +9,11 @@ import { setHomeHistory } from '../store/homeSlice'
 export function useHomeHistory(authToken) {
   const dispatch = useAppDispatch()
   const authUser = useAppSelector((state) => state.auth.auth?.user)
+  const hasValidAuth = Boolean(authUser && authToken)
   const authCacheKey = getAuthCacheKey(authUser)
   const query = useQuery({
     queryKey: queryKeys.history(authCacheKey),
-    enabled: Boolean(authUser),
+    enabled: hasValidAuth,
     queryFn: ({ signal }) =>
       fetchHomeHistory(
         authToken
@@ -25,10 +26,15 @@ export function useHomeHistory(authToken) {
   })
 
   useEffect(() => {
+    if (!hasValidAuth) {
+      dispatch(setHomeHistory([]))
+      return
+    }
+
     if (query.data) {
       dispatch(setHomeHistory(query.data))
     }
-  }, [dispatch, query.data])
+  }, [dispatch, hasValidAuth, query.data])
 
   useEffect(() => {
     if (query.error && query.error.name !== 'AbortError') {

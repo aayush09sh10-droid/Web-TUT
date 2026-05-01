@@ -1,4 +1,5 @@
 import { buildApiUrl } from '../../../shared/config/apiBase'
+import { handleProtectedResponse } from '../../../shared/auth/authSession'
 const DEFAULT_GEMINI_UI_ERROR = 'Web-Tut is unavailable right now. Please try again in a moment.'
 
 async function parseJsonResponse(res) {
@@ -34,7 +35,12 @@ export async function fetchHomeHistory(headers, signal) {
     signal,
   })
 
+  handleProtectedResponse(res)
   const payload = await parseJsonResponse(res)
+  if (res.status === 401) {
+    return []
+  }
+
   if (!res.ok) {
     throw new Error(payload?.error || 'Failed to load history.')
   }
