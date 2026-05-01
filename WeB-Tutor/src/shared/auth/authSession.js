@@ -1,12 +1,14 @@
 import { clearAuth } from '../../component/Auth/store/authSlice'
 import { store } from '../../store/store'
 
-export function handleProtectedResponse(res) {
+export function handleProtectedResponse(res, options = {}) {
   if (!res) {
     return
   }
 
-  if (res.status === 401) {
+  const shouldClearAuth = Boolean(options.clearAuthOn401)
+
+  if (res.status === 401 && shouldClearAuth) {
     store.dispatch(clearAuth())
   }
 }

@@ -47,7 +47,7 @@ async function fetchWithSessionFallback(path, headers = {}, options = {}) {
     })
   }
 
-  handleProtectedResponse(res)
+  handleProtectedResponse(res, { clearAuthOn401: false })
   return res
 }
 
