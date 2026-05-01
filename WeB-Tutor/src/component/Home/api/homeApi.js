@@ -1,5 +1,5 @@
 import { buildApiUrl } from '../../../shared/config/apiBase'
-const DEFAULT_GEMINI_UI_ERROR = 'WebTutor AI is unavailable right now. Please try again in a moment.'
+const DEFAULT_GEMINI_UI_ERROR = 'Web-Tut is unavailable right now. Please try again in a moment.'
 
 async function parseJsonResponse(res) {
   try {

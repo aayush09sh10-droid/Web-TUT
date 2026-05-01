@@ -12,7 +12,7 @@ export default function NewSummaryFeature({ onClick }) {
         color: 'var(--text)',
       }}
     >
-      New Learning
+      New
     </button>
   )
 }

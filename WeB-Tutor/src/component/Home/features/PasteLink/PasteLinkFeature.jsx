@@ -47,6 +47,17 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
     'border-[rgba(99,102,241,0.18)] bg-[linear-gradient(135deg,rgba(99,102,241,0.12),rgba(56,189,248,0.1))] text-(--text) shadow-[0_10px_24px_rgba(99,102,241,0.08)] hover:-translate-y-0.5 hover:border-[rgba(99,102,241,0.32)] hover:bg-[linear-gradient(135deg,rgba(99,102,241,0.18),rgba(56,189,248,0.16))]'
   const activeModeClass =
     'border-[rgba(99,102,241,0.28)] bg-[linear-gradient(135deg,rgba(99,102,241,0.16),rgba(56,189,248,0.14))] text-(--text) shadow-[0_10px_24px_rgba(99,102,241,0.08)]'
+  const submitButtonLabel = loading
+    ? inputMode === 'ask'
+      ? 'Thinking...'
+      : 'Summarizing...'
+    : inputMode === 'video'
+      ? 'Summarize Video'
+      : inputMode === 'ask'
+        ? 'Ask Web-Tut'
+        : inputMode === 'photos'
+          ? 'Summarize'
+          : 'Summarize'
 
   return (
     <form
@@ -56,7 +67,7 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
     >
       <div className="mb-3 flex flex-wrap gap-2">
         <button type="button" aria-pressed={inputMode === 'video'} onClick={() => switchInputMode('video')} className={`pressable-control rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${inputMode === 'video' ? `${activeModeClass} is-selected` : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
-          YouTube Link
+          Video
         </button>
         <button type="button" aria-pressed={inputMode === 'photos'} onClick={() => switchInputMode('photos')} className={`pressable-control rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${inputMode === 'photos' ? `${activeModeClass} is-selected` : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
           Photos
@@ -65,7 +76,7 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
           Files
         </button>
         <button type="button" aria-pressed={inputMode === 'ask'} onClick={() => switchInputMode('ask')} className={`pressable-control rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${inputMode === 'ask' ? `${activeModeClass} is-selected` : 'border-(--border) bg-(--card) text-(--text) hover:-translate-y-0.5'}`}>
-          Ask WebTutor
+          Ask Web-Tut
         </button>
       </div>
 
@@ -76,7 +87,7 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
           <textarea
             value={askPrompt}
             onChange={(e) => dispatch(setHomeField({ field: 'askPrompt', value: e.target.value }))}
-            placeholder="Ask anything you want to learn. Example: Teach me recursion from beginner to advanced."
+            placeholder="Ask Web-Tut anything you want to learn. Example: Teach me recursion from beginner to advanced."
             rows={4}
             className="flex-1 rounded-[1.1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) shadow-sm focus:border-[var(--accent-2)] focus:outline-none focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]"
           />
@@ -94,19 +105,9 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
           </label>
         )}
 
-        {inputMode !== 'video' ? (
-          <button type="submit" disabled={loading} className={`pressable-control inline-flex w-auto self-start items-center justify-center rounded-[1.1rem] border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-6 sm:py-3 sm:text-sm ${softActionButtonClass}`}>
-            {loading
-              ? inputMode === 'ask'
-                ? 'Thinking...'
-                : 'Summarizing...'
-              : inputMode === 'ask'
-                  ? 'Ask WebTutor'
-                : inputMode === 'photos'
-                  ? 'Summarize Photos'
-                  : 'Summarize Files'}
-          </button>
-        ) : null}
+        <button type="submit" disabled={loading} className={`pressable-control inline-flex w-auto self-start items-center justify-center rounded-[1.1rem] border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-6 sm:py-3 sm:text-sm ${softActionButtonClass}`}>
+          {submitButtonLabel}
+        </button>
 
         {canClose ? (
           <button type="button" onClick={handleClose} className="pressable-control inline-flex h-[40px] w-[40px] items-center justify-center rounded-[1.1rem] border border-(--border) bg-(--card-strong) px-3 text-sm font-semibold text-(--text) shadow-sm transition sm:h-[48px] sm:w-[48px] sm:text-base" aria-label="Close upload box">

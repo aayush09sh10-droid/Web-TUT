@@ -110,7 +110,7 @@ function Home() {
   function getCurrentSourceLabel(nextResult = result) {
     if (nextResult?.sourceLabel) return nextResult.sourceLabel
     if (url.trim()) return url.trim()
-    if (askPrompt.trim()) return `Ask AI: ${askPrompt.trim()}`
+    if (askPrompt.trim()) return `Ask Web-Tut: ${askPrompt.trim()}`
     if (studyUploads.length > 0) {
       if (inputMode === 'photos') {
         return `Study Photos: ${studyUploads.map((upload) => upload.fileName).join(', ')}`
@@ -558,8 +558,8 @@ function Home() {
       <section className="flex flex-1 flex-col overflow-hidden">
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-3 pb-8 pt-4 sm:px-4 sm:pb-12 sm:pt-6 lg:pt-8">
           <HeaderFeature
-            title="Learn from video, files, or Ask AI"
-            description="Paste a YouTube link, upload study photos or files, or ask AI anything you want to learn, research, explain, compare, or generate with WebTutor."
+            title="Learn from video, files, or Web-Tut"
+            description="Paste a YouTube link, upload study photos or files, or ask Web-Tut anything you want to learn, research, explain, compare, or generate."
           />
 
           {(showComposer || !showResult) && (
@@ -581,8 +581,8 @@ function Home() {
                         <button type="button" aria-pressed={activeView === 'summary'} onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'summary' }))} className={`pressable-control shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 sm:px-4 sm:py-2 sm:text-sm ${activeView === 'summary' ? 'is-selected' : ''}`} style={simpleTabStyle(activeView === 'summary')}>{isAskResult ? 'Response' : 'Summary'}</button>
                         <button type="button" aria-pressed={activeView === 'quiz'} onClick={handleOpenQuizView} className={`pressable-control shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 sm:px-4 sm:py-2 sm:text-sm ${activeView === 'quiz' ? 'is-selected' : ''}`} style={simpleTabStyle(activeView === 'quiz')}>{quizLoading ? 'Quiz' : 'Quiz'}</button>
                         <button type="button" aria-pressed={activeView === 'teaching'} onClick={handleOpenTeachingView} className={`pressable-control shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 sm:px-4 sm:py-2 sm:text-sm ${activeView === 'teaching' ? 'is-selected' : ''}`} style={simpleTabStyle(activeView === 'teaching')}>{teachingLoading ? 'Teaching' : 'Teaching'}</button>
-                        <button type="button" aria-pressed={activeView === 'formula'} onClick={handleOpenFormulaView} className={`pressable-control shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 sm:px-4 sm:py-2 sm:text-sm ${activeView === 'formula' ? 'is-selected' : ''}`} style={simpleTabStyle(activeView === 'formula')}>{formulaLoading ? 'Formula Lab' : 'Formula Lab'}</button>
-                        <button type="button" aria-pressed={activeView === 'doubt'} onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'doubt' }))} className={`pressable-control shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 sm:px-4 sm:py-2 sm:text-sm ${activeView === 'doubt' ? 'is-selected' : ''}`} style={simpleTabStyle(activeView === 'doubt')}>Ask Doubt</button>
+                        <button type="button" aria-pressed={activeView === 'formula'} onClick={handleOpenFormulaView} className={`pressable-control shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 sm:px-4 sm:py-2 sm:text-sm ${activeView === 'formula' ? 'is-selected' : ''}`} style={simpleTabStyle(activeView === 'formula')}>{formulaLoading ? 'Formula' : 'Formula'}</button>
+                        <button type="button" aria-pressed={activeView === 'doubt'} onClick={() => dispatch(setHomeField({ field: 'activeView', value: 'doubt' }))} className={`pressable-control shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:-translate-y-0.5 sm:px-4 sm:py-2 sm:text-sm ${activeView === 'doubt' ? 'is-selected' : ''}`} style={simpleTabStyle(activeView === 'doubt')}>Doubt</button>
                         <div className="shrink-0">
                           <NewSummaryFeature onClick={handleOpenNewSummaryComposer} />
                         </div>

@@ -38,7 +38,7 @@ export default function GenerateQuizFeature({ handleSubmitQuiz, onRegenerate }) 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold">{quiz?.title || 'Playful Knowledge Check'}</h3>
-          <p className="mt-2 text-sm leading-relaxed" style={{ color: isDarkMode ? QUIZ_THEME.muted : '#7a3b12' }}>Test your understanding with AI-generated questions based on the same video summary.</p>
+          <p className="mt-2 text-sm leading-relaxed" style={{ color: isDarkMode ? QUIZ_THEME.muted : '#7a3b12' }}>Test your understanding with Web-Tut questions based on the same video summary.</p>
         </div>
         {quiz ? (
           <button type="button" onClick={onRegenerate} disabled={quizLoading} className="pressable-control rounded-full border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm" style={{ backgroundColor: isDarkMode ? QUIZ_THEME.cardSoft : 'rgba(255,255,255,0.72)', borderColor: QUIZ_THEME.accent, color: QUIZ_THEME.text }}>
@@ -67,7 +67,7 @@ export default function GenerateQuizFeature({ handleSubmitQuiz, onRegenerate }) 
           <div className="flex flex-wrap gap-3 pt-2">
             {!quizSubmitted ? (
               <button type="button" onClick={handleSubmitQuiz} disabled={answeredCount !== totalQuestions} className="pressable-control rounded-full border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-5 sm:py-2.5 sm:text-sm" style={{ background: `linear-gradient(135deg, ${QUIZ_THEME.primary}, ${QUIZ_THEME.secondary})`, borderColor: QUIZ_THEME.accent, color: QUIZ_THEME.text }}>
-                {answeredCount === totalQuestions ? 'Submit Answers' : `Answer ${totalQuestions - answeredCount} More`}
+                {answeredCount === totalQuestions ? 'Submit' : `${totalQuestions - answeredCount} Left`}
               </button>
             ) : (
               <button type="button" onClick={() => dispatch(resetQuizSelections())} className="pressable-control rounded-full border px-4 py-2 text-xs font-semibold transition sm:px-5 sm:py-2.5 sm:text-sm" style={{ backgroundColor: isDarkMode ? QUIZ_THEME.cardSoft : 'rgba(255,255,255,0.65)', borderColor: QUIZ_THEME.accent, color: QUIZ_THEME.text }}>
