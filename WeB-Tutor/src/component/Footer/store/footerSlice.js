@@ -3,8 +3,8 @@ import { createSlice } from '@reduxjs/toolkit'
 const footerSlice = createSlice({
   name: 'footer',
   initialState: {
-    brandName: 'YouTube Summarizer',
-    tagline: 'Turn videos into a study playground with summaries, quizzes, and guided lessons.',
+    brandName: 'WebTut',
+    tagline: 'Learn from videos, files, and questions with summaries, quizzes, and guided lessons.',
     badgeText: 'Built for playful learning',
   },
   reducers: {},
