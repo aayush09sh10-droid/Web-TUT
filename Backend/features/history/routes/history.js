@@ -1,6 +1,7 @@
 const express = require('express')
 
 const { authenticate } = require('../../auth/middleware/authenticate')
+const { attachAuthIfPresent } = require('../../auth/middleware/attachAuthIfPresent')
 const {
   addItemToSubject,
   clearHistory,
@@ -16,7 +17,7 @@ const {
 
 const router = express.Router()
 
-router.get('/', authenticate, listHistory)
+router.get('/', attachAuthIfPresent, listHistory)
 router.get('/subjects', authenticate, listSubjects)
 router.post('/subjects', authenticate, createSubject)
 router.post('/subjects/:id/items', authenticate, addItemToSubject)

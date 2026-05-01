@@ -2,6 +2,13 @@ const { listHistoryEntries } = require('../services/history')
 
 async function listHistory(req, res) {
   try {
+    if (!req.user) {
+      return res.json({
+        success: true,
+        history: [],
+      })
+    }
+
     const history = await listHistoryEntries(req.user._id)
 
     return res.json({
