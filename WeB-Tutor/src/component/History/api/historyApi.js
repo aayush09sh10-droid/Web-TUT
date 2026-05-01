@@ -2,11 +2,25 @@ import { parseJsonResponse } from '../../../shared/auth/authSession'
 import { buildAuthenticatedRequestOptions } from '../../../shared/auth/requestOptions'
 import { buildApiUrl } from '../../../shared/config/apiBase'
 
-export async function fetchHistory(authToken, signal) {
-  const res = await fetch(
-    buildApiUrl('/api/history'),
-    buildAuthenticatedRequestOptions(authToken, { signal })
+async function fetchWithSessionFallback(path, authToken, options = {}) {
+  const requestUrl = buildApiUrl(path)
+  let res = await fetch(
+    requestUrl,
+    buildAuthenticatedRequestOptions(authToken, options)
   )
+
+  if (res.status === 401 && authToken) {
+    res = await fetch(
+      requestUrl,
+      buildAuthenticatedRequestOptions('', options)
+    )
+  }
+
+  return res
+}
+
+export async function fetchHistory(authToken, signal) {
+  const res = await fetchWithSessionFallback('/api/history', authToken, { signal })
 
   const payload = await parseJsonResponse(res)
   if (!res.ok) {
@@ -45,10 +59,7 @@ export async function deleteHistoryItem(authToken, itemId) {
 }
 
 export async function fetchSubjects(authToken, signal) {
-  const res = await fetch(
-    buildApiUrl('/api/history/subjects'),
-    buildAuthenticatedRequestOptions(authToken, { signal })
-  )
+  const res = await fetchWithSessionFallback('/api/history/subjects', authToken, { signal })
 
   const payload = await parseJsonResponse(res)
   if (!res.ok) {
