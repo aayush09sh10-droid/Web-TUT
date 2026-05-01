@@ -3,7 +3,7 @@ const { requestJsonFromGeminiParts, sanitiseSummaryShape } = require('./parser')
 const { GeminiServiceError } = require('./errors')
 const { normaliseParagraph } = require('./text')
 
-const MAX_PHOTO_UPLOADS = 10
+const MAX_PHOTO_UPLOADS = 20
 const MAX_TEXT_FILE_CHARS = 12000
 const PPTX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
 const PPT_MIME_TYPE = 'application/vnd.ms-powerpoint'
@@ -21,16 +21,19 @@ Follow these rules strictly:
 - Read all provided study materials carefully.
 - The materials may include photos, PDFs, PowerPoint slides, or text-based study files.
 - Combine all useful material into one coherent study summary.
+- If multiple uploads overlap, repeat, or continue the same notes, merge them into one clean explanation instead of repeating content.
+- Preserve the most important facts, definitions, formulas, steps, and examples.
 - Rewrite everything in simple, clean language.
 - If some material is messy or partial, still extract the strongest ideas.
+- Prefer a compact, high-signal summary over long filler text.
 - Return exactly one short title.
 - Create a short logical timeline or section flow based on the topics.
-- Write exactly three short paragraphs.
-- Paragraph 1: overview of what the material is about.
-- Paragraph 2: core ideas explained simply.
-- Paragraph 3: extra insights, revision help, or what to review next.
-- Add 3 to 8 topic-wise study parts.
-- Each topic should include a short title, a short explanation, and key points for revision.
+- Write exactly three concise paragraphs.
+- Paragraph 1: overview of what the material is about and the main theme.
+- Paragraph 2: core ideas explained simply with the most exam- or revision-relevant details.
+- Paragraph 3: quick revision help, common connections, or what to review next.
+- Add 4 to 8 topic-wise study parts when enough material exists. Avoid redundant topics.
+- Each topic should include a short title, a short explanation, and crisp key points for revision.
 - Make the result useful for later teaching-path and formula generation.
 
 Input mode: ${sourceMode}
