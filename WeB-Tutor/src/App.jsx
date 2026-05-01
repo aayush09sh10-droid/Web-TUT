@@ -17,9 +17,26 @@ import { resetProfileState } from './component/Profile/store/profileSlice'
 import { parseJsonResponse } from './shared/auth/authSession'
 import { buildAuthenticatedRequestOptions } from './shared/auth/requestOptions'
 import { buildApiUrl } from './shared/config/apiBase'
-import { removeStorageItem, writeStorageItem } from './shared/storage/browserStorage'
+import { readStorageItem, removeStorageItem, writeStorageItem } from './shared/storage/browserStorage'
 import { clearPersistedHomeState } from './shared/storage/homeSession'
 import { useAppDispatch, useAppSelector } from './store/hooks'
+
+function readPersistedAuthToken() {
+  const storedAuth =
+    readStorageItem('localStorage', AUTH_STORAGE_KEY) ||
+    readStorageItem('sessionStorage', AUTH_STORAGE_KEY)
+
+  if (!storedAuth) {
+    return ''
+  }
+
+  try {
+    const parsed = JSON.parse(storedAuth)
+    return String(parsed?.token || '').trim()
+  } catch {
+    return ''
+  }
+}
 
 function App() {
   const dispatch = useAppDispatch()
@@ -43,7 +60,14 @@ function App() {
     if (auth?.user) {
       writeStorageItem('localStorage', AUTH_STORAGE_KEY, JSON.stringify(auth))
       removeStorageItem('sessionStorage', AUTH_STORAGE_KEY)
-    } else {
+      return
+    }
+
+    if (!hasAttemptedSessionRestoreRef.current) {
+      return
+    }
+
+    if (!auth?.user) {
       removeStorageItem('localStorage', AUTH_STORAGE_KEY)
       removeStorageItem('sessionStorage', AUTH_STORAGE_KEY)
     }
@@ -58,9 +82,10 @@ function App() {
 
     ;(async () => {
       try {
+        const persistedToken = readPersistedAuthToken()
         const res = await fetch(
           buildApiUrl('/api/auth/me'),
-          buildAuthenticatedRequestOptions(null, {
+          buildAuthenticatedRequestOptions(persistedToken, {
             method: 'GET',
           })
         )
@@ -72,7 +97,7 @@ function App() {
 
         dispatch(
           setAuth({
-            token: '',
+            token: persistedToken,
             user: payload.user,
           })
         )
