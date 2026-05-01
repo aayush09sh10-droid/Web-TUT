@@ -268,18 +268,19 @@ function Home() {
     const files = Array.from(e.target.files || [])
 
     if (!files.length) {
-      dispatch(setHomeField({ field: 'studyUploads', value: [] }))
       return
     }
 
     if (inputMode === 'photos') {
-      if (files.length > MAX_PHOTO_UPLOADS) {
+      const nextPhotoCount = studyUploads.length + files.length
+
+      if (nextPhotoCount > MAX_PHOTO_UPLOADS) {
         dispatch(
           setHomeFields({
             error: `You can upload a maximum of ${MAX_PHOTO_UPLOADS} photos at one time.`,
-            studyUploads: [],
           })
         )
+        e.target.value = ''
         return
       }
 
@@ -287,9 +288,9 @@ function Home() {
         dispatch(
           setHomeFields({
             error: 'Photo mode accepts image files only.',
-            studyUploads: [],
           })
         )
+        e.target.value = ''
         return
       }
     }
@@ -329,7 +330,12 @@ function Home() {
 
     try {
       const uploads = await buildStudyUploads(files)
-      dispatch(setHomeField({ field: 'studyUploads', value: uploads }))
+      dispatch(
+        setHomeField({
+          field: 'studyUploads',
+          value: inputMode === 'photos' ? [...studyUploads, ...uploads] : uploads,
+        })
+      )
     } catch (err) {
       dispatch(setHomeFields({ error: err.message || 'Failed to read the selected files.', studyUploads: [] }))
     } finally {

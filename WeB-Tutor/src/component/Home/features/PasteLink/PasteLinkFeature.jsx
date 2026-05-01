@@ -42,6 +42,10 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
           studyUploads,
           'Upload PDF, PPTX, text, CSV, JSON, markdown, or image files to summarize them.'
         )
+  const photoCountText =
+    inputMode === 'photos'
+      ? `${studyUploads.length}/${MAX_PHOTO_UPLOADS} photos added`
+      : `${studyUploads.length} file${studyUploads.length === 1 ? '' : 's'} added`
 
   const softActionButtonClass =
     'border-[rgba(99,102,241,0.18)] bg-[linear-gradient(135deg,rgba(99,102,241,0.12),rgba(56,189,248,0.1))] text-(--text) shadow-[0_10px_24px_rgba(99,102,241,0.08)] hover:-translate-y-0.5 hover:border-[rgba(99,102,241,0.32)] hover:bg-[linear-gradient(135deg,rgba(99,102,241,0.18),rgba(56,189,248,0.16))]'
@@ -95,6 +99,7 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
           <label className="flex flex-1 cursor-pointer flex-col justify-center rounded-[1.1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) shadow-sm">
             <span className="font-medium">{inputMode === 'photos' ? 'Upload study photos' : 'Upload study files'}</span>
             <span className="mt-1 text-xs text-(--muted)">{uploadHint}</span>
+            <span className="mt-1 text-xs font-medium text-(--text)">{photoCountText}</span>
             <input
               type="file"
               accept={inputMode === 'photos' ? 'image/*' : '.pdf,.pptx,.txt,.md,.markdown,.csv,.json,.xml,image/*,text/*'}
