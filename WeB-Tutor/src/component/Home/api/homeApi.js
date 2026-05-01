@@ -28,14 +28,31 @@ function throwAiRequestError(payload, fallbackMessage) {
   throw error
 }
 
-export async function fetchHomeHistory(headers, signal) {
-  const res = await fetch(buildApiUrl('/api/history'), {
+async function fetchWithSessionFallback(path, headers = {}, options = {}) {
+  const requestUrl = buildApiUrl(path)
+  const hasBearerToken = Boolean(headers?.Authorization)
+
+  let res = await fetch(requestUrl, {
     credentials: 'include',
     headers,
-    signal,
+    ...options,
   })
 
+  if (res.status === 401 && hasBearerToken) {
+    const { Authorization, ...cookieOnlyHeaders } = headers
+    res = await fetch(requestUrl, {
+      credentials: 'include',
+      headers: cookieOnlyHeaders,
+      ...options,
+    })
+  }
+
   handleProtectedResponse(res)
+  return res
+}
+
+export async function fetchHomeHistory(headers, signal) {
+  const res = await fetchWithSessionFallback('/api/history', headers, { signal })
   const payload = await parseJsonResponse(res)
   if (res.status === 401) {
     return []
