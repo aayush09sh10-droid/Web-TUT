@@ -9,7 +9,7 @@ import { setHomeHistory } from '../store/homeSlice'
 export function useHomeHistory(authToken) {
   const dispatch = useAppDispatch()
   const authUser = useAppSelector((state) => state.auth.auth?.user)
-  const hasValidAuth = Boolean(authUser && authToken)
+  const hasValidAuth = Boolean(authUser)
   const authCacheKey = getAuthCacheKey(authUser)
   const query = useQuery({
     queryKey: queryKeys.history(authCacheKey),
