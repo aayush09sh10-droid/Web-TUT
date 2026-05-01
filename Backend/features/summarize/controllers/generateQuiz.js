@@ -7,6 +7,7 @@ const { logger, serialiseError } = require('../../../utils/logger')
 async function generateQuiz(req, res) {
   try {
     const { summary, historyId, forceRegenerate } = req.body
+    const userId = req.user?._id || null
 
     if (!summary) {
       return sendValidationError(res, 'Missing `summary` in request body.')
@@ -15,14 +16,17 @@ async function generateQuiz(req, res) {
     const buildQuiz = async () => generateQuizFromSummary(summary)
     const quiz = forceRegenerate
       ? await buildQuiz()
-      : await getCachedQuiz(req.user._id, summary, buildQuiz)
-    await updateHistoryEntry({
-      historyId,
-      userId: req.user._id,
-      updates: {
-        quiz,
-      },
-    })
+      : await getCachedQuiz(userId, summary, buildQuiz)
+
+    if (historyId && userId) {
+      await updateHistoryEntry({
+        historyId,
+        userId,
+        updates: {
+          quiz,
+        },
+      })
+    }
 
     return res.json({
       success: true,

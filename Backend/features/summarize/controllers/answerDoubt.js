@@ -7,6 +7,7 @@ const { logger, serialiseError } = require('../../../utils/logger')
 async function answerDoubt(req, res) {
   try {
     const { summary, question, historyId, formula, teaching, sourceLabel, sourceType, forceRegenerate } = req.body
+    const userId = req.user?._id || null
 
     if (!summary) {
       return sendValidationError(res, 'Missing `summary` in request body.')
@@ -28,12 +29,12 @@ async function answerDoubt(req, res) {
     const buildDoubtAnswer = async () => answerDoubtFromSummary(doubtPayload)
     const answer = forceRegenerate
       ? await buildDoubtAnswer()
-      : await getCachedDoubtAnswer(req.user._id, doubtPayload, buildDoubtAnswer)
+      : await getCachedDoubtAnswer(userId, doubtPayload, buildDoubtAnswer)
 
-    if (historyId) {
+    if (historyId && userId) {
       await updateHistoryEntry({
         historyId,
-        userId: req.user._id,
+        userId,
         updates: {
           doubt: {
             question,

@@ -7,6 +7,7 @@ const { logger, serialiseError } = require('../../../utils/logger')
 async function generateTeaching(req, res) {
   try {
     const { summary, historyId, forceRegenerate } = req.body
+    const userId = req.user?._id || null
 
     if (!summary) {
       return sendValidationError(res, 'Missing `summary` in request body.')
@@ -15,14 +16,17 @@ async function generateTeaching(req, res) {
     const buildTeaching = async () => generateTeachingFromSummary(summary)
     const teaching = forceRegenerate
       ? await buildTeaching()
-      : await getCachedTeaching(req.user._id, summary, buildTeaching)
-    await updateHistoryEntry({
-      historyId,
-      userId: req.user._id,
-      updates: {
-        teaching,
-      },
-    })
+      : await getCachedTeaching(userId, summary, buildTeaching)
+
+    if (historyId && userId) {
+      await updateHistoryEntry({
+        historyId,
+        userId,
+        updates: {
+          teaching,
+        },
+      })
+    }
 
     return res.json({
       success: true,

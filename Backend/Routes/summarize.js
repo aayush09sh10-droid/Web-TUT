@@ -1,5 +1,4 @@
 const express = require('express')
-const { authenticate } = require('../features/auth/middleware/authenticate')
 const { attachAuthIfPresent } = require('../features/auth/middleware/attachAuthIfPresent')
 const {
   summarizeVideo,
@@ -16,9 +15,9 @@ const router = express.Router()
 router.post('/summarize', attachAuthIfPresent, summarizeVideo)
 router.post('/summarize-notes', attachAuthIfPresent, summarizeNotes)
 router.post('/ask-anything', attachAuthIfPresent, askAnything)
-router.post('/quiz', authenticate, generateQuiz)
-router.post('/teaching', authenticate, generateTeaching)
-router.post('/formula', authenticate, generateFormula)
-router.post('/doubt', authenticate, answerDoubt)
+router.post('/quiz', attachAuthIfPresent, generateQuiz)
+router.post('/teaching', attachAuthIfPresent, generateTeaching)
+router.post('/formula', attachAuthIfPresent, generateFormula)
+router.post('/doubt', attachAuthIfPresent, answerDoubt)
 
 module.exports = router

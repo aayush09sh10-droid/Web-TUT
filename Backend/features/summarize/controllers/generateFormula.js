@@ -7,6 +7,7 @@ const { logger, serialiseError } = require('../../../utils/logger')
 async function generateFormula(req, res) {
   try {
     const { summary, historyId, forceRegenerate } = req.body
+    const userId = req.user?._id || null
 
     if (!summary) {
       return sendValidationError(res, 'Missing `summary` in request body.')
@@ -15,14 +16,17 @@ async function generateFormula(req, res) {
     const buildFormula = async () => generateFormulaGuideFromSummary(summary)
     const formula = forceRegenerate
       ? await buildFormula()
-      : await getCachedFormula(req.user._id, summary, buildFormula)
-    await updateHistoryEntry({
-      historyId,
-      userId: req.user._id,
-      updates: {
-        formula,
-      },
-    })
+      : await getCachedFormula(userId, summary, buildFormula)
+
+    if (historyId && userId) {
+      await updateHistoryEntry({
+        historyId,
+        userId,
+        updates: {
+          formula,
+        },
+      })
+    }
 
     return res.json({
       success: true,
