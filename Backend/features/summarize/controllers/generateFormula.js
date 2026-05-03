@@ -33,7 +33,7 @@ async function generateFormula(req, res) {
     return sendSummarizeError(
       res,
       error,
-      'Gemini could not generate the formula guide right now. Please try again.'
+      'Web-Tut could not generate the formula guide right now. Please try again.'
     )
   }
 }

@@ -1,7 +1,7 @@
 const { GeminiServiceError } = require('../services/gemini')
 
 const DEFAULT_GEMINI_UI_ERROR =
-  'WebTutor AI is unavailable right now. Please try again in a moment.'
+  'Web-Tut is unavailable right now. Please try again in a moment.'
 
 function sendValidationError(res, message, statusCode = 400) {
   return res.status(statusCode).json({

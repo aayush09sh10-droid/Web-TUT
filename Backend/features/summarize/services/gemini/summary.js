@@ -35,6 +35,30 @@ Approximate audio range: ${startTime} to ${endTime}
 `.trim()
 }
 
+function buildTranscriptChunkPrompt(transcriptChunk, index, totalChunks) {
+  return `
+You are reading one transcript chunk from a YouTube video.
+
+Rules:
+- Ignore filler words, subtitle noise, and repeated lines.
+- Do not copy the speaker word-for-word.
+- Rewrite everything in simple, clean language.
+- Focus only on the ideas being explained.
+
+Return valid JSON only in this shape:
+{
+  "chunkTitle": "short title",
+  "mainIdeas": [
+    "brief rewritten point"
+  ],
+  "timelineHint": "very short label for this chunk"
+}
+
+Transcript chunk ${index} of ${totalChunks}:
+${transcriptChunk}
+`.trim()
+}
+
 function buildLearningPreferencesBlock(options = {}) {
   const studyPrompt = normaliseParagraph(options.studyPrompt)
 
@@ -98,6 +122,44 @@ Return valid JSON only in this shape:
 `.trim()
 }
 
+function splitTranscriptIntoChunks(transcriptText, maxChunkLength = 12000) {
+  const safeText = normaliseParagraph(transcriptText)
+
+  if (!safeText) {
+    return []
+  }
+
+  if (safeText.length <= maxChunkLength) {
+    return [safeText]
+  }
+
+  const sentences = safeText.split(/(?<=[.?!])\s+/)
+  const chunks = []
+  let currentChunk = ''
+
+  for (const sentence of sentences) {
+    if (!sentence) {
+      continue
+    }
+
+    const candidate = currentChunk ? `${currentChunk} ${sentence}` : sentence
+
+    if (candidate.length > maxChunkLength && currentChunk) {
+      chunks.push(currentChunk)
+      currentChunk = sentence
+      continue
+    }
+
+    currentChunk = candidate
+  }
+
+  if (currentChunk) {
+    chunks.push(currentChunk)
+  }
+
+  return chunks.slice(0, 12)
+}
+
 async function summariseAudioChunk(chunk, index, totalChunks) {
   const audioBuffer = await fs.promises.readFile(chunk.path)
   const chunkSummary = await requestJsonFromGeminiParts([
@@ -113,6 +175,22 @@ async function summariseAudioChunk(chunk, index, totalChunks) {
   return {
     startInSeconds: chunk.startInSeconds,
     durationInSeconds: chunk.durationInSeconds,
+    chunkTitle: normaliseParagraph(chunkSummary.chunkTitle || `Section ${index}`),
+    timelineHint: normaliseParagraph(chunkSummary.timelineHint || chunkSummary.chunkTitle || `Section ${index}`),
+    mainIdeas: Array.isArray(chunkSummary.mainIdeas)
+      ? chunkSummary.mainIdeas.map((idea) => normaliseParagraph(idea)).filter(Boolean)
+      : [],
+  }
+}
+
+async function summariseTranscriptChunk(transcriptChunk, index, totalChunks) {
+  const chunkSummary = await requestJsonFromGeminiParts([
+    { text: buildTranscriptChunkPrompt(transcriptChunk, index, totalChunks) },
+  ])
+
+  return {
+    startInSeconds: 0,
+    durationInSeconds: 0,
     chunkTitle: normaliseParagraph(chunkSummary.chunkTitle || `Section ${index}`),
     timelineHint: normaliseParagraph(chunkSummary.timelineHint || chunkSummary.chunkTitle || `Section ${index}`),
     mainIdeas: Array.isArray(chunkSummary.mainIdeas)
@@ -147,6 +225,37 @@ async function generateSummaryFromAudioChunks(chunks, options = {}) {
   return sanitised
 }
 
+async function generateSummaryFromTranscript(transcriptText, options = {}) {
+  const transcriptChunks = splitTranscriptIntoChunks(transcriptText)
+
+  if (!transcriptChunks.length) {
+    throw new GeminiServiceError('No transcript found for this video', 400)
+  }
+
+  const partialSummaries = []
+
+  for (let index = 0; index < transcriptChunks.length; index += 1) {
+    partialSummaries.push(
+      await summariseTranscriptChunk(transcriptChunks[index], index + 1, transcriptChunks.length)
+    )
+  }
+
+  const durationInSeconds = Number(options.durationInSeconds || 0)
+  const compiledNotes = JSON.stringify(partialSummaries, null, 2)
+  const finalSummary = await requestJsonFromGeminiParts([
+    { text: buildFinalPrompt(compiledNotes, durationInSeconds, options) },
+  ])
+
+  const sanitised = sanitiseSummaryShape(finalSummary)
+
+  if (!sanitised.timeline.length) {
+    sanitised.timeline = buildFallbackTimeline(partialSummaries, durationInSeconds)
+  }
+
+  return sanitised
+}
+
 module.exports = {
   generateSummaryFromAudioChunks,
+  generateSummaryFromTranscript,
 }

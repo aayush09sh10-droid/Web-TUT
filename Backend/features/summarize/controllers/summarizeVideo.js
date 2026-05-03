@@ -1,9 +1,10 @@
 const {
   createGeminiAudioChunks,
   downloadYoutubeAudio,
+  downloadYoutubeTranscript,
   removeFiles,
 } = require('../services/youtube-audio')
-const { generateSummaryFromAudioChunks } = require('../services/gemini')
+const { GeminiServiceError, generateSummaryFromAudioChunks, generateSummaryFromTranscript } = require('../services/gemini')
 const { getVideoSourceFingerprint } = require('../services/sourceFingerprint')
 const { getCachedVideoSummary } = require('../cache')
 const {
@@ -16,6 +17,7 @@ const { sendSummarizeError, sendValidationError } = require('./errorResponse')
 async function summarizeVideo(req, res) {
   let downloadedAudioPath = null
   let chunkPaths = []
+  let transcriptPath = null
 
   try {
     const { url, historyId, forceRegenerate, studyPrompt = '' } = req.body
@@ -70,24 +72,49 @@ async function summarizeVideo(req, res) {
         const audioResult = await downloadYoutubeAudio(url)
         downloadedAudioPath = audioResult.audioPath
 
-        emitProgress('Preparing audio for Gemini')
-        const chunks = await createGeminiAudioChunks(
-          downloadedAudioPath,
-          audioResult.durationInSeconds
-        )
+        try {
+          emitProgress('Preparing audio for Web-Tut')
+          const chunks = await createGeminiAudioChunks(
+            downloadedAudioPath,
+            audioResult.durationInSeconds
+          )
 
-        chunkPaths = chunks.map((chunk) => chunk.path)
+          chunkPaths = chunks.map((chunk) => chunk.path)
 
-        if (!chunks.length) {
-          throw Object.assign(new Error('No audio found in video'), { statusCode: 400 })
+          if (!chunks.length) {
+            throw Object.assign(new Error('No audio found in video'), { statusCode: 400 })
+          }
+
+          emitProgress('Generating summary')
+          return await generateSummaryFromAudioChunks(chunks, {
+            durationInSeconds: audioResult.durationInSeconds,
+            sourceUrl: url,
+            studyPrompt,
+          })
+        } catch (error) {
+          const canRetryWithTranscript =
+            error instanceof GeminiServiceError || Number(error?.statusCode) >= 500
+
+          if (!canRetryWithTranscript) {
+            throw error
+          }
+
+          emitProgress('Trying transcript fallback')
+          const transcript = await downloadYoutubeTranscript(url)
+
+          transcriptPath = transcript?.transcriptPath || null
+
+          if (!transcript?.transcriptText) {
+            throw error
+          }
+
+          emitProgress('Generating summary from transcript')
+          return generateSummaryFromTranscript(transcript.transcriptText, {
+            durationInSeconds: audioResult.durationInSeconds,
+            sourceUrl: url,
+            studyPrompt,
+          })
         }
-
-        emitProgress('Generating summary')
-        return generateSummaryFromAudioChunks(chunks, {
-          durationInSeconds: audioResult.durationInSeconds,
-          sourceUrl: url,
-          studyPrompt,
-        })
       }
 
     const summary = forceRegenerate
@@ -139,10 +166,10 @@ async function summarizeVideo(req, res) {
     return sendSummarizeError(
       res,
       error,
-      'Gemini could not summarize this video right now. Please try again.'
+      'Web-Tut could not summarize this video right now. Please try again.'
     )
   } finally {
-    await removeFiles([downloadedAudioPath, ...chunkPaths])
+    await removeFiles([downloadedAudioPath, transcriptPath, ...chunkPaths])
   }
 }
 

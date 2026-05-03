@@ -4,17 +4,17 @@ const { GEMINI_MODEL, GEMINI_FALLBACK_MODELS, MAX_TIMELINE_ITEMS } = require('./
 const { GeminiServiceError } = require('./errors')
 const { cleanJsonFence, formatTimestamp, normaliseParagraph } = require('./text')
 const WEBTUTOR_BUSY_MESSAGE =
-  'WebTutor AI is busy right now. Please try again in a moment.'
+  'Web-Tut is busy right now. Please try again in a moment.'
 const WEBTUTOR_PLAN_MESSAGE =
-  'WebTutor AI usage limit has been reached. Please upgrade your WebTutor plan and try again.'
+  'Web-Tut usage limit has been reached. Please upgrade your Web-Tut plan and try again.'
 const WEBTUTOR_FILE_MESSAGE =
-  'WebTutor could not read this file format for AI study generation. Please change the file and try again.'
+  'Web-Tut could not read this file format for AI study generation. Please change the file and try again.'
 const WEBTUTOR_RESPONSE_MESSAGE =
-  'WebTutor AI returned an incomplete response. Please try again.'
+  'Web-Tut returned an incomplete response. Please try again.'
 const WEBTUTOR_CONFIG_MESSAGE =
-  'WebTutor AI is not configured correctly right now. Please contact support or try again later.'
+  'Web-Tut is not configured correctly right now. Please contact support or try again later.'
 const WEBTUTOR_SETUP_MESSAGE =
-  'WebTutor AI is not available for this API setup yet. Please check the API key, model access, and project configuration.'
+  'Web-Tut is not available for this API setup yet. Please check the API key, model access, and project configuration.'
 
 function ensureGeminiConfig() {
   const apiKey = String(process.env.GEMINI_API_KEY || '').trim()
@@ -485,7 +485,7 @@ async function requestJsonFromGeminiParts(parts) {
         retryableModel: isRetryableModelError(error),
       }
 
-      console.error('WebTutor AI debug:', {
+      console.error('Web-Tut AI debug:', {
         status: debugStatus,
         message: debugMessage,
         flags: debugFlags,

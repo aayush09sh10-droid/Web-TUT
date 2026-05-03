@@ -117,7 +117,7 @@ async function askAnything(req, res) {
     return sendSummarizeError(
       res,
       error,
-      'Gemini could not prepare the study answer right now. Please try again.'
+      'Web-Tut could not prepare the study answer right now. Please try again.'
     )
   }
 }

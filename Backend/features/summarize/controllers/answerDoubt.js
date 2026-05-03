@@ -52,7 +52,7 @@ async function answerDoubt(req, res) {
     return sendSummarizeError(
       res,
       error,
-      'Gemini could not answer this doubt right now. Please try again.'
+      'Web-Tut could not answer this doubt right now. Please try again.'
     )
   }
 }

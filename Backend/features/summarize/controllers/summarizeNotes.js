@@ -122,7 +122,7 @@ async function summarizeNotes(req, res) {
     return sendSummarizeError(
       res,
       error,
-      'Gemini could not summarize the uploaded study materials right now. Please try again.'
+      'Web-Tut could not summarize the uploaded study materials right now. Please try again.'
     )
   }
 }

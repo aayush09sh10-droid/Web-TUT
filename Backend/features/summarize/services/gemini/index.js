@@ -4,11 +4,12 @@ const { answerDoubtFromSummary } = require('./doubt')
 const { generateFormulaGuideFromSummary } = require('./formula')
 const { generateSummaryFromNotesImage, generateSummaryFromStudyUploads } = require('./notes')
 const { generateQuizFromSummary } = require('./quiz')
-const { generateSummaryFromAudioChunks } = require('./summary')
+const { generateSummaryFromAudioChunks, generateSummaryFromTranscript } = require('./summary')
 const { generateTeachingFromSummary } = require('./teaching')
 
 module.exports = {
   generateSummaryFromAudioChunks,
+  generateSummaryFromTranscript,
   generateSummaryFromQuestion,
   generateSummaryFromNotesImage,
   generateSummaryFromStudyUploads,

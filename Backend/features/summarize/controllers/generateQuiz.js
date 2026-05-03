@@ -33,7 +33,7 @@ async function generateQuiz(req, res) {
     return sendSummarizeError(
       res,
       error,
-      'Gemini could not generate the quiz right now. Please try again.'
+      'Web-Tut could not generate the quiz right now. Please try again.'
     )
   }
 }

@@ -33,7 +33,7 @@ async function generateTeaching(req, res) {
     return sendSummarizeError(
       res,
       error,
-      'Gemini could not generate the teaching path right now. Please try again.'
+      'Web-Tut could not generate the teaching path right now. Please try again.'
     )
   }
 }
