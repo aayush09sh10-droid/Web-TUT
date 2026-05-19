@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { clearAuth, toggleTheme } from '../Auth/store/authSlice'
+import { toggleTheme } from '../Auth/store/authSlice'
 import { closeHeaderMenu, setHeaderVisible, toggleHeaderMenu } from './store/headerSlice'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { buildAuthenticatedRequestOptions } from '../../shared/auth/requestOptions'
+import { clearClientAuthSession } from '../../shared/auth/authSession'
 import { buildApiUrl } from '../../shared/config/apiBase'
 
 function Header() {
@@ -26,6 +27,7 @@ function Header() {
 
   async function handleLogout() {
     dispatch(closeHeaderMenu())
+    clearClientAuthSession()
 
     try {
       await fetch(
@@ -35,9 +37,7 @@ function Header() {
         })
       )
     } catch {
-      // Local logout should still happen if the backend request is interrupted.
-    } finally {
-      dispatch(clearAuth())
+      // The local session is already cleared before the request is sent.
     }
   }
 

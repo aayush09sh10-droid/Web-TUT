@@ -4,6 +4,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'http://127.0.0.1:3000',
   'http://127.0.0.1:5173',
 ]
+const LOCAL_DEV_ORIGIN_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i
 
 function parseAllowedOrigins() {
   const configuredOrigins = String(
@@ -26,6 +27,10 @@ function isOriginAllowed(origin, allowedOrigins = parseAllowedOrigins()) {
   }
 
   const safeOrigin = normaliseOrigin(origin)
+
+  if (LOCAL_DEV_ORIGIN_PATTERN.test(safeOrigin)) {
+    return true
+  }
 
   return allowedOrigins.some((allowedOrigin) => normaliseOrigin(allowedOrigin) === safeOrigin)
 }
