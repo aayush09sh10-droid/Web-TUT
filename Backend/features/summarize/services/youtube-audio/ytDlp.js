@@ -1,7 +1,11 @@
 const fs = require('fs')
 const YTDlpWrap = require('yt-dlp-wrap').default
 
-const { YT_DLP_BINARY_PATH } = require('./constants')
+const {
+  YT_DLP_BINARY_PATH,
+  YT_DLP_COOKIES_FROM_BROWSER,
+  YT_DLP_COOKIES_PATH,
+} = require('./constants')
 
 let ytDlpBootstrapPromise = null
 
@@ -30,6 +34,30 @@ async function ensureYtDlpBinary() {
 
 function getYtDlpClient() {
   return new YTDlpWrap(YT_DLP_BINARY_PATH)
+}
+
+function buildYtDlpCommonArgs() {
+  const args = [
+    '--no-playlist',
+    '--no-warnings',
+    '--force-ipv4',
+    '--extractor-retries',
+    '3',
+    '--fragment-retries',
+    '3',
+    '--retry-sleep',
+    '2',
+    '--extractor-args',
+    'youtube:player_client=android,web;skip=translated_subs',
+  ]
+
+  if (YT_DLP_COOKIES_PATH) {
+    args.push('--cookies', YT_DLP_COOKIES_PATH)
+  } else if (YT_DLP_COOKIES_FROM_BROWSER) {
+    args.push('--cookies-from-browser', YT_DLP_COOKIES_FROM_BROWSER)
+  }
+
+  return args
 }
 
 function extractYoutubeVideoId(url) {
@@ -96,6 +124,7 @@ function normaliseYoutubeError(error) {
 }
 
 module.exports = {
+  buildYtDlpCommonArgs,
   ensureYtDlpBinary,
   getYtDlpClient,
   extractYoutubeVideoId,

@@ -3,7 +3,13 @@ const os = require('os')
 const path = require('path')
 
 const { AudioServiceError } = require('./errors')
-const { ensureYtDlpBinary, extractYoutubeVideoId, getYtDlpClient, normaliseYoutubeError } = require('./ytDlp')
+const {
+  buildYtDlpCommonArgs,
+  ensureYtDlpBinary,
+  extractYoutubeVideoId,
+  getYtDlpClient,
+  normaliseYoutubeError,
+} = require('./ytDlp')
 
 function createTempBasePath(prefix) {
   const fileName = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -19,23 +25,31 @@ async function downloadYoutubeAudio(url) {
 
   const ytDlp = getYtDlpClient()
   const outputBase = createTempBasePath('youtube-audio')
+  const commonArgs = buildYtDlpCommonArgs()
 
   let videoInfo
   try {
-    videoInfo = await ytDlp.getVideoInfo(url)
+    videoInfo = await ytDlp.getVideoInfo([
+      ...commonArgs,
+      url,
+    ])
   } catch (error) {
     throw new AudioServiceError(`Failed to read YouTube video info: ${normaliseYoutubeError(error)}`, 502)
   }
 
   try {
     await ytDlp.execPromise([
-      url,
-      '--no-playlist',
-      '--no-warnings',
+      ...commonArgs,
       '--format',
       'bestaudio/best',
+      '--extract-audio',
+      '--audio-format',
+      'mp3',
+      '--audio-quality',
+      '0',
       '--output',
       `${outputBase}.%(ext)s`,
+      url,
     ])
   } catch (error) {
     throw new AudioServiceError(`Failed to download YouTube audio: ${normaliseYoutubeError(error)}`, 502)
