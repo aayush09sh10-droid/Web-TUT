@@ -7,6 +7,7 @@ const {
 const { GeminiServiceError, generateSummaryFromAudioChunks, generateSummaryFromTranscript } = require('../services/gemini')
 const { getVideoSourceFingerprint } = require('../services/sourceFingerprint')
 const { getCachedVideoSummary } = require('../cache')
+const { createSummaryProgressReporter } = require('../services/progress/summaryProgress')
 const {
   createHistoryEntry,
   updateHistoryEntry,
@@ -21,13 +22,8 @@ async function summarizeVideo(req, res) {
 
   try {
     const { url, historyId, forceRegenerate, studyPrompt = '' } = req.body
-    const io = req.app.get('io')
-
-    const emitProgress = (step) => {
-      if (io) {
-        io.emit('summary-progress', { step })
-      }
-    }
+    const progress = createSummaryProgressReporter(req)
+    const emitProgress = (step) => progress.emit(step)
 
     if (!url) {
       return sendValidationError(res, 'Missing `url` in request body.')
@@ -47,6 +43,7 @@ async function summarizeVideo(req, res) {
 
         return res.json({
           success: true,
+          jobId: progress.jobId,
           reusedExisting: true,
           sourceType: existingEntry.sourceType,
           sourceLabel: existingEntry.sourceLabel,
@@ -154,6 +151,7 @@ async function summarizeVideo(req, res) {
 
     return res.json({
       success: true,
+      jobId: progress.jobId,
       sourceType: 'youtube-video',
       sourceLabel: url,
       historyId: resolvedHistoryEntry.id,
