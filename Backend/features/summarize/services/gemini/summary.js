@@ -1,6 +1,8 @@
 const fs = require('fs')
 
 const { GeminiServiceError } = require('./errors')
+const { AUDIO_SUMMARY_CONCURRENCY, TRANSCRIPT_SUMMARY_CONCURRENCY } = require('../pipeline/config')
+const { mapWithConcurrency } = require('../pipeline/mapWithConcurrency')
 const {
   buildFallbackTimeline,
   requestJsonFromGeminiParts,
@@ -205,11 +207,11 @@ async function generateSummaryFromAudioChunks(chunks, options = {}) {
   }
 
   const durationInSeconds = Number(options.durationInSeconds || 0)
-  const partialSummaries = []
-
-  for (let index = 0; index < chunks.length; index += 1) {
-    partialSummaries.push(await summariseAudioChunk(chunks[index], index + 1, chunks.length))
-  }
+  const partialSummaries = await mapWithConcurrency(
+    chunks,
+    AUDIO_SUMMARY_CONCURRENCY,
+    (chunk, index) => summariseAudioChunk(chunk, index + 1, chunks.length)
+  )
 
   const compiledNotes = JSON.stringify(partialSummaries, null, 2)
   const finalSummary = await requestJsonFromGeminiParts([
@@ -232,13 +234,12 @@ async function generateSummaryFromTranscript(transcriptText, options = {}) {
     throw new GeminiServiceError('No transcript found for this video', 400)
   }
 
-  const partialSummaries = []
-
-  for (let index = 0; index < transcriptChunks.length; index += 1) {
-    partialSummaries.push(
-      await summariseTranscriptChunk(transcriptChunks[index], index + 1, transcriptChunks.length)
-    )
-  }
+  const partialSummaries = await mapWithConcurrency(
+    transcriptChunks,
+    TRANSCRIPT_SUMMARY_CONCURRENCY,
+    (transcriptChunk, index) =>
+      summariseTranscriptChunk(transcriptChunk, index + 1, transcriptChunks.length)
+  )
 
   const durationInSeconds = Number(options.durationInSeconds || 0)
   const compiledNotes = JSON.stringify(partialSummaries, null, 2)

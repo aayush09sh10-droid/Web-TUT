@@ -1,13 +1,10 @@
 const {
-  createGeminiAudioChunks,
-  downloadYoutubeAudio,
-  downloadYoutubeTranscript,
   removeFiles,
 } = require('../services/youtube-audio')
-const { GeminiServiceError, generateSummaryFromAudioChunks, generateSummaryFromTranscript } = require('../services/gemini')
 const { getVideoSourceFingerprint } = require('../services/sourceFingerprint')
 const { getCachedVideoSummary } = require('../cache')
 const { createSummaryProgressReporter } = require('../services/progress/summaryProgress')
+const { summarizeVideoPipeline } = require('../services/pipeline/summarizeVideoPipeline')
 const {
   createHistoryEntry,
   updateHistoryEntry,
@@ -16,9 +13,8 @@ const {
 const { sendSummarizeError, sendValidationError } = require('./errorResponse')
 
 async function summarizeVideo(req, res) {
-  let downloadedAudioPath = null
-  let chunkPaths = []
-  let transcriptPath = null
+  let tempPaths = []
+  let summaryStrategy = ''
 
   try {
     const { url, historyId, forceRegenerate, studyPrompt = '' } = req.body
@@ -44,6 +40,7 @@ async function summarizeVideo(req, res) {
         return res.json({
           success: true,
           jobId: progress.jobId,
+          summaryStrategy: 'history-reused',
           reusedExisting: true,
           sourceType: existingEntry.sourceType,
           sourceLabel: existingEntry.sourceLabel,
@@ -65,54 +62,15 @@ async function summarizeVideo(req, res) {
     }
 
     const buildSummary = async () => {
-        emitProgress('Downloading audio')
-        const audioResult = await downloadYoutubeAudio(url)
-        downloadedAudioPath = audioResult.audioPath
-
-        try {
-          emitProgress('Preparing audio for Web-Tut')
-          const chunks = await createGeminiAudioChunks(
-            downloadedAudioPath,
-            audioResult.durationInSeconds
-          )
-
-          chunkPaths = chunks.map((chunk) => chunk.path)
-
-          if (!chunks.length) {
-            throw Object.assign(new Error('No audio found in video'), { statusCode: 400 })
-          }
-
-          emitProgress('Generating summary')
-          return await generateSummaryFromAudioChunks(chunks, {
-            durationInSeconds: audioResult.durationInSeconds,
-            sourceUrl: url,
-            studyPrompt,
-          })
-        } catch (error) {
-          const canRetryWithTranscript =
-            error instanceof GeminiServiceError || Number(error?.statusCode) >= 500
-
-          if (!canRetryWithTranscript) {
-            throw error
-          }
-
-          emitProgress('Trying transcript fallback')
-          const transcript = await downloadYoutubeTranscript(url)
-
-          transcriptPath = transcript?.transcriptPath || null
-
-          if (!transcript?.transcriptText) {
-            throw error
-          }
-
-          emitProgress('Generating summary from transcript')
-          return generateSummaryFromTranscript(transcript.transcriptText, {
-            durationInSeconds: audioResult.durationInSeconds,
-            sourceUrl: url,
-            studyPrompt,
-          })
-        }
-      }
+      const pipelineResult = await summarizeVideoPipeline(url, {
+        emitProgress,
+        sourceUrl: url,
+        studyPrompt,
+      })
+      tempPaths = pipelineResult.tempPaths || []
+      summaryStrategy = pipelineResult.strategy || ''
+      return pipelineResult.summary
+    }
 
     const summary = forceRegenerate
       ? await buildSummary()
@@ -152,6 +110,7 @@ async function summarizeVideo(req, res) {
     return res.json({
       success: true,
       jobId: progress.jobId,
+      summaryStrategy: summaryStrategy || 'unknown',
       sourceType: 'youtube-video',
       sourceLabel: url,
       historyId: resolvedHistoryEntry.id,
@@ -159,6 +118,9 @@ async function summarizeVideo(req, res) {
       summary,
     })
   } catch (error) {
+    if (Array.isArray(error?.tempPaths) && error.tempPaths.length) {
+      tempPaths = error.tempPaths
+    }
     console.error('Summarize error:', error)
 
     return sendSummarizeError(
@@ -167,7 +129,7 @@ async function summarizeVideo(req, res) {
       'Web-Tut could not summarize this video right now. Please try again.'
     )
   } finally {
-    await removeFiles([downloadedAudioPath, transcriptPath, ...chunkPaths])
+    await removeFiles(tempPaths)
   }
 }
 
