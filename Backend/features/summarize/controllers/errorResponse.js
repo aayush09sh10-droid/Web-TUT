@@ -1,4 +1,5 @@
 const { GeminiServiceError } = require('../services/gemini')
+const { AudioServiceError } = require('../services/youtube-audio')
 
 const DEFAULT_GEMINI_UI_ERROR =
   'WebTutor AI is unavailable right now. Please try again in a moment.'
@@ -20,6 +21,16 @@ function sendSummarizeError(res, error, fallbackMessage) {
       error: isSilentInUi ? '' : error.message || fallbackMessage || DEFAULT_GEMINI_UI_ERROR,
       errorType: 'gemini',
       silentInUi: isSilentInUi,
+    })
+  }
+
+  if (error instanceof AudioServiceError) {
+    const statusCode = Number(error.statusCode) || 502
+
+    return res.status(statusCode).json({
+      success: false,
+      error: error.message || fallbackMessage || 'We could not process audio from this video right now.',
+      errorType: statusCode === 400 ? 'validation' : 'audio',
     })
   }
 

@@ -33,17 +33,37 @@ function getYtDlpClient() {
 }
 
 function extractYoutubeVideoId(url) {
-  const patterns = [
-    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([\w-]{11})/i,
-    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([\w-]{11})/i,
-    /(?:https?:\/\/)?youtu\.be\/([\w-]{11})/i,
-  ]
+  const rawUrl = String(url || '').trim()
 
-  for (const pattern of patterns) {
-    const match = url.match(pattern)
-    if (match?.[1]) {
-      return match[1]
+  if (!rawUrl) {
+    return null
+  }
+
+  try {
+    const parsed = new URL(rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`)
+    const hostname = parsed.hostname.replace(/^www\./i, '').toLowerCase()
+    const pathParts = parsed.pathname.split('/').filter(Boolean)
+
+    if (hostname === 'youtu.be') {
+      const shortId = String(pathParts[0] || '').trim()
+      return /^[\w-]{11}$/.test(shortId) ? shortId : null
     }
+
+    if (!['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com'].includes(hostname)) {
+      return null
+    }
+
+    const watchId = String(parsed.searchParams.get('v') || '').trim()
+    if (/^[\w-]{11}$/.test(watchId)) {
+      return watchId
+    }
+
+    const embeddedId = String(pathParts[1] || '').trim()
+    if (['shorts', 'embed', 'live', 'v'].includes(pathParts[0]) && /^[\w-]{11}$/.test(embeddedId)) {
+      return embeddedId
+    }
+  } catch {
+    return null
   }
 
   return null
@@ -52,7 +72,7 @@ function extractYoutubeVideoId(url) {
 function normaliseYoutubeError(error) {
   const message = String(error?.stderr || error?.message || 'Unknown YouTube extraction error')
 
-  if (/private|members-only|login|sign in|cookie/i.test(message)) {
+  if (/private|members-only|login|sign in|cookie|confirm you.?re not a bot/i.test(message)) {
     return 'This YouTube video requires login or cookies to access.'
   }
 
