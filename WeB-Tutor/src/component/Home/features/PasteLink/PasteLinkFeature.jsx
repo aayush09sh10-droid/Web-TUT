@@ -86,7 +86,12 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
 
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
         {inputMode === 'video' ? (
-          <input value={url} onChange={(e) => dispatch(setHomeField({ field: 'url', value: e.target.value }))} placeholder="https://www.youtube.com/watch?v=..." className="flex-1 rounded-[1.1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) shadow-sm focus:border-[var(--accent-2)] focus:outline-none focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]" />
+          <div className="flex-1">
+            <input value={url} onChange={(e) => dispatch(setHomeField({ field: 'url', value: e.target.value }))} placeholder="https://www.youtube.com/watch?v=..." className="w-full rounded-[1.1rem] border border-(--border) bg-[var(--input-bg)] px-4 py-3 text-sm text-(--text) shadow-sm focus:border-[var(--accent-2)] focus:outline-none focus:ring-2 focus:ring-[color:rgba(99,102,241,0.12)]" />
+            <p className="mt-2 px-1 text-xs text-(--muted)">
+              Public YouTube links work best. Shorts, share links, mobile links, and playlist links are cleaned automatically.
+            </p>
+          </div>
         ) : inputMode === 'ask' ? (
           <textarea
             value={askPrompt}

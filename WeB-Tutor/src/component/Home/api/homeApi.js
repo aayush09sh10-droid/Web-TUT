@@ -1,6 +1,8 @@
 import { buildApiUrl } from '../../../shared/config/apiBase'
 import { handleProtectedResponse } from '../../../shared/auth/authSession'
 const DEFAULT_GEMINI_UI_ERROR = 'Web-Tut is unavailable right now. Please try again in a moment.'
+const DEFAULT_VIDEO_UI_ERROR =
+  'We could not process this video link. Try a public YouTube video URL and try again.'
 
 async function parseJsonResponse(res) {
   try {
@@ -26,6 +28,58 @@ function throwAiRequestError(payload, fallbackMessage) {
   error.silentInUi = silentInUi
   error.errorType = errorType || 'unknown'
   throw error
+}
+
+function extractYouTubeVideoId(rawUrl) {
+  const safeUrl = String(rawUrl || '').trim()
+
+  if (!safeUrl) {
+    return ''
+  }
+
+  try {
+    const parsed = new URL(safeUrl.startsWith('http') ? safeUrl : `https://${safeUrl}`)
+    const hostname = parsed.hostname.replace(/^www\./i, '').toLowerCase()
+    const pathParts = parsed.pathname.split('/').filter(Boolean)
+
+    if (hostname === 'youtu.be') {
+      return /^[\w-]{11}$/.test(pathParts[0] || '') ? pathParts[0] : ''
+    }
+
+    if (
+      !['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com'].includes(
+        hostname
+      )
+    ) {
+      return ''
+    }
+
+    const watchId = String(parsed.searchParams.get('v') || '').trim()
+    if (/^[\w-]{11}$/.test(watchId)) {
+      return watchId
+    }
+
+    const embeddedId = String(pathParts[1] || '').trim()
+    if (['shorts', 'embed', 'live', 'v'].includes(pathParts[0]) && /^[\w-]{11}$/.test(embeddedId)) {
+      return embeddedId
+    }
+  } catch {
+    return ''
+  }
+
+  return ''
+}
+
+function normalizeYouTubeUrl(rawUrl) {
+  const videoId = extractYouTubeVideoId(rawUrl)
+
+  if (!videoId) {
+    const error = new Error('Please paste a valid YouTube video link.')
+    error.errorType = 'validation'
+    throw error
+  }
+
+  return `https://www.youtube.com/watch?v=${videoId}`
 }
 
 async function fetchWithSessionFallback(path, headers = {}, options = {}) {
@@ -66,24 +120,41 @@ export async function fetchHomeHistory(headers, signal) {
 }
 
 export async function requestVideoSummary(headers, url, options = {}) {
-  const res = await fetch(buildApiUrl('/api/summarize'), {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify({
-      url,
-      studyPrompt: options.studyPrompt,
-      historyId: options.historyId,
-      forceRegenerate: Boolean(options.forceRegenerate),
-    }),
-  })
+  const normalizedUrl = normalizeYouTubeUrl(url)
+  const res = await fetchWithSessionFallback(
+    '/api/summarize',
+    { 'Content-Type': 'application/json', ...headers },
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        url: normalizedUrl,
+        studyPrompt: options.studyPrompt,
+        historyId: options.historyId,
+        forceRegenerate: Boolean(options.forceRegenerate),
+      }),
+    }
+  )
 
   const payload = await parseJsonResponse(res)
   if (!res.ok) {
-    throwAiRequestError(payload, DEFAULT_GEMINI_UI_ERROR)
+    if (
+      payload?.errorType === 'gemini' &&
+      (!payload?.error ||
+        /gemini could not summarize this video right now|web-tut is unavailable right now/i.test(
+          payload.error
+        ))
+    ) {
+      payload.error = DEFAULT_VIDEO_UI_ERROR
+    }
+
+    throwAiRequestError(payload, DEFAULT_VIDEO_UI_ERROR)
   }
 
-  return payload
+  return {
+    ...payload,
+    videoUrl: payload?.videoUrl || normalizedUrl,
+    sourceLabel: payload?.sourceLabel || normalizedUrl,
+  }
 }
 
 export async function requestStudySummary(headers, studyPayload, options = {}) {
