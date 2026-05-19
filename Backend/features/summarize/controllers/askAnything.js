@@ -1,6 +1,6 @@
-const { generateSummaryFromQuestion, generateTeachingFromSummary } = require('../services/gemini')
 const { getAskSourceFingerprint } = require('../services/sourceFingerprint')
-const { getCachedAskSummary, getCachedTeaching } = require('../cache')
+const { getCachedAskSummary } = require('../cache')
+const { runAskPipeline } = require('../services/pipeline/askPipeline')
 const {
   createHistoryEntry,
   updateHistoryEntry,
@@ -33,6 +33,7 @@ async function askAnything(req, res) {
       if (existingEntry?.result?.summary) {
         return res.json({
           success: true,
+          summaryStrategy: 'history-reused',
           reusedExisting: true,
           sourceType: existingEntry.sourceType,
           sourceLabel: existingEntry.sourceLabel,
@@ -52,17 +53,13 @@ async function askAnything(req, res) {
       studyPrompt: String(studyPrompt || '').trim(),
     }
 
-    const buildSummary = async () => generateSummaryFromQuestion(question, {
-      studyPrompt,
-    })
+    const buildSummary = async () =>
+      runAskPipeline(question, {
+        studyPrompt,
+      })
     const result = forceRegenerate
       ? await buildSummary()
       : await getCachedAskSummary(req.user._id, askPayload, buildSummary)
-
-    const buildTeaching = async () => generateTeachingFromSummary(result.summary)
-    const teaching = forceRegenerate
-      ? await buildTeaching()
-      : await getCachedTeaching(req.user._id, result.summary, buildTeaching)
 
     const historyEntry =
       historyId
@@ -74,7 +71,7 @@ async function askAnything(req, res) {
               sourceLabel: result.sourceLabel,
               sourceFingerprint,
               summary: result.summary,
-              teaching,
+              teaching: null,
               quiz: null,
               formula: null,
               doubt: null,
@@ -94,22 +91,17 @@ async function askAnything(req, res) {
       }))
 
     if (!historyEntry) {
-      await updateHistoryEntry({
-        historyId: resolvedHistoryEntry.id,
-        userId: req.user._id,
-        updates: {
-          teaching,
-        },
-      })
+      // Teaching is intentionally generated on demand to keep the first answer fast.
     }
 
     return res.json({
       success: true,
+      summaryStrategy: result.strategy || 'ask-fast',
       sourceType: 'ask-ai',
       sourceLabel: result.sourceLabel,
       historyId: resolvedHistoryEntry.id,
       summary: result.summary,
-      teaching,
+      teaching: null,
     })
   } catch (error) {
     console.error('Ask anything error:', error)

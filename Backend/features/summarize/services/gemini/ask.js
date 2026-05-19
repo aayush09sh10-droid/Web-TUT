@@ -64,6 +64,7 @@ async function generateSummaryFromQuestion(question, options = {}) {
   return {
     summary: sanitiseSummaryShape(summary),
     sourceLabel: `Ask AI: ${safeQuestion}`,
+    strategy: 'ask-fast',
   }
 }
 

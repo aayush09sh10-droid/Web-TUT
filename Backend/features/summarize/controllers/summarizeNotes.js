@@ -1,6 +1,6 @@
-const { generateSummaryFromNotesImage, generateSummaryFromStudyUploads } = require('../services/gemini')
 const { getStudySourceFingerprint } = require('../services/sourceFingerprint')
 const { getCachedNotesSummary } = require('../cache')
+const { runStudySummaryPipeline } = require('../services/pipeline/studySummaryPipeline')
 const {
   createHistoryEntry,
   updateHistoryEntry,
@@ -57,6 +57,7 @@ async function summarizeNotes(req, res) {
       if (existingEntry?.result?.summary) {
         return res.json({
           success: true,
+          summaryStrategy: 'history-reused',
           reusedExisting: true,
           sourceType: existingEntry.sourceType,
           sourceLabel: existingEntry.sourceLabel,
@@ -72,9 +73,11 @@ async function summarizeNotes(req, res) {
     }
 
     const buildSummary = async () =>
-      Array.isArray(uploads) && uploads.length
-        ? generateSummaryFromStudyUploads(notesPayload)
-        : generateSummaryFromNotesImage({ imageData, mimeType, fileName })
+      runStudySummaryPipeline(
+        Array.isArray(uploads) && uploads.length
+          ? notesPayload
+          : { imageData, mimeType, fileName }
+      )
 
     const result = forceRegenerate
       ? await buildSummary()
@@ -111,6 +114,7 @@ async function summarizeNotes(req, res) {
 
     return res.json({
       success: true,
+      summaryStrategy: result.strategy || 'study-unknown',
       sourceType: resolvedSourceType,
       sourceLabel: result.sourceLabel,
       historyId: resolvedHistoryEntry.id,

@@ -5,6 +5,7 @@ const { normaliseParagraph } = require('./text')
 
 const MAX_PHOTO_UPLOADS = 10
 const MAX_TEXT_FILE_CHARS = 12000
+const FAST_TEXT_UPLOAD_TOTAL_CHARS = Number(process.env.FAST_TEXT_UPLOAD_TOTAL_CHARS || 18000)
 const PPTX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
 const PPT_MIME_TYPE = 'application/vnd.ms-powerpoint'
 
@@ -246,6 +247,75 @@ async function buildGeminiPartsForUpload(upload, index) {
   ]
 }
 
+async function extractStudyUploadText(upload) {
+  if (isTextLikeMimeType(upload.mimeType)) {
+    const decodedText = Buffer.from(upload.data, 'base64')
+      .toString('utf8')
+      .replace(/\0/g, ' ')
+      .trim()
+
+    if (!decodedText) {
+      throw new GeminiServiceError(`Unable to read text from "${upload.fileName}".`, 400)
+    }
+
+    return decodedText.slice(0, MAX_TEXT_FILE_CHARS)
+  }
+
+  if (isPptxMimeType(upload.mimeType)) {
+    return extractTextFromPptx(upload)
+  }
+
+  return ''
+}
+
+function buildFastStudyTextPrompt({ sourceMode, studyPrompt, textBlocks }) {
+  const safeStudyPrompt = normaliseParagraph(studyPrompt)
+  const combinedText = textBlocks
+    .map((block, index) => `Material ${index + 1}\n${block}`)
+    .join('\n\n')
+    .slice(0, FAST_TEXT_UPLOAD_TOTAL_CHARS)
+
+  return `
+You are reading study materials that have already been converted into text for fast summarization.
+
+Rules:
+- Rewrite in simple and clear language.
+- Focus on the most important learning points first.
+- Remove repetition and noisy formatting.
+- Return exactly one short title.
+- Write exactly three short paragraphs.
+- Add 3 to 8 revision-friendly topics.
+
+Input mode: ${sourceMode}
+Student summary instructions: ${safeStudyPrompt || 'No extra instructions provided'}
+
+Study text:
+${combinedText}
+
+Return valid JSON only in this shape:
+{
+  "title": "short meaningful title",
+  "timeline": [
+    { "timestamp": "Part 1", "label": "Introduction" }
+  ],
+  "paragraphs": {
+    "overview": "short paragraph",
+    "coreIdeas": "short paragraph",
+    "exploreMore": "short paragraph"
+  },
+  "topics": [
+    {
+      "title": "topic title",
+      "summary": "short topic explanation",
+      "keyPoints": [
+        "short point"
+      ]
+    }
+  ]
+}
+`.trim()
+}
+
 function buildSourceLabel(sourceMode, uploads) {
   const fileNames = uploads.slice(0, 3).map((upload) => upload.fileName).join(', ')
   const suffix = uploads.length > 3 ? `, +${uploads.length - 3} more` : ''
@@ -275,6 +345,34 @@ async function generateSummaryFromStudyUploads({
     }
   }
 
+  const supportsFastTextPath = safeUploads.every(
+    (upload) => isTextLikeMimeType(upload.mimeType) || isPptxMimeType(upload.mimeType)
+  )
+
+  if (supportsFastTextPath) {
+    const textBlocks = []
+
+    for (let index = 0; index < safeUploads.length; index += 1) {
+      textBlocks.push(await extractStudyUploadText(safeUploads[index]))
+    }
+
+    const summary = await requestJsonFromGeminiParts([
+      {
+        text: buildFastStudyTextPrompt({
+          sourceMode: safeSourceMode,
+          studyPrompt,
+          textBlocks,
+        }),
+      },
+    ])
+
+    return {
+      summary: sanitiseSummaryShape(summary),
+      sourceLabel: buildSourceLabel(safeSourceMode, safeUploads),
+      strategy: 'study-text-fast',
+    }
+  }
+
   const summaryPrompt = buildStudyMaterialSummaryPrompt({
     sourceMode: safeSourceMode,
     uploads: safeUploads,
@@ -291,6 +389,7 @@ async function generateSummaryFromStudyUploads({
   return {
     summary: sanitiseSummaryShape(summary),
     sourceLabel: buildSourceLabel(safeSourceMode, safeUploads),
+    strategy: safeSourceMode === 'photos' ? 'study-photo-multipart' : 'study-file-multipart',
   }
 }
 
@@ -309,6 +408,8 @@ async function generateSummaryFromNotesImage({ imageData, mimeType, fileName }) 
 }
 
 module.exports = {
+  extractStudyUploadText,
   generateSummaryFromStudyUploads,
   generateSummaryFromNotesImage,
+  normaliseUploads,
 }
