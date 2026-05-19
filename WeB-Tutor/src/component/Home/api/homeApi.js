@@ -1,5 +1,6 @@
 import { buildApiUrl } from '../../../shared/config/apiBase'
 import { handleProtectedResponse } from '../../../shared/auth/authSession'
+import { fetchStreamingJson } from '../../../shared/network/fetchStreamingJson'
 const DEFAULT_GEMINI_UI_ERROR = 'Web-Tut is unavailable right now. Please try again in a moment.'
 const DEFAULT_VIDEO_UI_ERROR =
   'We could not process this video link. Try a public YouTube video URL and try again.'
@@ -121,22 +122,31 @@ export async function fetchHomeHistory(headers, signal) {
 
 export async function requestVideoSummary(headers, url, options = {}) {
   const normalizedUrl = normalizeYouTubeUrl(url)
-  const res = await fetchWithSessionFallback(
-    '/api/summarize',
-    { 'Content-Type': 'application/json', ...headers },
+  const result = await fetchStreamingJson(
+    buildApiUrl('/api/summarize'),
     {
       method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'x-webtutor-stream': '1', ...headers },
       body: JSON.stringify({
         url: normalizedUrl,
         studyPrompt: options.studyPrompt,
         historyId: options.historyId,
         forceRegenerate: Boolean(options.forceRegenerate),
       }),
+    },
+    {
+      onProgress: options.onProgress,
     }
   )
 
-  const payload = await parseJsonResponse(res)
-  if (!res.ok) {
+  const res = result.response
+  const payload = result.payload
+  if (result.mode === 'json') {
+    handleProtectedResponse(res, { clearAuthOn401: false })
+  }
+
+  if (!res.ok || payload?.type === 'error' || !payload?.success) {
     if (
       payload?.errorType === 'gemini' &&
       (!payload?.error ||
@@ -158,20 +168,27 @@ export async function requestVideoSummary(headers, url, options = {}) {
 }
 
 export async function requestStudySummary(headers, studyPayload, options = {}) {
-  const res = await fetch(buildApiUrl('/api/summarize-notes'), {
+  const result = await fetchStreamingJson(buildApiUrl('/api/summarize-notes'), {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    headers: { 'Content-Type': 'application/json', 'x-webtutor-stream': '1', ...headers },
     body: JSON.stringify({
       ...studyPayload,
       studyPrompt: options.studyPrompt,
       historyId: options.historyId,
       forceRegenerate: Boolean(options.forceRegenerate),
     }),
+  }, {
+    onProgress: options.onProgress,
   })
 
-  const payload = await parseJsonResponse(res)
-  if (!res.ok) {
+  const res = result.response
+  const payload = result.payload
+  if (result.mode === 'json') {
+    handleProtectedResponse(res, { clearAuthOn401: false })
+  }
+
+  if (!res.ok || payload?.type === 'error' || !payload?.success) {
     throwAiRequestError(payload, DEFAULT_GEMINI_UI_ERROR)
   }
 
@@ -179,20 +196,27 @@ export async function requestStudySummary(headers, studyPayload, options = {}) {
 }
 
 export async function requestAskAnything(headers, question, options = {}) {
-  const res = await fetch(buildApiUrl('/api/ask-anything'), {
+  const result = await fetchStreamingJson(buildApiUrl('/api/ask-anything'), {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    headers: { 'Content-Type': 'application/json', 'x-webtutor-stream': '1', ...headers },
     body: JSON.stringify({
       question,
       studyPrompt: options.studyPrompt,
       historyId: options.historyId,
       forceRegenerate: Boolean(options.forceRegenerate),
     }),
+  }, {
+    onProgress: options.onProgress,
   })
 
-  const payload = await parseJsonResponse(res)
-  if (!res.ok) {
+  const res = result.response
+  const payload = result.payload
+  if (result.mode === 'json') {
+    handleProtectedResponse(res, { clearAuthOn401: false })
+  }
+
+  if (!res.ok || payload?.type === 'error' || !payload?.success) {
     throwAiRequestError(payload, DEFAULT_GEMINI_UI_ERROR)
   }
 

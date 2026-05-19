@@ -3,22 +3,24 @@ const {
 } = require('../services/youtube-audio')
 const { getVideoSourceFingerprint } = require('../services/sourceFingerprint')
 const { getCachedVideoSummary } = require('../cache')
-const { createSummaryProgressReporter } = require('../services/progress/summaryProgress')
+const { wantsNdjsonStream, createNdjsonStream } = require('../services/streaming/ndjsonStream')
+const { createRequestProgress } = require('../services/streaming/requestProgress')
 const { summarizeVideoPipeline } = require('../services/pipeline/summarizeVideoPipeline')
 const {
   createHistoryEntry,
   updateHistoryEntry,
   findExistingHistoryEntryByFingerprint,
 } = require('../../history/services/history')
-const { sendSummarizeError, sendValidationError } = require('./errorResponse')
+const { buildSummarizeErrorPayload, sendSummarizeError, sendValidationError } = require('./errorResponse')
 
 async function summarizeVideo(req, res) {
   let tempPaths = []
   let summaryStrategy = ''
+  const stream = wantsNdjsonStream(req) ? createNdjsonStream(res) : null
 
   try {
     const { url, historyId, forceRegenerate, studyPrompt = '' } = req.body
-    const progress = createSummaryProgressReporter(req)
+    const progress = createRequestProgress(req, stream)
     const emitProgress = (step) => progress.emit(step)
 
     if (!url) {
@@ -37,7 +39,7 @@ async function summarizeVideo(req, res) {
       if (existingEntry?.result?.summary) {
         emitProgress('Summary ready')
 
-        return res.json({
+        const payload = {
           success: true,
           jobId: progress.jobId,
           summaryStrategy: 'history-reused',
@@ -52,7 +54,13 @@ async function summarizeVideo(req, res) {
           formula: existingEntry.result.formula,
           doubt: existingEntry.result.doubt,
           quizProgress: existingEntry.result.quizProgress,
-        })
+        }
+
+        if (stream) {
+          return stream.final(payload)
+        }
+
+        return res.json(payload)
       }
     }
 
@@ -107,7 +115,7 @@ async function summarizeVideo(req, res) {
 
     emitProgress('Summary ready')
 
-    return res.json({
+    const payload = {
       success: true,
       jobId: progress.jobId,
       summaryStrategy: summaryStrategy || 'unknown',
@@ -116,18 +124,27 @@ async function summarizeVideo(req, res) {
       historyId: resolvedHistoryEntry.id,
       videoUrl: url,
       summary,
-    })
+    }
+
+    if (stream) {
+      return stream.final(payload)
+    }
+
+    return res.json(payload)
   } catch (error) {
     if (Array.isArray(error?.tempPaths) && error.tempPaths.length) {
       tempPaths = error.tempPaths
     }
     console.error('Summarize error:', error)
 
-    return sendSummarizeError(
-      res,
-      error,
-      'Web-Tut could not summarize this video right now. Please try again.'
-    )
+    const fallbackMessage = 'Web-Tut could not summarize this video right now. Please try again.'
+
+    if (stream) {
+      const { payload } = buildSummarizeErrorPayload(error, fallbackMessage)
+      return stream.error(payload)
+    }
+
+    return sendSummarizeError(res, error, fallbackMessage)
   } finally {
     await removeFiles(tempPaths)
   }

@@ -1,14 +1,18 @@
 const { getAskSourceFingerprint } = require('../services/sourceFingerprint')
 const { getCachedAskSummary } = require('../cache')
 const { runAskPipeline } = require('../services/pipeline/askPipeline')
+const { createNdjsonStream, wantsNdjsonStream } = require('../services/streaming/ndjsonStream')
+const { createRequestProgress } = require('../services/streaming/requestProgress')
 const {
   createHistoryEntry,
   updateHistoryEntry,
   findExistingHistoryEntryByFingerprint,
 } = require('../../history/services/history')
-const { sendSummarizeError, sendValidationError } = require('./errorResponse')
+const { buildSummarizeErrorPayload, sendSummarizeError, sendValidationError } = require('./errorResponse')
 
 async function askAnything(req, res) {
+  const stream = wantsNdjsonStream(req) ? createNdjsonStream(res) : null
+
   try {
     const {
       question,
@@ -16,6 +20,8 @@ async function askAnything(req, res) {
       forceRegenerate,
       studyPrompt = '',
     } = req.body
+
+    const progress = createRequestProgress(req, stream)
 
     if (!question) {
       return sendValidationError(res, 'Please enter a topic or question first.')
@@ -31,7 +37,7 @@ async function askAnything(req, res) {
       )
 
       if (existingEntry?.result?.summary) {
-        return res.json({
+        const payload = {
           success: true,
           summaryStrategy: 'history-reused',
           reusedExisting: true,
@@ -44,7 +50,13 @@ async function askAnything(req, res) {
           formula: existingEntry.result.formula,
           doubt: existingEntry.result.doubt,
           quizProgress: existingEntry.result.quizProgress,
-        })
+        }
+
+        if (stream) {
+          return stream.final(payload)
+        }
+
+        return res.json(payload)
       }
     }
 
@@ -53,10 +65,12 @@ async function askAnything(req, res) {
       studyPrompt: String(studyPrompt || '').trim(),
     }
 
-    const buildSummary = async () =>
-      runAskPipeline(question, {
+    const buildSummary = async () => {
+      progress.emit('Thinking about your question')
+      return runAskPipeline(question, {
         studyPrompt,
       })
+    }
     const result = forceRegenerate
       ? await buildSummary()
       : await getCachedAskSummary(req.user._id, askPayload, buildSummary)
@@ -94,23 +108,34 @@ async function askAnything(req, res) {
       // Teaching is intentionally generated on demand to keep the first answer fast.
     }
 
-    return res.json({
+    const payload = {
       success: true,
+      jobId: progress.jobId,
       summaryStrategy: result.strategy || 'ask-fast',
       sourceType: 'ask-ai',
       sourceLabel: result.sourceLabel,
       historyId: resolvedHistoryEntry.id,
       summary: result.summary,
       teaching: null,
-    })
+    }
+
+    if (stream) {
+      progress.emit('Answer ready')
+      return stream.final(payload)
+    }
+
+    return res.json(payload)
   } catch (error) {
     console.error('Ask anything error:', error)
 
-    return sendSummarizeError(
-      res,
-      error,
-      'Web-Tut could not prepare the study answer right now. Please try again.'
-    )
+    const fallbackMessage = 'Web-Tut could not prepare the study answer right now. Please try again.'
+
+    if (stream) {
+      const { payload } = buildSummarizeErrorPayload(error, fallbackMessage)
+      return stream.error(payload)
+    }
+
+    return sendSummarizeError(res, error, fallbackMessage)
   }
 }
 

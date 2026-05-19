@@ -5,7 +5,7 @@ import { MAX_PHOTO_UPLOADS, formatUploadNames } from '../../utils/studyUploadUti
 
 export default function PasteLinkFeature({ canClose, handleClose, handleStudyFilesChange, handleSubmit }) {
   const dispatch = useAppDispatch()
-  const { inputMode, url, studyUploads, askPrompt, loading, error } =
+  const { inputMode, url, studyUploads, askPrompt, loading, loadingMessage, error } =
     useAppSelector((state) => state.home)
   const isDarkMode = useAppSelector((state) => state.auth.theme === 'dark')
 
@@ -125,6 +125,14 @@ export default function PasteLinkFeature({ canClose, handleClose, handleStudyFil
           </button>
         ) : null}
       </div>
+
+      {loading && loadingMessage ? (
+        <div className="mt-3">
+          <p className="rounded-xl border border-(--border) bg-(--card) px-4 py-2 text-xs text-(--text)">
+            {loadingMessage}
+          </p>
+        </div>
+      ) : null}
 
       {error && <div className="mt-3"><p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">{error}</p></div>}
     </form>

@@ -45,6 +45,7 @@ function Home() {
     askPrompt,
     summaryPrompt,
     result,
+    loadingMessage,
     history,
     activeView,
     quizLoading,
@@ -232,9 +233,12 @@ function Home() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    dispatch(setHomeFields({ error: '', quizError: '', teachingError: '', formulaError: '', doubtError: '', loading: true }))
+    dispatch(setHomeFields({ error: '', quizError: '', teachingError: '', formulaError: '', doubtError: '', loading: true, loadingMessage: 'Starting...' }))
     try {
-      const payload = await requestSummaryForCurrentInput()
+      const payload = await requestSummaryForCurrentInput({
+        onProgress: (event) =>
+          dispatch(setHomeField({ field: 'loadingMessage', value: event?.step || 'Working...' })),
+      })
       await continueAfterSummary(payload)
     } catch (err) {
       const nextError = getVisibleErrorMessage(err)
@@ -242,16 +246,18 @@ function Home() {
         dispatch(setHomeField({ field: 'error', value: nextError }))
       }
     } finally {
-      dispatch(setHomeField({ field: 'loading', value: false }))
+      dispatch(setHomeFields({ loading: false, loadingMessage: '' }))
     }
   }
 
   async function handleRegenerateSummary() {
-    dispatch(setHomeFields({ error: '', quizError: '', teachingError: '', formulaError: '', doubtError: '', loading: true }))
+    dispatch(setHomeFields({ error: '', quizError: '', teachingError: '', formulaError: '', doubtError: '', loading: true, loadingMessage: 'Starting...' }))
     try {
       const payload = await requestSummaryForCurrentInput({
         historyId: result?.historyId,
         forceRegenerate: true,
+        onProgress: (event) =>
+          dispatch(setHomeField({ field: 'loadingMessage', value: event?.step || 'Working...' })),
       })
       applySummaryPayload(payload, activeView || 'summary')
     } catch (err) {
@@ -260,7 +266,7 @@ function Home() {
         dispatch(setHomeField({ field: 'error', value: nextError }))
       }
     } finally {
-      dispatch(setHomeField({ field: 'loading', value: false }))
+      dispatch(setHomeFields({ loading: false, loadingMessage: '' }))
     }
   }
 

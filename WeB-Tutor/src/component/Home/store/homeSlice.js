@@ -8,6 +8,7 @@ const initialState = {
   summaryPrompt: '',
   result: null,
   loading: false,
+  loadingMessage: '',
   error: '',
   history: [],
   activeView: 'summary',
@@ -72,6 +73,7 @@ const homeSlice = createSlice({
       state.askPrompt = ''
       state.summaryPrompt = ''
       state.loading = false
+      state.loadingMessage = ''
       state.error = ''
       state.doubtLoading = false
       state.doubtError = ''
