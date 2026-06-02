@@ -5,6 +5,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'http://127.0.0.1:5173',
 ]
 const LOCAL_DEV_ORIGIN_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i
+const WEB_TUT_VERCEL_ORIGIN_PATTERN = /^https:\/\/web-tut(?:-[a-z0-9-]+)?\.vercel\.app$/i
 
 function parseAllowedOrigins() {
   const configuredOrigins = String(
@@ -32,6 +33,10 @@ function isOriginAllowed(origin, allowedOrigins = parseAllowedOrigins()) {
     return true
   }
 
+  if (WEB_TUT_VERCEL_ORIGIN_PATTERN.test(safeOrigin)) {
+    return true
+  }
+
   return allowedOrigins.some((allowedOrigin) => normaliseOrigin(allowedOrigin) === safeOrigin)
 }
 
@@ -42,6 +47,7 @@ function createCorsOriginValidator(allowedOrigins = parseAllowedOrigins()) {
       return
     }
 
+    console.warn(`Blocked CORS origin: ${origin || 'unknown'}`)
     callback(new Error('Origin not allowed by CORS'))
   }
 }
