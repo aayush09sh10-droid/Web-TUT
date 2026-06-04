@@ -19,7 +19,7 @@ const corsOptions = {
   origin: createCorsOriginValidator(allowedOrigins),
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-webtutor-stream'],
 }
 const authRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
