@@ -2,6 +2,7 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 
+const { AudioServiceError } = require('./errors')
 const { ensureYtDlpBinary, getYtDlpClient, normaliseYoutubeError } = require('./ytDlp')
 
 function createTempBasePath(prefix) {
@@ -61,9 +62,9 @@ async function downloadYoutubeTranscript(url) {
       `${outputBase}.%(ext)s`,
     ])
   } catch (error) {
-    throw Object.assign(
-      new Error(`Failed to download YouTube transcript: ${normaliseYoutubeError(error)}`),
-      { statusCode: 502 }
+    throw new AudioServiceError(
+      `Failed to download YouTube transcript: ${normaliseYoutubeError(error)}`,
+      502
     )
   }
 

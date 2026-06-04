@@ -23,7 +23,7 @@ function throwAiRequestError(payload, fallbackMessage) {
       ? payload?.error || fallbackMessage
       : payload?.errorType === 'gemini'
         ? payload?.error || DEFAULT_GEMINI_UI_ERROR
-        : fallbackMessage || DEFAULT_GEMINI_UI_ERROR
+        : payload?.error || fallbackMessage || DEFAULT_GEMINI_UI_ERROR
 
   const error = new Error(message)
   error.silentInUi = silentInUi
