@@ -6,6 +6,63 @@ const { YT_DLP_BINARY_PATH } = require('./constants')
 
 let ytDlpBootstrapPromise = null
 
+function getConfiguredCookiesPath() {
+  const configuredPath = String(
+    process.env.YT_DLP_COOKIES_PATH || process.env.YTDLP_COOKIES_PATH || ''
+  ).trim()
+
+  return configuredPath || ''
+}
+
+function isLoginOrBotError(error) {
+  const message = String(error?.stderr || error?.message || '').toLowerCase()
+
+  return (
+    message.includes('login') ||
+    message.includes('sign in') ||
+    message.includes('cookie') ||
+    message.includes('cookies') ||
+    message.includes('confirm you’re not a bot') ||
+    message.includes("confirm you're not a bot") ||
+    message.includes('use --cookies-from-browser or --cookies') ||
+    message.includes('video unavailable')
+  )
+}
+
+async function getAvailableCookiesArgs() {
+  const cookiesPath = getConfiguredCookiesPath()
+
+  if (!cookiesPath) {
+    return []
+  }
+
+  const exists = await fs.promises
+    .access(cookiesPath, fs.constants.F_OK)
+    .then(() => true)
+    .catch(() => false)
+
+  return exists ? ['--cookies', cookiesPath] : []
+}
+
+async function getYtDlpAttemptProfiles() {
+  const cookiesArgs = await getAvailableCookiesArgs()
+
+  return [
+    {
+      name: cookiesArgs.length ? 'cookies-default' : 'default',
+      args: [...cookiesArgs],
+    },
+    {
+      name: 'android-client',
+      args: [...cookiesArgs, '--extractor-args', 'youtube:player_client=android,web'],
+    },
+    {
+      name: 'tv-client',
+      args: [...cookiesArgs, '--extractor-args', 'youtube:player_client=tv_simply,tv,web'],
+    },
+  ]
+}
+
 function getAssetCandidates(platform = process.platform, arch = process.arch) {
   if (platform === 'win32') {
     return ['yt-dlp.exe']
@@ -104,6 +161,51 @@ function getYtDlpClient() {
   return new YTDlpWrap(YT_DLP_BINARY_PATH)
 }
 
+async function execYtDlpWithFallback(baseArgs, options = {}) {
+  const ytDlp = getYtDlpClient()
+  const profiles = await getYtDlpAttemptProfiles()
+  const safeBaseArgs = Array.isArray(baseArgs) ? baseArgs : []
+  let lastError = null
+
+  for (let index = 0; index < profiles.length; index += 1) {
+    const profile = profiles[index]
+
+    try {
+      return await ytDlp.execPromise([...profile.args, ...safeBaseArgs], options)
+    } catch (error) {
+      lastError = error
+
+      if (!isLoginOrBotError(error) || index === profiles.length - 1) {
+        throw error
+      }
+    }
+  }
+
+  throw lastError || new Error('yt-dlp failed to execute.')
+}
+
+async function getVideoInfoWithFallback(url) {
+  const ytDlp = getYtDlpClient()
+  const profiles = await getYtDlpAttemptProfiles()
+  let lastError = null
+
+  for (let index = 0; index < profiles.length; index += 1) {
+    const profile = profiles[index]
+
+    try {
+      return await ytDlp.getVideoInfo([...profile.args, url])
+    } catch (error) {
+      lastError = error
+
+      if (!isLoginOrBotError(error) || index === profiles.length - 1) {
+        throw error
+      }
+    }
+  }
+
+  throw lastError || new Error('yt-dlp could not read video info.')
+}
+
 function extractYoutubeVideoId(url) {
   const patterns = [
     /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([\w-]{11})/i,
@@ -149,8 +251,12 @@ function normaliseYoutubeError(error) {
 
 module.exports = {
   ensureYtDlpBinary,
+  execYtDlpWithFallback,
   getYtDlpClient,
   extractYoutubeVideoId,
   getAssetCandidates,
+  getConfiguredCookiesPath,
+  getVideoInfoWithFallback,
+  isLoginOrBotError,
   normaliseYoutubeError,
 }
