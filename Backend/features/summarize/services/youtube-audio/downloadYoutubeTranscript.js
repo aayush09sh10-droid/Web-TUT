@@ -2,7 +2,7 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 
-const { getYtDlpClient, normaliseYoutubeError } = require('./ytDlp')
+const { ensureYtDlpBinary, getYtDlpClient, normaliseYoutubeError } = require('./ytDlp')
 
 function createTempBasePath(prefix) {
   const fileName = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -38,6 +38,8 @@ function parseVttTranscript(vttText) {
 }
 
 async function downloadYoutubeTranscript(url) {
+  await ensureYtDlpBinary()
+
   const ytDlp = getYtDlpClient()
   const outputBase = createTempBasePath('youtube-transcript')
   const outputDirectory = path.dirname(outputBase)

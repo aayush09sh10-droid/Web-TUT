@@ -1,4 +1,5 @@
 const { GeminiServiceError } = require('../services/gemini')
+const { AudioServiceError } = require('../services/youtube-audio')
 
 const DEFAULT_GEMINI_UI_ERROR =
   'Web-Tut is unavailable right now. Please try again in a moment.'
@@ -14,6 +15,17 @@ function buildSummarizeErrorPayload(error, fallbackMessage) {
         error: isSilentInUi ? '' : error.message || fallbackMessage || DEFAULT_GEMINI_UI_ERROR,
         errorType: 'gemini',
         silentInUi: isSilentInUi,
+      },
+    }
+  }
+
+  if (error instanceof AudioServiceError) {
+    return {
+      statusCode: error.statusCode || 502,
+      payload: {
+        success: false,
+        error: error.message || fallbackMessage || DEFAULT_GEMINI_UI_ERROR,
+        errorType: Number(error.statusCode) === 400 ? 'validation' : 'youtube',
       },
     }
   }
